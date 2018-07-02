@@ -1,5 +1,4 @@
 import os
-import random
 import shutil
 
 import numpy as np
@@ -136,20 +135,26 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
         if TEST:
             prediction_number = sess.run(output,
                                          feed_dict={x: np.asarray(previous_first_prize_number).reshape(-1, 6)})
-            prediction_number_rint = np.clip(np.rint(prediction_number), a_min=0, a_max=45)
-            prediction_number_floor = np.clip(np.floor(prediction_number), a_min=0, a_max=45)
-            prediction_number_ceil = np.clip(np.ceil(prediction_number), a_min=0, a_max=45)
 
-            except_result = np.asarray(list(set(list(prediction_number_floor[0])
-                                                + list(prediction_number_rint[0])
-                                                + list(prediction_number_ceil[0])
-                                                + list(previous_first_prize_number))),
+            prediction_number_rint = np.clip(np.rint(prediction_number[-1]), a_min=0, a_max=45)
+            prediction_number_floor = np.clip(np.floor(prediction_number[-1]), a_min=0, a_max=45)
+            prediction_number_ceil = np.clip(np.ceil(prediction_number[-1]), a_min=0, a_max=45)
+
+            except_result = np.asarray(list(set(list(prediction_number_floor)
+                                                + list(prediction_number_rint)
+                                                + list(prediction_number_ceil)
+                                                + list(previous_first_prize_number[-1]))),
                                        dtype=np.int32)
+
+            except_result = np.sort(except_result)
+            if 0 in except_result:
+                except_result = np.delete(except_result, 0)
             select_number = np.delete(np.arange(1, 46), except_result - 1)
             np.random.shuffle(select_number)
+
             with open("prediction.txt", "w") as f:
                 for i in range(number_of_prediction):
-                    result = np.sort(np.random.choice(select_number, 6, replace=False)) #replace=False -> 중복 허용 x
+                    result = np.sort(np.random.choice(select_number, 6, replace=False))  # replace=False -> 중복 허용 x
                     print("당첨 예측 번호-{} : {}".format(i + 1, result))
                     f.write("당첨 예측 번호-{} : {}\n".format(i + 1, result))
 
