@@ -7,16 +7,16 @@
     * ### **Model With Fixed Length Dataset**
         
         * [***Fully Connected Layer***]()
-            * 기본적인 전방향 신경망 입니다.
+            * 기본적인 FullyConnected Neural Network(전방향 신경망) 입니다.
 
         * [***Convolution Neural Network***]()
 
-            * 기본적인 합성곱 신경망 입니다.
+            * 기본적인 Convolution Neural Network(합성곱 신경망) 입니다.
 
          * **Various Kinds Of Autoencoder**
             * **Feature Extraction Model**
                 * [***Autoencoder And PCA***]()
-                    * 가장 기본적인 Autoencoder를 PCA와 비교한 코드입니다.
+                    * 기본적인 Autoencoder를 PCA와 비교한 코드입니다.
 
                 * [***Denoising Autoencoder And PCA***]()
                     * 네트워크의 복원 능력을 강화하기 위해 입력에 노이즈를 추가한 Denoising Autoencoder를 PCA와 비교한 코드입니다.
@@ -29,8 +29,7 @@
                     * 무작위로 데이터를 생성해내는 GAN과 제한을 두어 원하는 것을 생성해내는 조건부 GAN 입니다.
 
                 * [***Variational Autoencoder***]()
-                    * Autoencoder의 생성모델 버전입니다. 중간의 은닉층에 조건을 주어
-                    원하는 것을 생성해내는 Variational Autoencoder 입니다.  
+                    * Autoencoder를 생성모델로 사용합니다. 중간층의 평균과 분산에 target정보를 같이 줘서 원하는 것을 생성해내는 Autoencoder 입니다. 짧게 VAE라고 불립니다.  
          * **Application**
 
             * [***LottoNet***]()
@@ -38,13 +37,13 @@
             * [***Neural Style***]()
                 * 내 사진을 예술작품으로 바꿔주는 유명한 논문인 "A Neural Algorithm of Artistic Style" 의 구현 입니다.
             * [***Word2Vector SkipGram With TSNE***]()
-                * 설명
+                * 아무런 관계가 없는 것처럼 표현(one-hot encoding)된 단어들을 낮은 차원의 벡터로 표현함과 동시에 단어간의 관계를 표현하는 방법입니다. Word2Vector에는 CBOW모델과 Skip-Gram 모델이 있습니다. 여기서는 Skip-Gram모델을 구현합니다.
             * [***Image To Image Translation With Conditional Adversarial Networks***]()
                 * 진행중
             
-    * **Sequence Model With Variable Length Dataset**
+    * ### **Sequence Model With Variable Length Dataset**
         * ASAP
-    * **Reinforcement Learning**
+    * ### **Reinforcement Learning**
         * ASAP
 
 
