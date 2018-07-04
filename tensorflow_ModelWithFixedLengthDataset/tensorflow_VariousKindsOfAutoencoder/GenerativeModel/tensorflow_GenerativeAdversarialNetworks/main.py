@@ -7,9 +7,7 @@ import GenerativeAdversarialNetworks
 # 선화(Generator의 입력)를 (여기서 채색된 선화는 Discriminator의 입력이 된다.)채색가능
 '''
 targeting = False 일 때는 숫자를 무작위로 생성하는 GAN MODEL 생성 - General GAN
-targeting = True 일 때는 숫자를 타게팅 하여 생성하는 GAN MODEL 생성 - Conditional GAN
-
-model_name은 붙이고 싶은 것 붙이면 된다.  
+targeting = True 일 때는 숫자를 타게팅 하여 생성하는 GAN MODEL 생성 - Conditional GAN 
 '''
 GenerativeAdversarialNetworks.model(TEST=True, noise_size=128, targeting=True,
                                     optimizer_selection="Adam", learning_rate=0.0002, training_epochs=100,

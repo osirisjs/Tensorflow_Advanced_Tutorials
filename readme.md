@@ -29,7 +29,7 @@
                     * 무작위로 데이터를 생성해내는 GAN과 제한을 두어 원하는 데이터를 생성하는 조건부 GAN 입니다.
 
                 * [***Basic and Conditional Variational Autoencoder***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_ModelWithFixedLengthDataset/tensorflow_VariousKindsOfAutoencoder/GenerativeModel/tensorflow_VariationalAutoencoder)
-                    * Autoencoder를 생성모델로 사용합니다. 줄여서 VAE라고 불립니다. 중간층의 평균과 분산에 따라 무작위로 데이터를 생성하는 VAE와 중간층의 평균과 분산에 target정보를 주어 원하는 데이터를 생성하는 VAE 입니다. - 수정중
+                    * Autoencoder를 생성모델로 사용합니다. 줄여서 VAE라고 불립니다. 중간층의 평균과 분산에 따라 무작위로 데이터를 생성하는 VAE와 중간층의 평균과 분산에 target정보를 주어 원하는 데이터를 생성하는 VAE 입니다.
          * **Application**
 
             * [***LottoNet***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_AutoencoderLottoNet)

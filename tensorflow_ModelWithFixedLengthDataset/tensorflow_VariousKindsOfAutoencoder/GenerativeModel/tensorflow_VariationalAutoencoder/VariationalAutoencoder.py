@@ -23,61 +23,24 @@ def show_image(model_name, generated_image, column_size=10, row_size=10):
     plt.show()
 
 
-def model(TEST=True, latent_number=16, model_name="Autoencoder", optimizer_selection="Adam",
+def model(TEST=True, targeting=True, latent_number=16, optimizer_selection="Adam",
           learning_rate=0.001, training_epochs=100,
           batch_size=128, display_step=10, batch_norm=True):
     mnist = input_data.read_data_sets("", one_hot=False)
 
-    if batch_norm == True:
-        model_name = "batch_norm_" + model_name
+    if targeting:
+        print("target generative VAE")
+        model_name = "ConditionalVAE"
+    else:
+        print("random generative VAE")
+        model_name = "RandomVAE"
+
+    if batch_norm:
+        model_name = "BatchNorm_" + model_name
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
             shutil.rmtree("tensorboard/{}".format(model_name))
-
-    # stride? -> [1, 2, 2, 1] = [one image, width, height, one channel]
-    def conv2d(input, weight_shape='', bias_shape='', strides=[1, 1, 1, 1], padding="VALID"):
-        weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
-        bias_init = tf.constant_initializer(value=0)
-        if batch_norm:
-            w = tf.get_variable("w", weight_shape, initializer=weight_init)
-        else:
-            weight_decay = tf.constant(0.00001, dtype=tf.float32)
-            w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
-
-        b = tf.get_variable("b", bias_shape, initializer=bias_init)
-        conv_out = tf.nn.conv2d(input, w, strides=strides, padding=padding)
-
-        if batch_norm:
-            return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=not TEST)
-        else:
-            return tf.nn.bias_add(conv_out, b)
-
-    def conv2d_transpose(input, output_shape='', weight_shape='', bias_shape='', strides=[1, 1, 1, 1], padding="VALID"):
-        weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
-        bias_init = tf.constant_initializer(value=0)
-        if batch_norm:
-            w = tf.get_variable("w", weight_shape, initializer=weight_init)
-        else:
-            weight_decay = tf.constant(0.00001, dtype=tf.float32)
-            w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
-        b = tf.get_variable("b", bias_shape, initializer=bias_init)
-
-        conv_out = tf.nn.conv2d_transpose(input, w, output_shape=output_shape, strides=strides, padding=padding)
-        if batch_norm:
-            return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=not TEST)
-        else:
-            return tf.nn.bias_add(conv_out, b)
-
-    # ksize, strides? -> [1, 2, 2, 1] = [one image, width, height, one channel]
-    # pooling을 할때, 각 batch 에 대해 한 채널에 대해서 하니까, 1, 1,로 설정해준것.
-    def pooling(input, type="avg", k=2, padding='VALID'):
-        if type == "max":
-            return tf.nn.max_pool(input, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding=padding)
-        else:
-            return tf.nn.avg_pool(input, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding=padding)
 
     def layer(input, weight_shape, bias_shape):
         weight_init = tf.random_normal_initializer(stddev=0.01)
@@ -97,130 +60,65 @@ def model(TEST=True, latent_number=16, model_name="Autoencoder", optimizer_selec
 
     def inference(x, target, latent_number):
 
-        if model_name == "Autoencoder" or model_name == "batch_norm_Autoencoder":
-            with tf.variable_scope("encoder"):
-                with tf.variable_scope("fully1"):
-                    fully_1 = tf.nn.relu(layer(tf.reshape(x, (-1, 784)), [784, 256], [256]))
-                with tf.variable_scope("fully2"):
-                    fully_2 = tf.nn.relu(layer(fully_1, [256, 128], [128]))
-                with tf.variable_scope("fully3"):
-                    fully_3 = tf.nn.relu(layer(fully_2, [128, 64], [64]))
+        with tf.variable_scope("encoder"):
+            with tf.variable_scope("fully1"):
+                fully_1 = tf.nn.relu(layer(tf.reshape(x, (-1, 784)), [784, 256], [256]))
+            with tf.variable_scope("fully2"):
+                fully_2 = tf.nn.relu(layer(fully_1, [256, 128], [128]))
+            with tf.variable_scope("fully3"):
+                fully_3 = tf.nn.relu(layer(fully_2, [128, 64], [64]))
 
-            with tf.variable_scope("mean_variance"):
-                # 활성화 함수 쓰면 안된다.
-                encoder_output = layer(fully_3, [64, latent_number * 2], [latent_number * 2])
+        with tf.variable_scope("mean_variance"):
+            # 활성화 함수 쓰면 안된다.
+            encoder_output = layer(fully_3, [64, latent_number * 2], [latent_number * 2])
 
-                '''key point1
-                reparametrization trick'''
-                mu, log_var = tf.split(encoder_output, [latent_number, latent_number], axis=1)
-                zero_mean_gaussian = tf.random_normal([tf.shape(x)[0], latent_number], mean=0.0, stddev=1.0)
-                std = tf.exp(0.5 * log_var)  # 양수로 만들기 위함
-                latent_variable = tf.concat([mu + std * zero_mean_gaussian, tf.tile(tf.reshape(target, (-1, 1)),
+            '''key point1
+            reparametrization trick'''
+            mu, log_var = tf.split(encoder_output, [latent_number, latent_number], axis=1)
+            zero_mean_gaussian = tf.random_normal([tf.shape(x)[0], latent_number], mean=0.0, stddev=1.0)
+            std = tf.exp(0.5 * log_var)  # 양수로 만들기 위함
+            latent_variable = mu + std * zero_mean_gaussian
+
+            if targeting:
+                latent_variable = tf.concat([latent_variable, tf.tile(tf.reshape(target, (-1, 1)),
                                                                                     [1, latent_number])], axis=1)
+            else:
+                latent_number = (latent_number//2)
 
-            # 학습이 완료된 후에는 아래의 decoder의 가중치만 사용하면 된다.
-            with tf.variable_scope("decoder"):
-                with tf.variable_scope("fully1"):
-                    fully_4 = tf.nn.relu(layer(latent_variable, [latent_number * 2, 64], [64]))
-                with tf.variable_scope("fully2"):
-                    fully_5 = tf.nn.relu(layer(fully_4, [64, 128], [128]))
-                with tf.variable_scope("fully3"):
-                    fully_6 = tf.nn.relu(layer(fully_5, [128, 256], [256]))
-                with tf.variable_scope("output"):
-                    decoder_output = tf.nn.sigmoid(layer(fully_6, [256, 784], [784]))
+        # 학습이 완료된 후에는 아래의 decoder의 가중치만 사용하면 된다.
+        with tf.variable_scope("decoder"):
+            with tf.variable_scope("fully1"):
+                fully_4 = tf.nn.relu(layer(latent_variable, [latent_number * 2, 64], [64]))
+            with tf.variable_scope("fully2"):
+                fully_5 = tf.nn.relu(layer(fully_4, [64, 128], [128]))
+            with tf.variable_scope("fully3"):
+                fully_6 = tf.nn.relu(layer(fully_5, [128, 256], [256]))
+            with tf.variable_scope("output"):
+                decoder_output = tf.nn.sigmoid(layer(fully_6, [256, 784], [784]))
 
-            return latent_variable, encoder_output, decoder_output
-
-        elif model_name == 'Convolution_Autoencoder' or model_name == "batch_norm_Convolution_Autoencoder":
-            with tf.variable_scope("encoder"):
-                with tf.variable_scope("conv_1"):
-                    conv_1 = tf.nn.relu(
-                        conv2d(x, weight_shape=[5, 5, 1, 32], bias_shape=[32], strides=[1, 1, 1, 1], padding="VALID"))
-                    # result -> batch_size, 24, 24, 32
-
-                with tf.variable_scope("conv_2"):
-                    conv_2 = tf.nn.relu(
-                        conv2d(conv_1, weight_shape=[5, 5, 32, 32], bias_shape=[32], strides=[1, 1, 1, 1],
-                               padding="VALID"))
-                    # result -> batch_size, 20, 20, 32
-
-            with tf.variable_scope("mean_variance"):
-                # 활성화 함수 쓰면 안된다.
-                encoder_output = conv2d(conv_2, weight_shape=[5, 5, 32, latent_number * 2],
-                                        bias_shape=[latent_number * 2],
-                                        strides=[1, 1, 1, 1],
-                                        padding="VALID")
-                # result -> batch_size, 16, 16, 32
-                '''key point1
-                reparametrization trick'''
-                mu, log_var = tf.split(encoder_output, [latent_number, latent_number], axis=-1)
-                zero_mean_gaussian = tf.random_normal(
-                    [tf.shape(x)[0], tf.shape(encoder_output)[1], tf.shape(encoder_output)[2], latent_number], \
-                    mean=0.0, stddev=1.0)
-                std = tf.exp(0.5 * log_var)  # 양수로 만들기 위함
-                latent_variable = tf.concat([mu + std * zero_mean_gaussian, \
-                                             tf.tile(tf.reshape(target, (-1, 1, 1, 1)), [1, tf.shape(encoder_output)[1],
-                                                                                         tf.shape(encoder_output)[2],
-                                                                                         latent_number])], axis=-1)
-
-            # 학습이 다 완료된 후에는 아래의 decoder만 사용하면 된다.
-
-            with tf.variable_scope("decoder"):
-                with tf.variable_scope("trans_conv_1"):
-                    conv_3 = tf.nn.relu(
-                        conv2d_transpose(latent_variable, output_shape=tf.shape(conv_2),
-                                         weight_shape=[5, 5, 32, latent_number * 2],
-                                         bias_shape=[32], strides=[1, 1, 1, 1], padding="VALID"))
-                    # result -> batch_size, 20, 20, 32
-
-                with tf.variable_scope("trans_conv_2"):
-                    conv_4 = tf.nn.relu(
-                        conv2d_transpose(conv_3, output_shape=tf.shape(conv_1), weight_shape=[5, 5, 32, 32],
-                                         bias_shape=[32], strides=[1, 1, 1, 1], padding="VALID"))
-                    # result -> batch_size, 24, 24, 32
-
-                with tf.variable_scope("output"):
-                    decoder_output = tf.nn.sigmoid(
-                        conv2d_transpose(conv_4, output_shape=tf.shape(x), weight_shape=[5, 5, 1, 32],
-                                         bias_shape=[1],
-                                         strides=[1, 1, 1, 1], padding="VALID"))
-                    # result -> batch_size, 28, 28, 1
-
-            return latent_variable, encoder_output, decoder_output
+        return latent_variable, encoder_output, decoder_output
 
     def evaluate(output, x):
+
         with tf.variable_scope("validation"):
             tf.summary.image('input_image', tf.reshape(x, [-1, 28, 28, 1]), max_outputs=5)
             tf.summary.image('output_image', tf.reshape(output, [-1, 28, 28, 1]), max_outputs=5)
-
-            if model_name == 'Convolution_Autoencoder' or model_name == "batch_norm_Convolution_Autoencoder":
-                l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(output, x)), axis=[1, 2, 3]))
-            elif model_name == "Autoencoder" or model_name == "batch_norm_Autoencoder":
-                l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(output, tf.reshape(x, (-1, 784)))), axis=1))
-
+            l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(output, tf.reshape(x, (-1, 784)))), axis=1))
             val_loss = tf.reduce_mean(l2)
             tf.summary.scalar('val_cost', val_loss)
             return val_loss
 
     def crossentropy(output, x):
-        if model_name == "Autoencoder" or model_name == "batch_norm_Autoencoder":
-            transformed_x = tf.reshape(x, (-1, 784))
-            train_loss = tf.reduce_sum(transformed_x * tf.log(output + 1e-12) + \
-                                       (1 - transformed_x) * tf.log(1 - output + 1e-12), axis=1)
-        elif model_name == 'Convolution_Autoencoder' or model_name == "batch_norm_Convolution_Autoencoder":
-            train_loss = tf.reduce_sum(x * tf.log(output + 1e-12) + \
-                                       (1 - x) * tf.log(1 - output + 1e-12), axis=[1, 2, 3])
+        transformed_x = tf.reshape(x, (-1, 784))
+        train_loss = tf.reduce_sum(
+            transformed_x * tf.log(output + 1e-12) + (1 - transformed_x) * tf.log(1 - output + 1e-12), axis=1)
         return -tf.reduce_mean(train_loss)
 
     '''key point2'''
 
     def latentloss(encoder_output):
-        if model_name == "Autoencoder" or model_name == "batch_norm_Autoencoder":
-            mu, log_var = tf.split(encoder_output, [latent_number, latent_number], axis=1)
-            train_loss = 0.5 * tf.reduce_sum(tf.exp(log_var) + mu * mu - 1 - log_var, axis=1)
-        elif model_name == 'Convolution_Autoencoder' or model_name == "batch_norm_Convolution_Autoencoder":
-            mu, log_var = tf.split(encoder_output, [latent_number, latent_number], axis=-1)
-            train_loss = 0.5 * tf.reduce_sum(tf.exp(log_var) + mu * mu - 1 - log_var, axis=[1, 2, 3])
+        mu, log_var = tf.split(encoder_output, [latent_number, latent_number], axis=1)
+        train_loss = 0.5 * tf.reduce_sum(tf.exp(log_var) + mu * mu - 1 - log_var, axis=1)
         return tf.reduce_mean(train_loss)
 
     def training(cost):
@@ -242,6 +140,7 @@ def model(TEST=True, latent_number=16, model_name="Autoencoder", optimizer_selec
         with tf.name_scope("feed_dict"):
             x = tf.placeholder("float", [None, 28, 28, 1])
             target = tf.placeholder("float", [None])
+
         with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
             with tf.name_scope("inference"):
                 latent_variable, encoder_output, decoder_output = inference(x, target, latent_number)
@@ -330,31 +229,30 @@ def model(TEST=True, latent_number=16, model_name="Autoencoder", optimizer_selec
         if TEST:
             column_size = 10
             row_size = 10
-            if model_name == "Autoencoder" or model_name == "batch_norm_Autoencoder":
+
+            if targeting:
                 target = np.tile(np.tile(np.arange(start=0, stop=column_size), row_size).reshape((-1, 1)),
                                  (1, latent_number))
                 feed_dict = {latent_variable: np.concatenate(
                     (np.random.normal(loc=0.0, scale=1.0, size=(column_size * row_size, latent_number)), target) \
                     , axis=1)}
-            elif model_name == 'Convolution_Autoencoder' or model_name == "batch_norm_Convolution_Autoencoder":
-                '''x: np.zeros(shape=(column_size * row_size, 28, 28, 1))는 conv2d_transpose 에서 output_shape를 위해 필요하다.
-                위 코드에서 이런식으로 (output_shape=tf.shape(conv_1)) 으로 사용하고 있기 때문이다.
-                '''
-                target = np.tile(np.tile(np.arange(start=0, stop=column_size), row_size).reshape((-1, 1, 1, 1)),
-                                 (1, np.shape(encoder_output)[1], np.shape(encoder_output)[2], latent_number))
-                feed_dict = {x: np.zeros(shape=(column_size * row_size, 28, 28, 1)),
-                             latent_variable: np.concatenate((np.random.normal(loc=0.0, scale=1.0, size=(
-                                 column_size * row_size, np.shape(encoder_output)[1], np.shape(encoder_output)[2],
-                                 latent_number)), target), axis=-1)}
+            else:
+                feed_dict = {
+                    latent_variable: np.random.normal(loc=0.0, scale=1.0, size=(column_size * row_size, latent_number))}
+
             generated_image = sess.run(decoder_output, feed_dict=feed_dict)
             show_image(model_name, generated_image, column_size=column_size, row_size=row_size)
 
 
 if __name__ == "__main__":
+
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-    # model_name = "Convolution_Autoencoder" or "Autoencoder"
     # latent_number는 2의 배수인 양수여야 한다.
-    model(TEST=True, latent_number=16, model_name="Autoencoder", optimizer_selection="Adam", \
+    '''
+    targeting = False 일 때는 숫자를 무작위로 생성하는 VAE 생성 - General VAE
+    targeting = True 일 때는 숫자를 타게팅 하여 생성하는 VAE 생성 - Conditional VAE
+    '''
+    model(TEST=True, targeting=True, latent_number=16, optimizer_selection="Adam", \
           learning_rate=0.001, training_epochs=300, batch_size=512, display_step=1, batch_norm=True)
 
 else:
