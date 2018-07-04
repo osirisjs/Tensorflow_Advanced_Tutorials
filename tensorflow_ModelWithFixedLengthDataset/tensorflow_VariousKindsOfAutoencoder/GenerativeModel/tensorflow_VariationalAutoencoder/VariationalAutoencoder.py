@@ -118,7 +118,7 @@ def model(TEST=True, latent_number=16, model_name="Autoencoder", optimizer_selec
                 latent_variable = tf.concat([mu + std * zero_mean_gaussian, tf.tile(tf.reshape(target, (-1, 1)),
                                                                                     [1, latent_number])], axis=1)
 
-            # 학습이 다 완료된 후에는 아래의 decoder만 사용하면 된다.
+            # 학습이 완료된 후에는 아래의 decoder의 가중치만 사용하면 된다.
             with tf.variable_scope("decoder"):
                 with tf.variable_scope("fully1"):
                     fully_4 = tf.nn.relu(layer(latent_variable, [latent_number * 2, 64], [64]))
