@@ -107,7 +107,6 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
             tf.add_to_collection('x', x)
             tf.add_to_collection('output', output)
             #graph 구조를 파일에 쓴다.
-            tf.train.export_meta_graph
             saver.export_meta_graph(os.path.join(model_name, "Lotto_Graph.meta"), collection_list=['x', 'output'])
 
         config = tf.ConfigProto(log_device_placement=False, allow_soft_placement=True)
@@ -158,7 +157,7 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
             -> 단순히 그래프를 가져오고 가중치를 복원하는 것만으로는 안된다. 세션을 실행할때 인수로 사용할 변수에 대한 
             추가 접근을 제공하지 않기 때문에 아래와 같이 get_colltection으로 입,출력 변수들을 불러와서 다시 사용 해야 한다.
             '''
-            saver = tf.train.import_meta_graph(meta_path[0])  # meta graph 읽어오기
+            saver = tf.train.import_meta_graph(meta_path[0], clear_devices=True)  # meta graph 읽어오기
             if saver==None:
                 print("meta 파일을 읽을 수 없습니다.")
                 exit(0)
