@@ -34,6 +34,9 @@
 
             * [***LottoNet***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_AutoencoderLottoNet)
                 * 로또 당첨의 꿈을 이루고자 전방향 신경망을 사용해 단순히 로또 번호를 예측하는 코드입니다.
+                * Graph구조를 담은 meta파일을 저장하고 불러와 사용하는 코드도 포함되어 있습니다.
+                    * tensorflow.add_to_collection, tensorflow.get_collection을 사용합니다.
+                    * tf.data.Dataset를 사용합니다.(편리하게 자신의 데이터를 전처리 할 수 있습니다.)
             * [***Neural Style***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_NeuralStyle)
                 * 내 사진을 예술작품으로 바꿔주는 유명한 논문인 "A Neural Algorithm of Artistic Style" 의 구현 입니다.
             * [***Word2Vector SkipGram With TSNE***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_Word2Vector_SkipGram_WithTSNE)

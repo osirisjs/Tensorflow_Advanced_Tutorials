@@ -1,6 +1,6 @@
 import os
 import shutil
-
+import glob
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -76,22 +76,21 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
         train_operation = optimizer.minimize(cost, global_step=global_step)
         return train_operation
 
-    # print(tf.get_default_graph()) #기본그래프이다.
-    JG_Graph = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
-    with JG_Graph.as_default():  # as_default()는 JG_Graph를 기본그래프로 설정한다.
-        with tf.name_scope("feed_dict"):
-            x = tf.placeholder("float", [None, 6])
-            if not TEST:
+    if not TEST :
+        # print(tf.get_default_graph()) #기본그래프이다.
+        JG = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
+        with JG.as_default():  # as_default()는 JG_Graph를 기본그래프로 설정한다.
+            with tf.name_scope("feed_dict"):
+                x = tf.placeholder("float", [None, 6])
                 y = tf.placeholder("float", [None, 6])
-        with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
-            with tf.name_scope("inference"):
-                output = inference(x)
-            # or scope.reuse_variables()
+            with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
+                with tf.name_scope("inference"):
+                    output = inference(x)
+                # or scope.reuse_variables()
 
-        # Adam optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
-        with tf.name_scope("saver"):
-            saver = tf.train.Saver(var_list=tf.global_variables(), max_to_keep=3)
-        if not TEST:
+            # Adam optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
+            with tf.name_scope("saver"):
+                saver = tf.train.Saver(var_list=tf.global_variables(), max_to_keep=3)
             with tf.name_scope("loss"):
                 global_step = tf.Variable(0, name="global_step", trainable=False)
                 cost = loss(output, y)
@@ -100,19 +99,29 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
             with tf.name_scope("tensorboard"):
                 summary_operation = tf.summary.merge_all()
 
-    config = tf.ConfigProto(log_device_placement=False, allow_soft_placement=True)
-    config.gpu_options.allow_growth = True
-    with tf.Session(graph=JG_Graph, config=config) as sess:
-        print("initializing!!!")
-        sess.run(tf.global_variables_initializer())
-        ckpt = tf.train.get_checkpoint_state(model_name)
-        if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
-            print("Restore {} checkpoint!!!".format(os.path.basename(ckpt.model_checkpoint_path)))
-            saver.restore(sess, ckpt.model_checkpoint_path)
+            '''
+            WHY? 아래 3줄의 코드를 적어 주지 않고, 학습을 하게되면, TEST부분에서 tf.train.import_meta_graph를 사용할 때 오류가 난다. 
+            -> 단순히 그래프를 가져오고 가중치를 복원하는 것만으로는 안된다. 세션을 실행할때 인수로 사용할 변수에 대한 
+            추가 접근을 제공하지 않기 때문에 아래와 같이 저장을 해놓은 뒤 TEST씨에 불러와서 다시 사용 해야한다.
+            '''
+            tf.add_to_collection('x', x)
+            tf.add_to_collection('output', output)
+            #graph 구조를 파일에 쓴다.
+            tf.train.export_meta_graph
+            saver.export_meta_graph(os.path.join(model_name, "Lotto_Graph.meta"), collection_list=['x', 'output'])
 
-        if not TEST:
+        config = tf.ConfigProto(log_device_placement=False, allow_soft_placement=True)
+        config.gpu_options.allow_growth = True
+        with tf.Session(graph=JG, config=config) as sess:
+            print("initializing!!!")
+            sess.run(tf.global_variables_initializer())
+            ckpt = tf.train.get_checkpoint_state(model_name)
+
+            if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
+                print("Restore {} checkpoint!!!".format(os.path.basename(ckpt.model_checkpoint_path)))
+                saver.restore(sess, ckpt.model_checkpoint_path)
+
             summary_writer = tf.summary.FileWriter(os.path.join("tensorboard"), sess.graph)
-
             next_batch, data_length = DataLoader(batch_size)
             for epoch in tqdm(range(training_epochs)):
                 avg_cost = 0.
@@ -132,31 +141,62 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
                                write_meta_graph=False)
             print("Optimization Finished!")
 
-        if TEST:
-            prediction_number = sess.run(output,
-                                         feed_dict={x: np.asarray(previous_first_prize_number).reshape(-1, 6)})
+    else:
+        tf.reset_default_graph()
+        meta_path=glob.glob(os.path.join(model_name,'*.meta'))
+        if len(meta_path)==0:
+            print("Lotto Graph가 존재 하지 않습니다.")
+            exit(0)
+        else:
+            print("Lotto Graph가 존재 합니다.")
 
-            prediction_number_rint = np.clip(np.rint(prediction_number[-1]), a_min=0, a_max=45)
-            prediction_number_floor = np.clip(np.floor(prediction_number[-1]), a_min=0, a_max=45)
-            prediction_number_ceil = np.clip(np.ceil(prediction_number[-1]), a_min=0, a_max=45)
+        # print(tf.get_default_graph()) #기본그래프이다.
+        JG = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
+        with JG.as_default():  # as_default()는 JG를 기본그래프로 설정한다.
+            '''
+            WHY? 아래 3줄의 코드를 적어 주지 않으면 오류가 난다. 
+            -> 단순히 그래프를 가져오고 가중치를 복원하는 것만으로는 안된다. 세션을 실행할때 인수로 사용할 변수에 대한 
+            추가 접근을 제공하지 않기 때문에 아래와 같이 get_colltection으로 입,출력 변수들을 불러와서 다시 사용 해야 한다.
+            '''
+            saver = tf.train.import_meta_graph(meta_path[0])  # meta graph 읽어오기
+            if saver==None:
+                print("meta 파일을 읽을 수 없습니다.")
+                exit(0)
 
-            except_result = np.asarray(list(set(list(prediction_number_floor)
-                                                + list(prediction_number_rint)
-                                                + list(prediction_number_ceil)
-                                                + list(previous_first_prize_number[-1]))),
-                                       dtype=np.int32)
+            x = tf.get_collection('x')[0]
+            output = tf.get_collection('output')[0]
 
-            except_result = np.sort(except_result)
-            if 0 in except_result:
-                except_result = np.delete(except_result, 0)
-            select_number = np.delete(np.arange(1, 46), except_result - 1)
-            np.random.shuffle(select_number)
+            with tf.Session(graph=JG) as sess:
+                sess.run(tf.global_variables_initializer())
+                ckpt = tf.train.get_checkpoint_state(model_name)
+                if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
+                    print("Restore {} checkpoint!!!".format(os.path.basename(ckpt.model_checkpoint_path)))
+                    saver.restore(sess, ckpt.model_checkpoint_path)
 
-            with open("prediction.txt", "w") as f:
-                for i in range(number_of_prediction):
-                    result = np.sort(np.random.choice(select_number, 6, replace=False))  # replace=False -> 중복 허용 x
-                    print("당첨 예측 번호-{} : {}".format(i + 1, result))
-                    f.write("당첨 예측 번호-{} : {}\n".format(i + 1, result))
+                prediction_number = sess.run(output,
+                                             feed_dict={x: np.asarray(previous_first_prize_number).reshape(-1, 6)})
+
+                prediction_number_rint = np.clip(np.rint(prediction_number[-1]), a_min=0, a_max=45)
+                prediction_number_floor = np.clip(np.floor(prediction_number[-1]), a_min=0, a_max=45)
+                prediction_number_ceil = np.clip(np.ceil(prediction_number[-1]), a_min=0, a_max=45)
+
+                except_result = np.asarray(list(set(list(prediction_number_floor)
+                                                    + list(prediction_number_rint)
+                                                    + list(prediction_number_ceil)
+                                                    + list(previous_first_prize_number[-1]))),
+                                           dtype=np.int32)
+
+                except_result = np.sort(except_result)
+                if 0 in except_result:
+                    except_result = np.delete(except_result, 0)
+                select_number = np.delete(np.arange(1, 46), except_result - 1)
+                np.random.shuffle(select_number)
+
+                with open("prediction.txt", "w") as f:
+                    for i in range(number_of_prediction):
+                        result = np.sort(np.random.choice(select_number, 6, replace=False))  # replace=False -> 중복 허용 x
+                        print("당첨 예측 번호-{} : {}".format(i + 1, result))
+                        f.write("당첨 예측 번호-{} : {}\n".format(i + 1, result))
 
 
 if __name__ == "__main__":
