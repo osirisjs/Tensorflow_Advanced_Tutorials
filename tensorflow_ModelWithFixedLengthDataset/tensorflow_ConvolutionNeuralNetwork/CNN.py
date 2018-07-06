@@ -19,7 +19,8 @@ def model(TEST=True, model_name="CNN", optimizer_selection="Adam", learning_rate
 
     # stride? -> [1, 2, 2, 1] = [one image, width, height, one channel]
     def conv2d(input, weight_shape='', bias_shape='', strides=[1, 1, 1, 1], padding="VALID"):
-        weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
+        #weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
+        weight_init = tf.truncated_normal_initializer(stddev=0.02)
         bias_init = tf.constant_initializer(value=0)
         if batch_norm:
             w = tf.get_variable("w", weight_shape, initializer=weight_init)
@@ -160,7 +161,6 @@ def model(TEST=True, model_name="CNN", optimizer_selection="Adam", learning_rate
         # batch_norm=True 일 때, 이동평균 사용
         if TEST:
             test_feed_dict = {x: mnist.test.images, y: mnist.test.labels}
-
             accuracy = sess.run(evaluate_operation, feed_dict=test_feed_dict)
             print("Test Accuracy : {0:0.3f}".format(100 * accuracy))
 

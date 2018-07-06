@@ -18,8 +18,8 @@ def model(TEST=True, model_name="FNN", optimizer_selection="Adam", learning_rate
             shutil.rmtree("tensorboard/{}".format(model_name))
 
     def layer(input, weight_shape, bias_shape):
-        weight_init = tf.random_normal_initializer(stddev=0.01)
-        bias_init = tf.random_normal_initializer(stddev=0.01)
+        weight_init = tf.truncated_normal_initializer(stddev=0.02)
+        bias_init = tf.truncated_normal_initializer(stddev=0.02)
         if batch_norm:
             w = tf.get_variable("w", weight_shape, initializer=weight_init)
         else:
