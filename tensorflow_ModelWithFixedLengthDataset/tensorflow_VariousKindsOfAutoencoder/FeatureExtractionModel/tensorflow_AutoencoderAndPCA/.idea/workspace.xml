@@ -17,8 +17,8 @@
       <file leaf-file-name="Autoencoder.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Autoencoder.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-706">
-              <caret line="248" selection-start-line="248" selection-end-line="248" />
+            <state relative-caret-position="561">
+              <caret line="150" column="55" lean-forward="true" selection-start-line="150" selection-start-column="55" selection-end-line="150" selection-end-column="55" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -29,7 +29,7 @@
       <file leaf-file-name="variable_scope.py" pinned="false" current-in-tab="false">
         <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/ops/variable_scope.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="34770">
+            <state relative-caret-position="830">
               <caret line="1857" column="6" selection-start-line="1857" selection-start-column="6" selection-end-line="1857" selection-end-column="6" />
             </state>
           </provider>
@@ -199,21 +199,21 @@
     <layout-to-restore>
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="9" weight="0.4" />
-      <window_info anchor="bottom" id="Cvs" order="8" weight="0.25" />
       <window_info active="true" content_ui="combo" id="Project" order="1" sideWeight="0.70731705" visible="true" weight="0.041639127" />
       <window_info id="Structure" order="2" sideWeight="0.29268292" side_tool="true" weight="0.0013020834" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="bottom" id="TODO" order="10" />
+      <window_info anchor="bottom" id="Version Control" order="3" show_stripe_button="false" />
       <window_info anchor="bottom" id="Run" order="6" weight="0.3062678" />
-      <window_info anchor="bottom" id="Find" order="5" weight="0.32570806" />
-      <window_info anchor="bottom" id="Python Console" order="0" weight="0.32897604" />
+      <window_info anchor="bottom" id="Message" order="4" />
       <window_info anchor="bottom" id="Debug" order="7" weight="0.4" />
       <window_info anchor="bottom" id="Terminal" order="1" weight="0.32897604" />
       <window_info anchor="bottom" id="Event Log" order="2" side_tool="true" />
-      <window_info anchor="bottom" id="Version Control" order="3" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Message" order="4" />
+      <window_info anchor="bottom" id="Cvs" order="8" weight="0.25" />
       <window_info id="Favorites" order="0" side_tool="true" weight="0.32982087" />
+      <window_info anchor="bottom" id="Find" order="5" weight="0.32570806" />
+      <window_info anchor="bottom" id="Python Console" order="0" weight="0.32897604" />
     </layout-to-restore>
   </component>
   <component name="VcsContentAnnotationSettings">
@@ -496,13 +496,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/ops/variable_scope.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="34770">
-          <caret line="1857" column="6" selection-start-line="1857" selection-start-column="6" selection-end-line="1857" selection-end-column="6" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="133">
@@ -510,10 +503,17 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/ops/variable_scope.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="830">
+          <caret line="1857" column="6" selection-start-line="1857" selection-start-column="6" selection-end-line="1857" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/Autoencoder.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-706">
-          <caret line="248" selection-start-line="248" selection-end-line="248" />
+        <state relative-caret-position="561">
+          <caret line="150" column="55" lean-forward="true" selection-start-line="150" selection-start-column="55" selection-end-line="150" selection-end-column="55" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>
