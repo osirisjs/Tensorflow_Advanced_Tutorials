@@ -1,7 +1,6 @@
 import GenerativeAdversarialNetworks
 
 # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-# model_name = "GAN"
 # 원하는 숫자를 생성이 가능하다.
 # 흑백 사진(Generator의 입력으로) -> 컬러(Discriminator의 입력)로 만들기
 # 선화(Generator의 입력)를 (여기서 채색된 선화는 Discriminator의 입력이 된다.)채색가능
