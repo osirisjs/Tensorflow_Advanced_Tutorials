@@ -46,7 +46,7 @@
                 * 진행 예정
             
     * ### **Sequence Model With Variable Length Dataset**
-        * ASAP
+        * ASAP 
     * ### **Reinforcement Learning**
         * ASAP
 
