@@ -7,7 +7,6 @@ import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 from tqdm import tqdm
 
-
 # evaluate the data
 def show_image(model_name, generated_image, column_size=10, row_size=10):
     print("show image")
@@ -23,20 +22,21 @@ def show_image(model_name, generated_image, column_size=10, row_size=10):
     plt.show()
 
 
-def model(TEST=True, noise_size=100, targeting=True,
+def model(TEST=True, distance_loss="L2",
           optimizer_selection="Adam", learning_rate=0.001, training_epochs=100,
-          batch_size=128, display_step=10, batch_norm=True):
+          batch_size=4, display_step=1):
+
     mnist = input_data.read_data_sets("", one_hot=True)
 
-    if targeting == False:
-        print("random generative GAN")
-        model_name = "GeneralGAN"
+    if distance_loss == "L1":
+        print("target generative GAN with L1 loss")
+        model_name = "ConditionalGAN_WithL1loss"
+    elif distance_loss == "L2":
+        print("target generative GAN with L1 loss")
+        model_name = "L2_ConditionalGAN_WithL2loss"
     else:
         print("target generative GAN")
         model_name = "ConditionalGAN"
-
-    if batch_norm == True:
-        model_name = "batchnorm" + model_name
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
@@ -138,7 +138,6 @@ def model(TEST=True, noise_size=100, targeting=True,
             saver_generator = tf.train.Saver(var_list=var_G, max_to_keep=3)
 
         if not TEST:
-            # Algorithjm
 
             with tf.name_scope("Discriminator_loss"):
                 # for discriminator
@@ -148,6 +147,16 @@ def model(TEST=True, noise_size=100, targeting=True,
             with tf.name_scope("Generator_loss"):
                 # for generator
                 G_Loss = min_max_loss(logits=D_gene, labels=tf.ones_like(D_gene))
+
+            # Algorithjm
+            if distance_loss == "L1":
+                with tf.name_scope("L1_loss"):
+                    distance_loss = tf.losses.absolute_difference(x, G)
+                    G_Loss += distance_loss
+            elif distance_loss == "L2":
+                with tf.name_scope("L1_loss"):
+                    distance_loss = tf.losses.mean_squared_error(x, G)
+                    G_Loss += distance_loss
 
             # Algorithjm
             with tf.name_scope("Discriminator_trainer"):
@@ -187,7 +196,7 @@ def model(TEST=True, noise_size=100, targeting=True,
                     mbatch_x, mbatch_y = mnist.train.next_batch(batch_size)
                     noise = np.random.normal(loc=0.0, scale=1.0, size=(batch_size, noise_size))
                     feed_dict_all = {x: mbatch_x, target: mbatch_y, z: noise}
-                    feed_dict_Generator = {target: mbatch_y, z: noise}
+                    feed_dict_Generator = {x: mbatch_x, target: mbatch_y, z: noise}
                     _, Discriminator_Loss = sess.run([D_train_op, D_Loss], feed_dict=feed_dict_all)
                     _, Generator_Loss = sess.run([G_train_op, G_Loss], feed_dict=feed_dict_Generator)
                     Loss_D += (Discriminator_Loss / total_batch)
@@ -227,11 +236,8 @@ def model(TEST=True, noise_size=100, targeting=True,
 
 if __name__ == "__main__":
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-    model(TEST=False, noise_size=128, targeting=True,
-          optimizer_selection="Adam", learning_rate=0.0002, training_epochs=300,
-          batch_size=128,
-          # batch_norm을 쓰면 생성이 잘 안된다는..
-          display_step=1, batch_norm=True)
+    model(TEST=False, distance_loss="L2", optimizer_selection="Adam",
+                  learning_rate=0.0002, training_epochs=10, batch_size=128, display_step=1)
 
 else:
     print("model imported")
