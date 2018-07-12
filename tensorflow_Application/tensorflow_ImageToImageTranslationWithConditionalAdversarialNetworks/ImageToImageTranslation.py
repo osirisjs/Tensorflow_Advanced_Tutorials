@@ -8,7 +8,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 from tqdm import tqdm
 
 # evaluate the data
-def show_image(model_name, generated_image, column_size=10, row_size=10):
+def translate_image(model_name, generated_image, column_size=10, row_size=10):
     print("show image")
     '''generator image visualization'''
     fig_g, ax_g = plt.subplots(row_size, column_size, figsize=(column_size, row_size))
@@ -23,7 +23,11 @@ def show_image(model_name, generated_image, column_size=10, row_size=10):
 
 
 def model(TEST=True, distance_loss="L2",
-          optimizer_selection="Adam", learning_rate=0.001, training_epochs=100,
+          optimizer_selection="Adam",
+          beta1=0.9, beta2=0.999,  # for Adam optimizer
+          decay=0.999, momentum=0.9,  # for RMSProp optimizer
+          L2_weight=100,
+          learning_rate=0.001, training_epochs=100,
           batch_size=4, display_step=1):
 
     mnist = input_data.read_data_sets("", one_hot=True)
@@ -58,6 +62,7 @@ def model(TEST=True, distance_loss="L2",
         else:
             return tf.matmul(input, w) + b
 
+    #유넷 - U-NET
     def generator(noise=None, target=None):
         if targeting:
             noise = tf.concat([noise, target], axis=1)
@@ -71,6 +76,7 @@ def model(TEST=True, distance_loss="L2",
 
         return output
 
+    #PatchGAN
     def discriminator(x=None, target=None):
         if targeting:
             x = tf.concat([x, target], axis=1)
@@ -81,6 +87,8 @@ def model(TEST=True, distance_loss="L2",
                 fully_2 = tf.nn.relu(layer(fully_1, [500, 100], [100]))
             with tf.variable_scope("output"):
                 output = layer(fully_2, [100, 1], [1])
+            with tf.Variable_scope("P/atchGAN")
+
         return output
 
     def training(cost, var_list, scope=None):
@@ -97,9 +105,9 @@ def model(TEST=True, distance_loss="L2",
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope=scope)
         with tf.control_dependencies(update_ops):
             if optimizer_selection == "Adam":
-                optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+                optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate,  beta1=beta1, beta2=beta2)
             elif optimizer_selection == "RMSP":
-                optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate)
+                optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate, decay=decay, momentum=momentum)
             elif optimizer_selection == "SGD":
                 optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
             train_operation = optimizer.minimize(cost, var_list=var_list)
@@ -231,13 +239,17 @@ def model(TEST=True, distance_loss="L2",
                          target: np.tile(np.diag(np.ones(column_size)), (row_size, 1))}
 
             generated_image = sess.run(G, feed_dict=feed_dict)
-            show_image(model_name, generated_image, column_size=column_size, row_size=row_size)
+            translate_image(model_name, generated_image, column_size=column_size, row_size=row_size)
 
 
 if __name__ == "__main__":
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
     model(TEST=False, distance_loss="L2", optimizer_selection="Adam",
-                  learning_rate=0.0002, training_epochs=10, batch_size=128, display_step=1)
+          beta1=0.9, beta2=0.999,  # for Adam optimizer
+          decay=0.999, momentum=0.9,  # for RMSProp optimizer
+          L2_weight=100,
+          # batch_size는 1~10사이로 하자
+          learning_rate=0.0002, training_epochs=10, batch_size=128, display_step=1)
 
 else:
     print("model imported")
