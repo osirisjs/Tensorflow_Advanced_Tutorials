@@ -37,6 +37,23 @@ def model(TEST=True, model_name="CNN", optimizer_selection="Adam", learning_rate
         else:
             return tf.nn.bias_add(conv_out, b)
 
+    def conv2d_transpose(input, output_shape='', weight_shape='', bias_shape='', strides=[1, 1, 1, 1], padding="VALID"):
+        weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
+        bias_init = tf.constant_initializer(value=0)
+        if batch_norm:
+            w = tf.get_variable("w", weight_shape, initializer=weight_init)
+        else:
+            weight_decay = tf.constant(0.0001, dtype=tf.float32)
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        b = tf.get_variable("b", bias_shape, initializer=bias_init)
+
+        conv_out = tf.nn.conv2d_transpose(input, w, output_shape=output_shape, strides=strides, padding=padding)
+        if batch_norm:
+            return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=not TEST)
+        else:
+            return tf.nn.bias_add(conv_out, b)
+
     # ksize, strides? -> [1, 2, 2, 1] = [one image, width, height, one channel]
     # pooling을 할때, 각 batch 에 대해 한 채널에 대해서 하니까, 1, 1,로 설정해준것.
     def pooling(input, type="avg", k=2, padding='VALID'):
