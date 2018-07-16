@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
-
+import datapreprocessing as dp
 
 # evaluate the data
 def translate_image(model_name, generated_image, column_size=10, row_size=10):
@@ -29,13 +29,13 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
 
     if distance_loss == "L1":
         print("target generative GAN with L1 loss")
-        model_name = "ConditionalGAN_WithL1loss"
+        model_name = "Pix2PixConditionalGAN_WithL1loss"
     elif distance_loss == "L2":
         print("target generative GAN with L1 loss")
-        model_name = "L2_ConditionalGAN_WithL2loss"
+        model_name = "Pix2PixConditionalGAN_WithL2loss"
     else:
         print("target generative GAN")
-        model_name = "ConditionalGAN"
+        model_name = "Pix2PixConditionalGAN"
 
     if batch_size == 1:
         norm_selection = "instance_norm"
