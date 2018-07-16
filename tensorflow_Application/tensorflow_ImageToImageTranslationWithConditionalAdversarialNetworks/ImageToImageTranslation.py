@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
-import datapreprocessing as dp
+from datapreprocessing import *
 
 # evaluate the data
 def translate_image(model_name, generated_image, column_size=10, row_size=10):
@@ -336,12 +336,12 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
 
                 Loss_D = 0.
                 Loss_G = 0
-                total_batch = int(mnist.train.num_examples / batch_size)
+                # total_batch = int(mnist.train.num_examples / batch_size)
                 for i in range(total_batch):
-                    mbatch_x, mbatch_y = mnist.train.next_batch(batch_size)
-                    noise = np.random.normal(loc=0.0, scale=1.0, size=(batch_size, noise_size))
-                    feed_dict_all = {x: mbatch_x, target: mbatch_y, z: noise}
-                    feed_dict_Generator = {x: mbatch_x, target: mbatch_y, z: noise}
+                    # mbatch_x, mbatch_y = mnist.train.next_batch(batch_size)
+                    # noise = np.random.normal(loc=0.0, scale=1.0, size=(batch_size, noise_size))
+                    feed_dict_all = {x: mbatch_x, target: mbatch_y}
+                    feed_dict_Generator = {x: mbatch_x, target: mbatch_y}
                     _, Discriminator_Loss = sess.run([D_train_op, D_Loss], feed_dict=feed_dict_all)
                     _, Generator_Loss = sess.run([G_train_op, G_Loss], feed_dict=feed_dict_Generator)
                     Loss_D += (Discriminator_Loss / total_batch)

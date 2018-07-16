@@ -1,7 +1,7 @@
 import ImageToImageTranslation as pix2pix
 '''
 데이터셋 다운로드는 - https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/  에서 받았으며,
-<edges2shoes 데이터셋> 을 사용여 학습하고 테스트 함.
+<edges2shoes 데이터셋> 을 사용여 학습하고 테스트 함. 논문에서 추천하기를 15 epoch, 4 batch size
 
 내가 생각하는 Image-to-Image Translation with cGAN
 1. generator 네트워크에 학습, 테스트시 둘다 dropout 적용  
