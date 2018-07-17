@@ -41,7 +41,11 @@
             * [***Word2Vector SkipGram With TSNE***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_Word2Vector_SkipGram_WithTSNE)
                 * 아무런 관계가 없는 것처럼 표현(one-hot encoding)된 단어들을 낮은 차원의 벡터로 표현함과 동시에 단어간의 관계를 표현하는 방법입니다. Word2Vector에는 CBOW모델과 Skip-Gram 모델이 있습니다. 여기서는 Skip-Gram 모델을 구현합니다.
             * [***Image To Image Translation With Conditional Adversarial Networks***]()
-                * 진행중
+                * 내가 가지고 있는 도메인의 이미지를 다른 도메인의 이미지로 변환 시켜보자라는 목적을 달성하기 위해 ConditionalGAN 과 UNET을 이용하여 연구를 진행한 논문입니다.
+                * 네트워크 구조 및 학습 방법은 논문에서 제시한 내용과 거의 같습니다.(Discriminator 구조인 PatchGAN 의 크기도 70X70 입니다.)
+                * edges2shoes 데이터셋을 사용합니다.
+                * 효율적인 데이터 전처리를 위해 TFRecord를 사용합니다.
+
             * [***Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks***]()
                 * 진행 예정
             
