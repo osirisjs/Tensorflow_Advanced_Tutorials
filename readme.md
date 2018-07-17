@@ -13,7 +13,7 @@
 
             * 기본적인 Convolution Neural Network(합성곱 신경망) 입니다.
             
-            * [ReceptiveField(수용 영역)크기에 대한 계산을 통해 네트워크의 구조를 결정 했습니다.](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/blob/master/tensorflow_ModelWithFixedLengthDataset/tensorflow_ConvolutionNeuralNetwork/ReceptiveField_inspection/rf.py)
+            * [ReceptiveField(수용 영역)크기 계산법을 사용해서 네트워크의 구조를 결정 했습니다.](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/blob/master/tensorflow_ModelWithFixedLengthDataset/tensorflow_ConvolutionNeuralNetwork/ReceptiveField_inspection/rf.py)
 
          * **Various Kinds Of Autoencoder**
             * **Feature Extraction Model**
