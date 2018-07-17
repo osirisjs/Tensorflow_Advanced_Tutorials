@@ -224,7 +224,7 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
             with tf.variable_scope("output"):
                 output = tf.nn.sigmoid(
                     conv2d(conv4, weight_shape=(4, 4, 512, 1), bias_shape=(1),
-                           strides=[1, 1, 1, 1], padding="SAME"), alpha=0.2)
+                           strides=[1, 1, 1, 1], padding="VALID"), alpha=0.2)
                 # result shape = (batch_size, 30, 30, 1)
             return output
 
