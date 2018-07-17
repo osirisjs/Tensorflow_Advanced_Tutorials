@@ -63,22 +63,25 @@ def model(TEST=True, model_name="CNN", optimizer_selection="Adam", learning_rate
             return tf.nn.avg_pool(input, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding=padding)
 
     def inference(x):
+
+        #ReceptiveField_inspection폴더의 rf.py에서 확인해보면, ReceptiveField사이즈가 28임을 알 수 있 습니다.
+
         x = tf.reshape(x, shape=[-1, 28, 28, 1])
         # in pooling, type = max or avg
         with tf.variable_scope("conv_1"):
             conv_1 = tf.nn.relu(
-                conv2d(x, weight_shape=[5, 5, 1, 16], bias_shape=[16], strides=[1, 1, 1, 1], padding="VALID"))
-            pool_1 = pooling(conv_1, type="max", k=2, padding="VALID")  # result -> batch_size, 12, 12, 32
+                conv2d(x, weight_shape=[5, 5, 1, 24], bias_shape=[24], strides=[1, 1, 1, 1], padding="VALID"))
+            pool_1 = pooling(conv_1, type="avg", k=2, padding="VALID")  # result -> batch_size, 12, 12, 12
         with tf.variable_scope("conv_2"):
             conv_2 = tf.nn.relu(
-                conv2d(pool_1, weight_shape=[5, 5, 16, 32], bias_shape=[32], strides=[1, 1, 1, 1], padding="VALID"))
-            pool_2 = pooling(conv_2, type="max", k=2, padding="VALID")  # result -> batcj_size, 4, 4 ,64
+                conv2d(pool_1, weight_shape=[5, 5, 24, 48], bias_shape=[48], strides=[1, 1, 1, 1], padding="VALID"))
+            pool_2 = pooling(conv_2, type="avg", k=2, padding="VALID")  # result -> batcj_size, 4, 4 ,24
         with tf.variable_scope("conv_3"):
             conv_3 = tf.nn.relu(
-                conv2d(pool_2, weight_shape=[4, 4, 32, 64], bias_shape=[64], strides=[1, 1, 1, 1], padding="VALID"))
-            # result -> batch_size, 1, 1 ,96
+                conv2d(pool_2, weight_shape=[4, 4, 48, 72], bias_shape=[72], strides=[1, 1, 1, 1], padding="VALID"))
+            # result -> batcj_size, 1, 1 ,36
         with tf.variable_scope("conv_4"):
-            output = conv2d(conv_3, weight_shape=[1, 1, 64, 10], bias_shape=[10], strides=[1, 1, 1, 1], padding="VALID")
+            output = conv2d(conv_3, weight_shape=[1, 1, 72, 10], bias_shape=[10], strides=[1, 1, 1, 1], padding="VALID")
         return tf.reshape(output, (-1, 10))
 
     def loss(output, y):

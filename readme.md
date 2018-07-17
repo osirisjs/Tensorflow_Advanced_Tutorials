@@ -12,6 +12,8 @@
         * [***Convolution Neural Network***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_ModelWithFixedLengthDataset/tensorflow_ConvolutionNeuralNetwork)
 
             * 기본적인 Convolution Neural Network(합성곱 신경망) 입니다.
+            
+            * [ReceptiveField(수용 영역)크기에 대한 계산을 통해 네트워크의 구조를 결정 했습니다.](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_ModelWithFixedLengthDataset/tensorflow_ConvolutionNeuralNetwork/ReceptiveField_inspection)
 
          * **Various Kinds Of Autoencoder**
             * **Feature Extraction Model**
