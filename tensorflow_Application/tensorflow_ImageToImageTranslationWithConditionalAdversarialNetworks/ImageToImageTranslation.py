@@ -3,13 +3,12 @@ import shutil
 
 import matplotlib.pyplot as plt
 import numpy as np
-import tensorflow as tf
 from tqdm import tqdm
-from datapreprocessing import *
+from Dataset import *
 
-# evaluate the data
 def translate_image(model_name, generated_image, column_size=10, row_size=10):
     print("show image")
+
     '''generator image visualization'''
     fig_g, ax_g = plt.subplots(row_size, column_size, figsize=(column_size, row_size))
     fig_g.suptitle('MNIST_generator')
@@ -72,7 +71,7 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
 
     def conv2d_transpose(input, output_shape=None, weight_shape=None, bias_shape=None, norm_selection="",
                          strides=[1, 1, 1, 1], padding="VALID"):
-        weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
+        weight_init = tf.random_normal_initializer(mean=0.0, stddev=0.02)
         bias_init = tf.constant_initializer(value=0)
         if norm_selection == "batch_norm" or norm_selection == "instance_norm":
             w = tf.get_variable("w", weight_shape, initializer=weight_init)
@@ -196,7 +195,9 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
     # PatchGAN
     def discriminator(x=None, target=None):
         '''discriminator의 활성화 함수는 모두 leaky_relu이다.
-        genertor와 마찬가지로 첫번째 층에는 batch_norm을 적용 안한다. '''
+        genertor와 마찬가지로 첫번째 층에는 batch_norm을 적용 안한다.
+
+        왜 이런 구조를 사용? 아래의 구조 출력단의 ReceptiveField 크기를 구해보면 70이다.(ReceptiveFieldArithmetic/rf.py 에서 구해볼 수 있다.)'''
         concated_x = tf.concat([x, target], axis=-1)
         with tf.variable_scope("discriminator"):
             with tf.variable_scope("conv1"):
