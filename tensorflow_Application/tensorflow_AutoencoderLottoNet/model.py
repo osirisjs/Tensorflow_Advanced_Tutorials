@@ -6,7 +6,6 @@ import pandas as pd
 import tensorflow as tf
 from tqdm import tqdm
 
-
 def DataLoader(batch_size=None):
     # 1.데이터셋 읽기
     data = pd.read_excel("lotto.xlsx")

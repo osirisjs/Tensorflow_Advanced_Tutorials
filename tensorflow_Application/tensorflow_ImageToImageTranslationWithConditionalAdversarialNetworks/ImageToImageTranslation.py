@@ -344,7 +344,7 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
                     feed_dict_all = {x: mbatch_x, target: mbatch_y}
                     feed_dict_Generator = {x: mbatch_x, target: mbatch_y}
                     _, Discriminator_Loss = sess.run([D_train_op, D_Loss], feed_dict=feed_dict_all)
-                    _, Generator_Loss = sess.run([G_train_op, G_Loss], feed_dict=feed_dict_Generator)
+                    _, Generator_Loss, Distance_Loss = sess.run([G_train_op, G_Loss, dis_loss ], feed_dict=feed_dict_Generator)
                     Loss_D += (Discriminator_Loss / total_batch)
                     Loss_G += (Generator_Loss / total_batch)
 
