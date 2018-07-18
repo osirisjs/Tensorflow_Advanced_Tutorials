@@ -1,8 +1,7 @@
 import ImageToImageTranslation as pix2pix
 '''
 1. 설명
-데이터셋 다운로드는 - https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/  에서 받았으며,
-<edges2shoes 데이터셋> 을 사용하여 학습하고 테스트 함. 
+데이터셋 다운로드는 - https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/ 에서 <edges2shoes 데이터셋> 을 내려받음. 
 논문에서 추천하기를 hyper parameter 는 15 epoch, 4 batch size, beta1 = 0.5, beta2=0.999, lr=0.0002
 입력크기 : 256x256x3
 optimizers_ selection = "Adam" or "RMSP" or "SGD"
