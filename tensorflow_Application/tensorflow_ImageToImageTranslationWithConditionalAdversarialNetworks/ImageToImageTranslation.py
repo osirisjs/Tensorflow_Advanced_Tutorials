@@ -1,9 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
-
+import shutil
 from Dataset import *
-
 
 def translate_image(model_name, generated_image, column_size=10, row_size=10):
     print("show image")
@@ -51,11 +50,9 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
         # weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
         weight_init = tf.truncated_normal_initializer(stddev=0.02)
         bias_init = tf.constant_initializer(value=0)
-        if norm_selection == "batch_norm" or norm_selection == "instance_norm":
-            w = tf.get_variable("w", weight_shape, initializer=weight_init)
-        else:
-            weight_decay = tf.constant(0.00001, dtype=tf.float32)
-            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+
+        weight_decay = tf.constant(0.00001, dtype=tf.float32)
+        w = tf.get_variable("w", weight_shape, initializer=weight_init,
                                 regularizer=tf.contrib.layers.l2_regularizer(scale = weight_decay))
 
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
@@ -69,23 +66,20 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
                 return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training = TEST)
         elif norm_selection == "instance_norm":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
-        else:
-            return tf.nn.bias_add(conv_out, b)
 
     def conv2d_transpose(input, output_shape=None, weight_shape=None, bias_shape=None, norm_selection="",
                          strides=[1, 1, 1, 1], padding="VALID"):
 
         weight_init = tf.random_normal_initializer(mean=0.0, stddev=0.02)
         bias_init = tf.constant_initializer(value=0)
-        if norm_selection == "batch_norm" or norm_selection == "instance_norm":
-            w = tf.get_variable("w", weight_shape, initializer=weight_init)
-        else:
-            weight_decay = tf.constant(0.00001, dtype=tf.float32)
-            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+        weight_decay = tf.constant(0, dtype=tf.float32)
+
+        w = tf.get_variable("w", weight_shape, initializer=weight_init,
                                 regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
 
         conv_out = tf.nn.conv2d_transpose(input, w, output_shape=output_shape, strides=strides, padding=padding)
+
         # batch_norm을 적용하면 bias를 안써도 된다곤 하지만, 나는 썼다.
         if norm_selection == "batch_norm":
             if TEST and using_moving_variable:
@@ -94,8 +88,6 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
                 return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training = TEST)
         elif norm_selection == "instance_norm":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
-        else:
-            return tf.nn.bias_add(conv_out, b)
 
     # 유넷 - U-NET
     def generator(target=None):
@@ -215,11 +207,13 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
 
     # PatchGAN
     def discriminator(x=None, target=None):
+
         '''discriminator의 활성화 함수는 모두 leaky_relu이다.
         genertor와 마찬가지로 첫번째 층에는 batch_norm을 적용 안한다.
 
         왜 이런 구조를 사용? 아래의 구조 출력단의 ReceptiveField 크기를 구해보면 70이다.(ReceptiveFieldArithmetic/rf.py 에서 구해볼 수 있다.)'''
         concated_x = tf.concat([x, target], axis=-1)
+
         with tf.variable_scope("discriminator"):
             with tf.variable_scope("conv1"):
                 conv1 = tf.nn.leaky_relu(
@@ -282,8 +276,9 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
     JG_Graph = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
     with JG_Graph.as_default():  # as_default()는 JG_Graph를 기본그래프로 설정한다.
         with tf.name_scope("feed_dict"):
-            x = tf.placeholder("float", [None, 784])
-            target = tf.placeholder("float", [None, 10])
+            x = tf.placeholder(dtype=tf.float32, shape=[None, 256, 256, 3])
+            target = tf.placeholder(ype=tf.float32, shape=[None, 256, 256, 3])
+        # Algorithjm
         with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
             with tf.name_scope("generator"):
                 G = generator(target=target)
@@ -292,7 +287,6 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
                 # scope.reuse_variables()
                 D_gene = discriminator(x=G, target=target)
 
-        # Algorithjm
         var_D = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
                                   scope='shared_variables/discriminator')
         # set으로 중복 제거 하고, 다시 list로 바꾼다.
@@ -319,12 +313,14 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
 
             # Algorithjm
             if distance_loss == "L1":
-                with tf.name_scope("L1_loss"):
+                with tf.name_scope("{}_loss".format(distance_loss)):
                     dis_loss = tf.losses.absolute_difference(x, G)
+                    tf.summary.scalar("{} Loss".format(distance_loss), dis_loss)
                     G_Loss += tf.multiply(dis_loss, distance_loss_weight)
             elif distance_loss == "L2":
-                with tf.name_scope("L1_loss"):
+                with tf.name_scope("{}_loss".format(distance_loss)):
                     dis_loss = tf.losses.mean_squared_error(x, G)
+                    tf.summary.scalar("{} Loss".format(distance_loss), dis_loss)
                     G_Loss += tf.multiply(dis_loss, distance_loss_weight)
 
             # Algorithjm
@@ -355,24 +351,25 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
 
         if not TEST:
             summary_writer = tf.summary.FileWriter(os.path.join("tensorboard", model_name), sess.graph)
-
+            dataset = Dataset(batch_size=batch_size, use_TFRecord=False)
+            next_batch, data_length = dataset.iterator()
             for epoch in tqdm(range(1, training_epochs + 1)):
 
                 Loss_D = 0.
                 Loss_G = 0
-                # total_batch = int(mnist.train.num_examples / batch_size)
+                Loss_Distance = 0
+                total_batch = int(data_length / batch_size)
                 for i in range(total_batch):
-                    # mbatch_x, mbatch_y = mnist.train.next_batch(batch_size)
-                    # noise = np.random.normal(loc=0.0, scale=1.0, size=(batch_size, noise_size))
-                    feed_dict_all = {x: mbatch_x, target: mbatch_y}
-                    feed_dict_Generator = {x: mbatch_x, target: mbatch_y}
+                    input, label = sess.run(next_batch)
+                    feed_dict_all = {x: input, target: label}
+                    feed_dict_Generator = {x: input, target: label}
                     _, Discriminator_Loss = sess.run([D_train_op, D_Loss], feed_dict=feed_dict_all)
                     _, Generator_Loss, Distance_Loss = sess.run([G_train_op, G_Loss, dis_loss],
                                                                 feed_dict=feed_dict_Generator)
                     Loss_D += (Discriminator_Loss / total_batch)
                     Loss_G += (Generator_Loss / total_batch)
-
-                print("Discriminator Loss : {}, Generator Loss  : {}".format(Loss_D, Loss_G))
+                    Loss_Distance +=(Distance_Loss / total_batch)
+                print("Discriminator Loss : {}, Generator Loss  : {}, {} loss : {}".format(Loss_D, Loss_G, distance_loss, Loss_Distance))
 
                 if epoch % display_step == 0:
                     summary_str = sess.run(summary_operation, feed_dict=feed_dict_all)
@@ -407,10 +404,11 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
 if __name__ == "__main__":
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
     model(TEST=False, distance_loss="L2", distance_loss_weight=100, optimizer_selection="Adam",
-          beta1=0.9, beta2=0.999,  # for Adam optimizer
-          decay=0.999, momentum=0.9,  # for RMSProp optimizer
-          # batch_size는 1~10사이로 하자
-          learning_rate=0.0002, training_epochs=10, batch_size=128, display_step=1, using_moving_variable=False)
+                  beta1=0.5, beta2=0.999,  # for Adam optimizer
+                  decay=0.999, momentum=0.9,  # for RMSProp optimizer
+                  # batch_size는 1~10사이로 하자
+                  learning_rate=0.0002, training_epochs=15, batch_size=4, display_step=1, Dropout_rate=0.5,
+                  using_moving_variable=False)  # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수 - 사용안한다.
 
 else:
     print("model imported")
