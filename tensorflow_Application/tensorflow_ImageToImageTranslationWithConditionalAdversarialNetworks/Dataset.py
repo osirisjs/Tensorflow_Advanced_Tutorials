@@ -1,7 +1,7 @@
 import os
-import urllib.request
 import tarfile
-import shutil
+import urllib.request
+
 import tensorflow as tf
 
 '''
@@ -19,22 +19,22 @@ https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/edges2shoes
     -> tf.read_file, tf.random_crop, tf.image.~ API를 사용하여 논문에서 설명한대로 이미지를 전처리 한다.
 '''
 
+
 class Dataset(object):
 
     def __init__(self, url="", batch_size=4):
 
         self.url = url
 
-        self.Dataset_Path="Dataset"
+        self.Dataset_Path = "Dataset"
         if not os.path.exists(self.Dataset_Path):
             os.makedirs(self.Dataset_Path)
 
-        self.dataset_name=os.path.join(self.Dataset_Path,"edges2shoes")
-        self.file_name=os.path.join(self.Dataset_Path, self.dataset_name+".tar.gz")
+        self.dataset_name = os.path.join(self.Dataset_Path, "edges2shoes")
+        self.file_name = self.dataset_name + ".tar.gz"
         self.batch_size = batch_size
-
-        self.Preparing_Learning_Dataset() # 데이터셋 다운로드
-        #self.Generate_Batch() # 학습형태에 맞게 다운로드
+        self.Preparing_Learning_Dataset()  # 데이터셋 다운로드
+        # self.Generate_Batch() # 학습형태에 맞게 다운로드
 
     def __repr__(self):
         return "Dataset Preprocessing"
@@ -45,11 +45,11 @@ class Dataset(object):
     def Preparing_Learning_Dataset(self):
 
         # 1. 데이터셋 폴더가 존재하지 않으면 다운로드(다운로드 시간이 굉장히 오래걸립니다.)
-        if not os.path.exists(self.dataset_name): #데이터셋 폴더가 존재하지 않는 다면?
-            if not os.path.exists(self.file_name): #데이터셋 압축 파일이 존재하지 않는 다면, 다운로드
+        if not os.path.exists(self.dataset_name):  # 데이터셋 폴더가 존재하지 않는 다면?
+            if not os.path.exists(self.file_name):  # 데이터셋 압축 파일이 존재하지 않는 다면, 다운로드
                 self.file_name, _ = urllib.request.urlretrieve(self.url, self.file_name)
                 print("{} Download Completed".format(self.file_name))
-            else: # 만약 데이터셋 압축 파일이 존재한다면, 존재한다고 print를 띄워주자.
+            else:  # 만약 데이터셋 압축 파일이 존재한다면, 존재한다고 print를 띄워주자.
                 print("{} Exists".format(self.file_name))
             # 2. 압축파일이 있는 상태이므로 압축을 푼다
             with tarfile.open(self.file_name) as tf:
@@ -57,7 +57,7 @@ class Dataset(object):
             print("{} Unzip Completed".format(self.file_name))
             # 3. 용량차지 하므로, tar.gz 파일을 지워주자. -> 데이터셋 폴더가 존재하므로
             # os.remove(self.file_name) # 하드디스크에 용량이 충분하다면, 굳이 필요 없는 코드다.
-        else: # 데이터셋 폴더가 존재한다면, 존재한다고 print를 띄워주자
+        else:  # 데이터셋 폴더가 존재한다면, 존재한다고 print를 띄워주자
             print("edges2shoes Dataset Exists")
 
         '''3. 데이터형식을 텐서플로의 기본 데이터 형식인 TFRecord 로 바꾼다.(대용량의 데이터를 처리하므로 TFRecord를 사용하는게 좋다.)
@@ -66,16 +66,17 @@ class Dataset(object):
         '''
 
     def Generate_Batch(self):
-        
-        #4. TFRecordDataset()사용해서 읽어오기
+
+        # 4. TFRecordDataset()사용해서 읽어오기
         file_name = tf.placeholder(tf.string, shape=[None])
         dataset = tf.data.TFRecordDataset(file_name)
-        dataset = dataset.map() #
+        dataset = dataset.map()  #
         dataset = dataset.repeat()
         dataset = dataset.batch(batch_size=self.batch_size)
         iterator = dataset.make_initializable_iterator()
-        training_file_name=["", ""]
+        training_file_name = ["", ""]
         return iterator
+
     '''
     Random jitter was applied by resizing th0e 256256 input
     images to 286 x 286 and then randomly cropping back to

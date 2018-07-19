@@ -15,7 +15,7 @@
         <entry file="file://$PROJECT_DIR$/ImageToImageTranslation.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="462">
-              <caret line="64" column="42" lean-forward="true" selection-start-line="64" selection-start-column="42" selection-end-line="64" selection-end-column="42" />
+              <caret line="64" column="42" selection-start-line="64" selection-start-column="42" selection-end-line="64" selection-end-column="42" />
               <folding>
                 <element signature="e#0#31#0" expanded="true" />
               </folding>
@@ -35,8 +35,11 @@
       <file leaf-file-name="Dataset.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Dataset.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="402">
-              <caret line="72" column="33" lean-forward="true" selection-start-line="72" selection-start-column="33" selection-end-line="72" selection-end-column="33" />
+            <state relative-caret-position="176">
+              <caret line="50" column="69" lean-forward="true" selection-start-line="50" selection-start-column="69" selection-end-line="50" selection-end-column="69" />
+              <folding>
+                <element signature="e#0#9#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -66,15 +69,15 @@
         <option value="$PROJECT_DIR$/datapreprocessing.py" />
         <option value="$PROJECT_DIR$/ReceptiveFieldArithmetic/dataloader.py" />
         <option value="$PROJECT_DIR$/dataloader.py" />
-        <option value="$PROJECT_DIR$/Dataset.py" />
         <option value="$PROJECT_DIR$/main.py" />
         <option value="$PROJECT_DIR$/ImageToImageTranslation.py" />
+        <option value="$PROJECT_DIR$/Dataset.py" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="7">
-    <option name="x" value="597" />
-    <option name="y" value="381" />
+  <component name="ProjectFrameBounds">
+    <option name="x" value="478" />
+    <option name="y" value="18" />
     <option name="width" value="1330" />
     <option name="height" value="1047" />
   </component>
@@ -179,7 +182,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1936" height="1056" extended-state="7" />
+    <frame x="478" y="18" width="1330" height="1047" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" weight="0.0882353" />
@@ -187,7 +190,7 @@
       <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
       <window_info anchor="bottom" id="Version Control" order="9" show_stripe_button="false" />
       <window_info anchor="bottom" id="Python Console" order="7" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.37793103" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.3190319" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Terminal" order="8" />
       <window_info id="Favorites" order="2" side_tool="true" />
@@ -525,7 +528,7 @@
     <entry file="file://$PROJECT_DIR$/ImageToImageTranslation.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="462">
-          <caret line="64" column="42" lean-forward="true" selection-start-line="64" selection-start-column="42" selection-end-line="64" selection-end-column="42" />
+          <caret line="64" column="42" selection-start-line="64" selection-start-column="42" selection-end-line="64" selection-end-column="42" />
           <folding>
             <element signature="e#0#31#0" expanded="true" />
           </folding>
@@ -534,8 +537,11 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Dataset.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="402">
-          <caret line="72" column="33" lean-forward="true" selection-start-line="72" selection-start-column="33" selection-end-line="72" selection-end-column="33" />
+        <state relative-caret-position="176">
+          <caret line="50" column="69" lean-forward="true" selection-start-line="50" selection-start-column="69" selection-end-line="50" selection-end-column="69" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
