@@ -1,10 +1,9 @@
-import os
-import shutil
-
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
+
 from Dataset import *
+
 
 def translate_image(model_name, generated_image, column_size=10, row_size=10):
     print("show image")
@@ -20,12 +19,12 @@ def translate_image(model_name, generated_image, column_size=10, row_size=10):
     fig_g.savefig("{}_generator.png".format(model_name))
     plt.show()
 
+
 def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_selection="Adam",
           beta1=0.9, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
           learning_rate=0.001, training_epochs=100,
-          batch_size=4, display_step=1):
-
+          batch_size=4, display_step=1, Dropout_rate=0.5, using_moving_variable=False):
     if distance_loss == "L1":
         print("target generative GAN with L1 loss")
         model_name = "Pix2PixConditionalGAN_WithL1loss"
@@ -48,6 +47,7 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
     # stride? -> [1, 2, 2, 1] = [one image, width, height, one channel]
     def conv2d(input, weight_shape=None, bias_shape=None, norm_selection="",
                strides=[1, 1, 1, 1], padding="VALID"):
+
         # weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
         weight_init = tf.truncated_normal_initializer(stddev=0.02)
         bias_init = tf.constant_initializer(value=0)
@@ -56,14 +56,17 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
         else:
             weight_decay = tf.constant(0.00001, dtype=tf.float32)
             w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+                                regularizer=tf.contrib.layers.l2_regularizer(scale = weight_decay))
 
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
         conv_out = tf.nn.conv2d(input, w, strides=strides, padding=padding)
 
         # batch_norm을 적용하면 bias를 안써도 된다곤 하지만, 나는 썼다.
         if norm_selection == "batch_norm":
-            return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=not TEST)
+            if TEST and using_moving_variable:
+                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training = not TEST)
+            else:
+                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training = TEST)
         elif norm_selection == "instance_norm":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
         else:
@@ -71,6 +74,7 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
 
     def conv2d_transpose(input, output_shape=None, weight_shape=None, bias_shape=None, norm_selection="",
                          strides=[1, 1, 1, 1], padding="VALID"):
+
         weight_init = tf.random_normal_initializer(mean=0.0, stddev=0.02)
         bias_init = tf.constant_initializer(value=0)
         if norm_selection == "batch_norm" or norm_selection == "instance_norm":
@@ -84,7 +88,10 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
         conv_out = tf.nn.conv2d_transpose(input, w, output_shape=output_shape, strides=strides, padding=padding)
         # batch_norm을 적용하면 bias를 안써도 된다곤 하지만, 나는 썼다.
         if norm_selection == "batch_norm":
-            return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=not TEST)
+            if TEST and using_moving_variable:
+                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training = not TEST)
+            else:
+                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training = TEST)
         elif norm_selection == "instance_norm":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
         else:
@@ -98,39 +105,46 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
 
         총 16개의 층이다.
         '''
+
         with tf.variable_scope("Generator_UNET"):
             with tf.variable_scope("encoder"):
                 with tf.variable_scope("conv1"):
                     conv1 = conv2d(target, weight_shape=(4, 4, 3, 64), bias_shape=(64),
-                                                    strides=[1, 2, 2, 1], padding="SAME")
+                                   strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 128, 128, 64)
                 with tf.variable_scope("conv2"):
-                    conv2 = conv2d(tf.nn.leaky_relu(conv1, alpha=0.2), weight_shape=(4, 4, 64, 128), bias_shape=(128), norm_selection=norm_selection,
-                               strides=[1, 2, 2, 1], padding="SAME")
+                    conv2 = conv2d(tf.nn.leaky_relu(conv1, alpha=0.2), weight_shape=(4, 4, 64, 128), bias_shape=(128),
+                                   norm_selection=norm_selection,
+                                   strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 64, 64, 128)
                 with tf.variable_scope("conv3"):
-                    conv3 = conv2d(tf.nn.leaky_relu(conv2, alpha=0.2), weight_shape=(4, 4, 128, 256), bias_shape=(256), norm_selection=norm_selection,
-                               strides=[1, 2, 2, 1], padding="SAME")
+                    conv3 = conv2d(tf.nn.leaky_relu(conv2, alpha=0.2), weight_shape=(4, 4, 128, 256), bias_shape=(256),
+                                   norm_selection=norm_selection,
+                                   strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 32, 32, 256)
                 with tf.variable_scope("conv4"):
-                    conv4 =  conv2d(tf.nn.leaky_relu(conv3, alpha=0.2), weight_shape=(4, 4, 256, 512), bias_shape=(512), norm_selection=norm_selection,
-                               strides=[1, 2, 2, 1], padding="SAME")
+                    conv4 = conv2d(tf.nn.leaky_relu(conv3, alpha=0.2), weight_shape=(4, 4, 256, 512), bias_shape=(512),
+                                   norm_selection=norm_selection,
+                                   strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 16, 16, 512)
                 with tf.variable_scope("conv5"):
-                    conv5 = conv2d(tf.nn.leaky_relu(conv4, alpha=0.2), weight_shape=(4, 4, 512, 512), bias_shape=(512), norm_selection=norm_selection,
-                               strides=[1, 2, 2, 1], padding="SAME")
+                    conv5 = conv2d(tf.nn.leaky_relu(conv4, alpha=0.2), weight_shape=(4, 4, 512, 512), bias_shape=(512),
+                                   norm_selection=norm_selection,
+                                   strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 8, 8, 512)
                 with tf.variable_scope("conv6"):
-                    conv6 = conv2d(tf.nn.leaky_relu(conv5, alpha=0.2), weight_shape=(4, 4, 512, 512), bias_shape=(512), norm_selection=norm_selection,
-                               strides=[1, 2, 2, 1], padding="SAME")
+                    conv6 = conv2d(tf.nn.leaky_relu(conv5, alpha=0.2), weight_shape=(4, 4, 512, 512), bias_shape=(512),
+                                   norm_selection=norm_selection,
+                                   strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 4, 4, 512)
                 with tf.variable_scope("conv7"):
-                    conv7 = conv2d(tf.nn.leaky_relu(conv6, alpha=0.2), weight_shape=(4, 4, 512, 512), bias_shape=(512), norm_selection=norm_selection,
-                               strides=[1, 2, 2, 1], padding="SAME")
+                    conv7 = conv2d(tf.nn.leaky_relu(conv6, alpha=0.2), weight_shape=(4, 4, 512, 512), bias_shape=(512),
+                                   norm_selection=norm_selection,
+                                   strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 2, 2, 512)
                 with tf.variable_scope("conv8"):
                     conv8 = conv2d(tf.nn.leaky_relu(conv7, alpha=0.2), weight_shape=(4, 4, 512, 512), bias_shape=(512),
-                               strides=[1, 2, 2, 1], padding="SAME")
+                                   strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 1, 1, 512)
 
             with tf.variable_scope("decoder"):
@@ -138,55 +152,62 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
                     trans_conv1 = tf.nn.dropout(
                         conv2d_transpose(tf.nn.relu(conv8), output_shape=tf.shape(conv7), weight_shape=(4, 4, 512, 512),
                                          bias_shape=(512), norm_selection=norm_selection,
-                                         strides=[1, 2, 2, 1], padding="SAME"), keep_prob=0.5)
+                                         strides=[1, 2, 2, 1], padding="SAME"), keep_prob=Dropout_rate)
                     # result shape = (batch_size, 2, 2, 512)
-                    #주의 : 활성화 함수 들어가기전의 encoder 요소를 concat 해줘야함
+                    # 주의 : 활성화 함수 들어가기전의 encoder 요소를 concat 해줘야함
                     trans_conv1 = tf.concat([trans_conv1, conv7], axis=-1)
                     # result shape = (batch_size, 2, 2, 1024)
 
                 with tf.variable_scope("trans_conv2"):
                     trans_conv2 = tf.nn.dropout(
-                        conv2d_transpose(tf.nn.relu(trans_conv1), output_shape=tf.shape(conv6), weight_shape=(4, 4, 512, 1024),
+                        conv2d_transpose(tf.nn.relu(trans_conv1), output_shape=tf.shape(conv6),
+                                         weight_shape=(4, 4, 512, 1024),
                                          bias_shape=(512), norm_selection=norm_selection,
-                                         strides=[1, 2, 2, 1], padding="SAME"))
+                                         strides=[1, 2, 2, 1], padding="SAME"), keep_prob=Dropout_rate)
                     trans_conv2 = tf.concat([trans_conv2, conv6], axis=-1)
                     # result shape = (batch_size, 4, 4, 1024)
 
                 with tf.variable_scope("trans_conv3"):
                     trans_conv3 = tf.nn.dropout(
-                        conv2d_transpose(tf.nn.relu(trans_conv2), output_shape=tf.shape(conv5), weight_shape=(4, 4, 512, 1024),
+                        conv2d_transpose(tf.nn.relu(trans_conv2), output_shape=tf.shape(conv5),
+                                         weight_shape=(4, 4, 512, 1024),
                                          bias_shape=(512), norm_selection=norm_selection,
-                                         strides=[1, 2, 2, 1], padding="SAME"))
+                                         strides=[1, 2, 2, 1], padding="SAME"), keep_prob=Dropout_rate)
                     trans_conv3 = tf.concat([trans_conv3, conv5], axis=-1)
                     # result shape = (batch_size, 8, 8, 1024)
 
                 with tf.variable_scope("trans_conv4"):
-                    trans_conv4 = conv2d_transpose(tf.nn.relu(trans_conv3), output_shape=tf.shape(conv4), weight_shape=(4, 4, 512, 1024),
-                                         bias_shape=(512), norm_selection=norm_selection,
-                                         strides=[1, 2, 2, 1], padding="SAME")
+                    trans_conv4 = conv2d_transpose(tf.nn.relu(trans_conv3), output_shape=tf.shape(conv4),
+                                                   weight_shape=(4, 4, 512, 1024),
+                                                   bias_shape=(512), norm_selection=norm_selection,
+                                                   strides=[1, 2, 2, 1], padding="SAME")
                     trans_conv4 = tf.concat([trans_conv4, conv4], axis=-1)
                     # result shape = (batch_size, 16, 16, 1024)
                 with tf.variable_scope("trans_conv5"):
-                    trans_conv5 = conv2d_transpose(tf.nn.relu(trans_conv4), output_shape=tf.shape(conv3), weight_shape=(4, 4, 256, 1024),
-                                         bias_shape=(256), norm_selection=norm_selection,
-                                         strides=[1, 2, 2, 1], padding="SAME")
+                    trans_conv5 = conv2d_transpose(tf.nn.relu(trans_conv4), output_shape=tf.shape(conv3),
+                                                   weight_shape=(4, 4, 256, 1024),
+                                                   bias_shape=(256), norm_selection=norm_selection,
+                                                   strides=[1, 2, 2, 1], padding="SAME")
                     trans_conv5 = tf.concat([trans_conv5, conv3], axis=-1)
                     # result shape = (batch_size, 32, 32, 512)
                 with tf.variable_scope("trans_conv6"):
-                    trans_conv6 = conv2d_transpose(tf.nn.relu(trans_conv5), output_shape=tf.shape(conv2), weight_shape=(4, 4, 128, 512),
-                                         bias_shape=(128), norm_selection=norm_selection,
-                                         strides=[1, 2, 2, 1], padding="SAME")
+                    trans_conv6 = conv2d_transpose(tf.nn.relu(trans_conv5), output_shape=tf.shape(conv2),
+                                                   weight_shape=(4, 4, 128, 512),
+                                                   bias_shape=(128), norm_selection=norm_selection,
+                                                   strides=[1, 2, 2, 1], padding="SAME")
                     trans_conv6 = tf.concat([trans_conv6, conv2], axis=-1)
                     # result shape = (batch_size, 64, 64, 256)
                 with tf.variable_scope("trans_conv7"):
-                    trans_conv7 = conv2d_transpose(tf.nn.relu(trans_conv6), output_shape=tf.shape(conv1), weight_shape=(4, 4, 64, 256),
-                                         bias_shape=(64), norm_selection=norm_selection,
-                                         strides=[1, 2, 2, 1], padding="SAME")
+                    trans_conv7 = conv2d_transpose(tf.nn.relu(trans_conv6), output_shape=tf.shape(conv1),
+                                                   weight_shape=(4, 4, 64, 256),
+                                                   bias_shape=(64), norm_selection=norm_selection,
+                                                   strides=[1, 2, 2, 1], padding="SAME")
                     trans_conv7 = tf.concat([trans_conv7, conv1], axis=-1)
                     # result shape = (batch_size, 128, 128, 128)
                 with tf.variable_scope("trans_conv8"):
                     output = tf.nn.tanh(
-                        conv2d_transpose(tf.nn.relu(trans_conv7), output_shape=tf.shape(target), weight_shape=(4, 4, 3, 128),
+                        conv2d_transpose(tf.nn.relu(trans_conv7), output_shape=tf.shape(target),
+                                         weight_shape=(4, 4, 3, 128),
                                          bias_shape=(3),
                                          strides=[1, 2, 2, 1], padding="SAME"))
                     # result shape = (batch_size, 256, 256, 3)
@@ -212,15 +233,17 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
                 # result shape = (batch_size, 64, 64, 128)
             with tf.variable_scope("conv3"):
                 conv3 = conv2d(conv2, weight_shape=(4, 4, 128, 256), bias_shape=(256), norm_selection=norm_selection,
-                           strides=[1, 2, 2, 1], padding="SAME")
+                               strides=[1, 2, 2, 1], padding="SAME")
                 # result shape = (batch_size, 32, 32, 256)
-                conv3 = tf.nn.leaky_relu(tf.pad(conv3, [[0, 0], [1, 1],[1, 1],[0, 0]], mode="CONSTANT", constant_values=0), alpha=0.2)
+                conv3 = tf.nn.leaky_relu(
+                    tf.pad(conv3, [[0, 0], [1, 1], [1, 1], [0, 0]], mode="CONSTANT", constant_values=0), alpha=0.2)
                 # result shape = (batch_size, 34, 34, 256)
             with tf.variable_scope("conv4"):
                 conv4 = conv2d(conv3, weight_shape=(4, 4, 256, 512), bias_shape=(512), norm_selection=norm_selection,
-                           strides=[1, 1, 1, 1], padding="VALID")
+                               strides=[1, 1, 1, 1], padding="VALID")
                 # result shape = (batch_size, 31, 31, 256)
-                conv4 = tf.nn.leaky_relu(tf.pad(conv4, [[0, 0], [1, 1],[1, 1],[0, 0]], mode="CONSTANT", constant_values=0), alpha=0.2)
+                conv4 = tf.nn.leaky_relu(
+                    tf.pad(conv4, [[0, 0], [1, 1], [1, 1], [0, 0]], mode="CONSTANT", constant_values=0), alpha=0.2)
                 # result shape = (batch_size, 33, 33, 512)
             with tf.variable_scope("output"):
                 output = tf.nn.sigmoid(
@@ -344,7 +367,8 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
                     feed_dict_all = {x: mbatch_x, target: mbatch_y}
                     feed_dict_Generator = {x: mbatch_x, target: mbatch_y}
                     _, Discriminator_Loss = sess.run([D_train_op, D_Loss], feed_dict=feed_dict_all)
-                    _, Generator_Loss, Distance_Loss = sess.run([G_train_op, G_Loss, dis_loss ], feed_dict=feed_dict_Generator)
+                    _, Generator_Loss, Distance_Loss = sess.run([G_train_op, G_Loss, dis_loss],
+                                                                feed_dict=feed_dict_Generator)
                     Loss_D += (Discriminator_Loss / total_batch)
                     Loss_G += (Generator_Loss / total_batch)
 
@@ -386,7 +410,7 @@ if __name__ == "__main__":
           beta1=0.9, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
           # batch_size는 1~10사이로 하자
-          learning_rate=0.0002, training_epochs=10, batch_size=128, display_step=1)
+          learning_rate=0.0002, training_epochs=10, batch_size=128, display_step=1, using_moving_variable=False)
 
 else:
     print("model imported")

@@ -38,7 +38,8 @@ def model(TEST=True, model_name="CNN", optimizer_selection="Adam", learning_rate
             return tf.nn.bias_add(conv_out, b)
 
     def conv2d_transpose(input, output_shape='', weight_shape='', bias_shape='', strides=[1, 1, 1, 1], padding="VALID"):
-        weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
+        # weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
+        weight_init = tf.truncated_normal_initializer(stddev=0.02)
         bias_init = tf.constant_initializer(value=0)
         if batch_norm:
             w = tf.get_variable("w", weight_shape, initializer=weight_init)

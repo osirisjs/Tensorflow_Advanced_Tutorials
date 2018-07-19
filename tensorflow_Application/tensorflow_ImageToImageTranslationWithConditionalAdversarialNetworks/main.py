@@ -9,6 +9,19 @@ batch_size = 1 -> instance norm, batch_size > 1 -> batch_norm
 저자코드 따라함 - https://github.com/phillipi/pix2pix/blob/master/models.lua
 generator는 unet을 사용한다.
 discriminator의 구조는 PatchGAN 70X70을 사용한다. 
+
+Training, Test Generator의 동작 방식이 같다. - 드롭아웃 적용, batchnorm 이동평균 안씀 - 그래도 옵션으로 주자
+At inference time, we run the generator net in exactly
+the same manner as during the training phase. This differs
+from the usual protocol in that we apply dropout at test time,
+and we apply batch normalization [28] using the statistics of
+the test batch, rather than aggregated statistics of the training
+batch. This approach to batch normalization, when the
+batch size is set to 1, has been termed “instance normalization”
+and has been demonstrated to be effective at image
+generation tasks [53]. In our experiments, we use batch
+sizes between 1 and 10 depending on the experiment
+
 -논문 내용과 똑같이 구현했다.
 
 2. loss에 대한 옵션
@@ -29,4 +42,4 @@ pix2pix.model(TEST=False, distance_loss="L2", distance_loss_weight=100, optimize
             beta1 = 0.5, beta2 = 0.999, # for Adam optimizer
             decay = 0.999, momentum = 0.9, # for RMSProp optimizer
             #batch_size는 1~10사이로 하자
-            learning_rate=0.0002, training_epochs=15, batch_size=4, display_step=1)
+            learning_rate=0.0002, training_epochs=15, batch_size=4, display_step=1, Dropout_rate=0.5, using_moving_variable=False) # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수 - 사용안한다.
