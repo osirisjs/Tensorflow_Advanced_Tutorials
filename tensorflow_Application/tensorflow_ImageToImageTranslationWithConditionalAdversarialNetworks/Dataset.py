@@ -86,15 +86,18 @@ class Dataset(object):
         img = tf.read_file(image)
         img_decoded = tf.image.decode_image(img, channels=3)
 
-        # 2. 이미지를 나눈다.
+        # 2. 256x512 이미지를 256x256, 256x256 2개로 나눈다.
         '''
+        This op cuts a rectangular part out of image. The top-left corner of the returned image is at offset_height, 
+        offset_width in image, and its lower-right corner is at offset_height + target_height, offset_width + target_width.
+        
         offset_height: Vertical coordinate of the top-left corner of the result in the input.
         offset_width: Horizontal coordinate of the top-left corner of the result in the input.
         target_height: Height of the result.
         target_width: Width of the result.
         '''
-        Ip = tf.image.crop_to_bounding_box(img_decoded, offset_height=, offset_width=, target_height=, target_width=)
-        lb = tf.image.crop_to_bounding_box(img_decoded, offset_height=, offset_width=, target_height=, target_width=)
+        Ip = tf.image.crop_to_bounding_box(img_decoded, offset_height=0, offset_width=0, target_height=256, target_width=256)
+        lb = tf.image.crop_to_bounding_box(img_decoded, offset_height=0, offset_width=256, target_height=256, target_width=256)
 
         # 3. gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
         Ip_scaled = tf.subtract(tf.divide(tf.cast(Ip, tf.float32), 127.5), 1) #gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
