@@ -42,11 +42,12 @@
                 * 내 사진을 예술 작품으로 바꿔주는 유명한 논문인 "A Neural Algorithm of Artistic Style" 의 구현 입니다.
             * [***Word2Vector SkipGram With TSNE***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_Word2Vector_SkipGram_WithTSNE)
                 * 아무런 관계가 없는 것처럼 표현(one-hot encoding)된 단어들을 낮은 차원의 벡터로 표현함과 동시에 단어간의 관계를 표현하는 방법입니다. Word2Vector에는 CBOW모델과 Skip-Gram 모델이 있습니다. 여기서는 Skip-Gram 모델을 구현합니다.
-            * [***Image To Image Translation With Conditional Adversarial Networks Using edges2shoes Dataset***]()
-                * 진행중
+            * [***Image To Image Translation With Conditional Adversarial Networks Using edges2shoes Dataset***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks)
                 * 어떤 도메인의 이미지의 다른 도메인의 이미지로의 변환이라는 거룩한 목적을 위해 고안된 네트워크입니다. ConditionalGAN 과 UNET을 사용하여 네트워크 구성 합니다.
                 * 네트워크 구조 및 학습 방법은 논문에서 제시한 내용과 거의 같습니다.(Discriminator 구조인 PatchGAN 의 크기도 70X70 입니다.)
-                * 효율적인 데이터 전처리를 위해 tf.data.Dataset을 사용합니다.
+                * 2가지의 데이터 전처리 방법
+                    1. 효율적인 데이터 전처리를 위해 tf.data.Dataset을 사용합니다.
+                    2. 더 효율적인 데이터 전처리를 위해 TFRecord 형식으로 데이터를 저장하고  tf.data.TFRecordDataset 를 사용합니다.(진행중)
 
             * [***Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks***]()
                 * 진행 예정
@@ -64,10 +65,10 @@
 * IDE : `pycharm Community Edition 2018.1.2`
     
 >## **코드 실행에 필요한 파이썬 모듈** 
-* Tensorflow-1.8.0
-* urllib, zipfile, collections
-* os, shutil, tqdm
-* numpy. matplotlib, scikit-learn, opencv-python
+* Tensorflow-1.8.0 
+* numpy, random, collections
+* matplotlib, scikit-learn, opencv-python
+* tqdm, os, glob, shutil, urllib, zipfile, tarfile
 
 >## **연락처** 
 medical18@naver.com

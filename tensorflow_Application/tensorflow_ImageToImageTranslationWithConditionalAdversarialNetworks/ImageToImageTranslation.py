@@ -1,29 +1,25 @@
-import matplotlib.pyplot as plt
+import shutil
+import cv2
 import numpy as np
 from tqdm import tqdm
-import shutil
+
 from Dataset import *
 
-def translate_image(model_name, generated_image, column_size=10, row_size=10):
-    print("show image")
+def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=None):
 
-    '''generator image visualization'''
-    fig_g, ax_g = plt.subplots(row_size, column_size, figsize=(column_size, row_size))
-    fig_g.suptitle('MNIST_generator')
-    for j in range(row_size):
-        for i in range(column_size):
-            ax_g[j][i].grid(False)
-            ax_g[j][i].set_axis_off()
-            ax_g[j][i].imshow(generated_image[i + j * column_size].reshape((28, 28)), cmap='gray')
-    fig_g.savefig("{}_generator.png".format(model_name))
-    plt.show()
-
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+    #이미지 y축 방향으로 붙이기
+    image = np.hstack(named_images[1:])
+    #이미지 스케일 바꾸기(~1 ~ 1 -> 0~ 255)
+    image = ((image+1)*127.5).astype(np.uint8)
+    cv2.imwrite(os.path.join(save_path,'{}_{}.png'.format(model_name, named_images[0])), image)
 
 def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_selection="Adam",
           beta1=0.9, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
           learning_rate=0.001, training_epochs=100,
-          batch_size=4, display_step=1, Dropout_rate=0.5, using_moving_variable=False):
+          batch_size=4, display_step=1, Dropout_rate=0.5, using_moving_variable=False, save_path="translated_image"):
     if distance_loss == "L1":
         print("target generative GAN with L1 loss")
         model_name = "Pix2PixConditionalGAN_WithL1loss"
@@ -44,16 +40,16 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
             shutil.rmtree("tensorboard/{}".format(model_name))
 
     # stride? -> [1, 2, 2, 1] = [one image, width, height, one channel]
-    def conv2d(input, weight_shape=None, bias_shape=None, norm_selection="",
+    def conv2d(input, weight_shape=None, bias_shape=None, norm_selection=None,
                strides=[1, 1, 1, 1], padding="VALID"):
 
         # weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
         weight_init = tf.truncated_normal_initializer(stddev=0.02)
         bias_init = tf.constant_initializer(value=0)
 
-        weight_decay = tf.constant(0.00001, dtype=tf.float32)
+        weight_decay = tf.constant(0, dtype=tf.float32)
         w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                                regularizer=tf.contrib.layers.l2_regularizer(scale = weight_decay))
+                            regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
 
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
         conv_out = tf.nn.conv2d(input, w, strides=strides, padding=padding)
@@ -61,13 +57,15 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
         # batch_norm을 적용하면 bias를 안써도 된다곤 하지만, 나는 썼다.
         if norm_selection == "batch_norm":
             if TEST and using_moving_variable:
-                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training = not TEST)
+                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=not TEST)
             else:
-                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training = TEST)
+                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=TEST)
         elif norm_selection == "instance_norm":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
+        else:
+            return tf.nn.bias_add(conv_out, b)
 
-    def conv2d_transpose(input, output_shape=None, weight_shape=None, bias_shape=None, norm_selection="",
+    def conv2d_transpose(input, output_shape=None, weight_shape=None, bias_shape=None, norm_selection=None,
                          strides=[1, 1, 1, 1], padding="VALID"):
 
         weight_init = tf.random_normal_initializer(mean=0.0, stddev=0.02)
@@ -75,7 +73,7 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
         weight_decay = tf.constant(0, dtype=tf.float32)
 
         w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+                            regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
 
         conv_out = tf.nn.conv2d_transpose(input, w, output_shape=output_shape, strides=strides, padding=padding)
@@ -83,14 +81,16 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
         # batch_norm을 적용하면 bias를 안써도 된다곤 하지만, 나는 썼다.
         if norm_selection == "batch_norm":
             if TEST and using_moving_variable:
-                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training = not TEST)
+                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=not TEST)
             else:
-                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training = TEST)
+                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=TEST)
         elif norm_selection == "instance_norm":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
+        else:
+            return tf.nn.bias_add(conv_out, b)
 
     # 유넷 - U-NET
-    def generator(target=None):
+    def generator(x=None):
 
         '''encoder의 활성화 함수는 모두 leaky_relu이며, decoder의 활성화 함수는 모두 relu이다.
         encoder의 첫번째 층에는 batch_norm이 적용 안된다.
@@ -98,10 +98,10 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
         총 16개의 층이다.
         '''
 
-        with tf.variable_scope("Generator_UNET"):
+        with tf.variable_scope("Generator"):
             with tf.variable_scope("encoder"):
                 with tf.variable_scope("conv1"):
-                    conv1 = conv2d(target, weight_shape=(4, 4, 3, 64), bias_shape=(64),
+                    conv1 = conv2d(x, weight_shape=(4, 4, 3, 64), bias_shape=(64),
                                    strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 128, 128, 64)
                 with tf.variable_scope("conv2"):
@@ -213,11 +213,10 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
 
         왜 이런 구조를 사용? 아래의 구조 출력단의 ReceptiveField 크기를 구해보면 70이다.(ReceptiveFieldArithmetic/rf.py 에서 구해볼 수 있다.)'''
         concated_x = tf.concat([x, target], axis=-1)
-
-        with tf.variable_scope("discriminator"):
+        with tf.variable_scope("Discriminator"):
             with tf.variable_scope("conv1"):
                 conv1 = tf.nn.leaky_relu(
-                    conv2d(concated_x, weight_shape=(4, 4, tf.shape(concated_x)[-1], 64), bias_shape=(64),
+                    conv2d(concated_x, weight_shape=(4, 4, np.shape(concated_x)[-1], 64), bias_shape=(64),
                            strides=[1, 2, 2, 1], padding="SAME"), alpha=0.2)
                 # result shape = (batch_size, 128, 128, 64)
             with tf.variable_scope("conv2"):
@@ -242,7 +241,7 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
             with tf.variable_scope("output"):
                 output = tf.nn.sigmoid(
                     conv2d(conv4, weight_shape=(4, 4, 512, 1), bias_shape=(1),
-                           strides=[1, 1, 1, 1], padding="VALID"), alpha=0.2)
+                           strides=[1, 1, 1, 1], padding="VALID"))
                 # result shape = (batch_size, 30, 30, 1)
             return output
 
@@ -277,22 +276,23 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
     with JG_Graph.as_default():  # as_default()는 JG_Graph를 기본그래프로 설정한다.
         with tf.name_scope("feed_dict"):
             x = tf.placeholder(dtype=tf.float32, shape=[None, 256, 256, 3])
-            target = tf.placeholder(ype=tf.float32, shape=[None, 256, 256, 3])
+            target = tf.placeholder(dtype=tf.float32, shape=[None, 256, 256, 3])
         # Algorithjm
         with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
-            with tf.name_scope("generator"):
-                G = generator(target=target)
-            with tf.name_scope("discriminator"):
+            with tf.name_scope("Generator"):
+                G = generator(x=x)
+            with tf.name_scope("Discriminator"):
                 D_real = discriminator(x=x, target=target)
                 # scope.reuse_variables()
                 D_gene = discriminator(x=G, target=target)
 
         var_D = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                  scope='shared_variables/discriminator')
+                                  scope='shared_variables/Discriminator')
+
         # set으로 중복 제거 하고, 다시 list로 바꾼다.
         var_G = list(set(np.concatenate(
-            (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/generator'),
-             tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/generator')),
+            (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/Generator'),
+             tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/Generator')),
             axis=0)))
 
         # Adam optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
@@ -351,10 +351,9 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
 
         if not TEST:
             summary_writer = tf.summary.FileWriter(os.path.join("tensorboard", model_name), sess.graph)
-            dataset = Dataset(batch_size=batch_size, use_TFRecord=False)
+            dataset = Dataset(batch_size=batch_size, use_TFRecord=False, use_TrainDataset=True)
             next_batch, data_length = dataset.iterator()
             for epoch in tqdm(range(1, training_epochs + 1)):
-
                 Loss_D = 0.
                 Loss_G = 0
                 Loss_Distance = 0
@@ -368,8 +367,10 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
                                                                 feed_dict=feed_dict_Generator)
                     Loss_D += (Discriminator_Loss / total_batch)
                     Loss_G += (Generator_Loss / total_batch)
-                    Loss_Distance +=(Distance_Loss / total_batch)
-                print("Discriminator Loss : {}, Generator Loss  : {}, {} loss : {}".format(Loss_D, Loss_G, distance_loss, Loss_Distance))
+                    Loss_Distance += (Distance_Loss / total_batch)
+                print(
+                    "Discriminator Loss : {} / Generator Loss  : {} / {} loss : {}".format(Loss_D, Loss_G, distance_loss,
+                                                                                         Loss_Distance))
 
                 if epoch % display_step == 0:
                     summary_str = sess.run(summary_operation, feed_dict=feed_dict_all)
@@ -392,23 +393,26 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
             print("Optimization Finished!")
 
         if TEST:
-            column_size = 10
-            row_size = 10
-            feed_dict = {z: np.random.normal(loc=0.0, scale=1.0, size=(column_size * row_size, noise_size)),
-                         target: np.tile(np.diag(np.ones(column_size)), (row_size, 1))}
-
-            generated_image = sess.run(G, feed_dict=feed_dict)
-            translate_image(model_name, generated_image, column_size=column_size, row_size=row_size)
+            #테스트셋 하나씩 처리하기.
+            dataset = Dataset(batch_size=1, use_TFRecord=False, use_TrainDataset=False)
+            next_batch, data_length = dataset.iterator()
+            total_batch = int(data_length / batch_size)
+            for i in range(total_batch):
+                input, label = sess.run(next_batch)
+                feed_dict_Generator = {x: input, target: label}
+                translated_image = sess.run(G, feed_dict=feed_dict_Generator)
+                visualize(model_name=model_name, named_images=[i, input[0], label[0], translated_image[0]], save_path=save_path)
 
 
 if __name__ == "__main__":
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
     model(TEST=False, distance_loss="L2", distance_loss_weight=100, optimizer_selection="Adam",
-                  beta1=0.5, beta2=0.999,  # for Adam optimizer
-                  decay=0.999, momentum=0.9,  # for RMSProp optimizer
-                  # batch_size는 1~10사이로 하자
-                  learning_rate=0.0002, training_epochs=15, batch_size=4, display_step=1, Dropout_rate=0.5,
-                  using_moving_variable=False)  # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수 - 사용안한다.
+          beta1=0.5, beta2=0.999,  # for Adam optimizer
+          decay=0.999, momentum=0.9,  # for RMSProp optimizer
+          # batch_size는 1~10사이로 하자
+          learning_rate=0.0002, training_epochs=15, batch_size=4, display_step=1, Dropout_rate=0.5,
+          using_moving_variable=False, # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수
+          save_path="translated_image") # 학습 완료 후 변환된 이미지가 저장될 폴더
 
 else:
     print("model imported")
