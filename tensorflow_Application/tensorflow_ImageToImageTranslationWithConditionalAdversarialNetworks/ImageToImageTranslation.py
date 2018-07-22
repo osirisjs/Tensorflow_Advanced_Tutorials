@@ -1,25 +1,29 @@
 import shutil
+
 import cv2
 import numpy as np
 from tqdm import tqdm
 
 from Dataset import *
 
-def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=None):
 
+def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=None):
     if not os.path.exists(save_path):
         os.makedirs(save_path)
-    #이미지 y축 방향으로 붙이기
+    # 이미지 y축 방향으로 붙이기
     image = np.hstack(named_images[1:])
-    #이미지 스케일 바꾸기(~1 ~ 1 -> 0~ 255)
-    image = ((image+1)*127.5).astype(np.uint8)
-    cv2.imwrite(os.path.join(save_path,'{}_{}.png'.format(model_name, named_images[0])), image)
+    # 이미지 스케일 바꾸기(~1 ~ 1 -> 0~ 255)
+    image = ((image + 1) * 127.5).astype(np.uint8)
+    cv2.imwrite(os.path.join(save_path, '{}_{}.png'.format(model_name, named_images[0])), image)
+    print("{}_{}.png saved in {} folder".format(model_name, named_images[0], save_path))
 
-def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_selection="Adam",
+
+def model(DB_name="maps", TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_selection="Adam",
           beta1=0.9, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
           learning_rate=0.001, training_epochs=100,
           batch_size=4, display_step=1, Dropout_rate=0.5, using_moving_variable=False, save_path="translated_image"):
+
     if distance_loss == "L1":
         print("target generative GAN with L1 loss")
         model_name = "Pix2PixConditionalGAN_WithL1loss"
@@ -29,6 +33,9 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
     else:
         print("target generative GAN")
         model_name = "Pix2PixConditionalGAN"
+    
+    #DB 이름도 추가
+    model_name = DB_name+"_"+model_name
 
     if batch_size == 1:
         norm_selection = "instance_norm"
@@ -206,17 +213,17 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
         return output
 
     # PatchGAN
-    def discriminator(x=None, target=None):
+    def discriminator(input=None, condition=None):
 
         '''discriminator의 활성화 함수는 모두 leaky_relu이다.
         genertor와 마찬가지로 첫번째 층에는 batch_norm을 적용 안한다.
 
         왜 이런 구조를 사용? 아래의 구조 출력단의 ReceptiveField 크기를 구해보면 70이다.(ReceptiveFieldArithmetic/rf.py 에서 구해볼 수 있다.)'''
-        concated_x = tf.concat([x, target], axis=-1)
+        conditional_input = tf.concat([input, condition], axis=-1)
         with tf.variable_scope("Discriminator"):
             with tf.variable_scope("conv1"):
                 conv1 = tf.nn.leaky_relu(
-                    conv2d(concated_x, weight_shape=(4, 4, np.shape(concated_x)[-1], 64), bias_shape=(64),
+                    conv2d(conditional_input, weight_shape=(4, 4, np.shape(conditional_input)[-1], 64), bias_shape=(64),
                            strides=[1, 2, 2, 1], padding="SAME"), alpha=0.2)
                 # result shape = (batch_size, 128, 128, 64)
             with tf.variable_scope("conv2"):
@@ -239,11 +246,10 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
                     tf.pad(conv4, [[0, 0], [1, 1], [1, 1], [0, 0]], mode="CONSTANT", constant_values=0), alpha=0.2)
                 # result shape = (batch_size, 33, 33, 512)
             with tf.variable_scope("output"):
-                output = tf.nn.sigmoid(
-                    conv2d(conv4, weight_shape=(4, 4, 512, 1), bias_shape=(1),
-                           strides=[1, 1, 1, 1], padding="VALID"))
+                output = conv2d(conv4, weight_shape=(4, 4, 512, 1), bias_shape=(1),
+                                strides=[1, 1, 1, 1], padding="VALID")
                 # result shape = (batch_size, 30, 30, 1)
-            return output
+            return output, tf.nn.sigmoid(output)
 
     def training(cost, var_list, scope=None):
         if scope == None:
@@ -282,9 +288,9 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
             with tf.name_scope("Generator"):
                 G = generator(x=x)
             with tf.name_scope("Discriminator"):
-                D_real = discriminator(x=x, target=target)
+                D_real, sigmoid_D_real = discriminator(input=target, condition=x)
                 # scope.reuse_variables()
-                D_gene = discriminator(x=G, target=target)
+                D_gene, sigmoid_D_gene = discriminator(input=G, condition=x)
 
         var_D = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
                                   scope='shared_variables/Discriminator')
@@ -302,6 +308,8 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
 
         if not TEST:
 
+            # Algorithjm - 속이고 속이는 과정
+
             with tf.name_scope("Discriminator_loss"):
                 # for discriminator
                 D_Loss = min_max_loss(logits=D_real, labels=tf.ones_like(D_real)) + min_max_loss(logits=D_gene,
@@ -311,19 +319,19 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
                 # for generator
                 G_Loss = min_max_loss(logits=D_gene, labels=tf.ones_like(D_gene))
 
-            # Algorithjm
             if distance_loss == "L1":
                 with tf.name_scope("{}_loss".format(distance_loss)):
-                    dis_loss = tf.losses.absolute_difference(x, G)
+                    dis_loss = tf.losses.absolute_difference(target, G)
                     tf.summary.scalar("{} Loss".format(distance_loss), dis_loss)
                     G_Loss += tf.multiply(dis_loss, distance_loss_weight)
             elif distance_loss == "L2":
                 with tf.name_scope("{}_loss".format(distance_loss)):
-                    dis_loss = tf.losses.mean_squared_error(x, G)
+                    dis_loss = tf.losses.mean_squared_error(target, G)
                     tf.summary.scalar("{} Loss".format(distance_loss), dis_loss)
                     G_Loss += tf.multiply(dis_loss, distance_loss_weight)
+            else:
+                dis_loss = tf.constant(value=0, dtype=tf.float32)
 
-            # Algorithjm
             with tf.name_scope("Discriminator_trainer"):
                 D_train_op = training(D_Loss, var_D, scope=None)
             with tf.name_scope("Generator_trainer"):
@@ -351,26 +359,43 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
 
         if not TEST:
             summary_writer = tf.summary.FileWriter(os.path.join("tensorboard", model_name), sess.graph)
-            dataset = Dataset(batch_size=batch_size, use_TFRecord=False, use_TrainDataset=True)
-            next_batch, data_length = dataset.iterator()
+            dataset = Dataset(DB_name=DB_name, batch_size=batch_size, use_TFRecord=False, use_TrainDataset=True)
+            iterator, next_batch, data_length = dataset.iterator()
+            sess.run(iterator.initializer)
             for epoch in tqdm(range(1, training_epochs + 1)):
-                Loss_D = 0.
+                Loss_D = 0
                 Loss_G = 0
                 Loss_Distance = 0
+                # 아래의 두 값이 각각 0.5 씩을 갖는게 가장 이상적이다.
+                sigmoid_D = 0
+                sigmoid_G = 0
                 total_batch = int(data_length / batch_size)
                 for i in range(total_batch):
                     input, label = sess.run(next_batch)
                     feed_dict_all = {x: input, target: label}
                     feed_dict_Generator = {x: input, target: label}
-                    _, Discriminator_Loss = sess.run([D_train_op, D_Loss], feed_dict=feed_dict_all)
-                    _, Generator_Loss, Distance_Loss = sess.run([G_train_op, G_Loss, dis_loss],
-                                                                feed_dict=feed_dict_Generator)
+                    _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real],
+                                                                     feed_dict=feed_dict_all)
+                    _, Generator_Loss, Distance_Loss, D_gene_simgoid = sess.run(
+                        [G_train_op, G_Loss, dis_loss, sigmoid_D_gene],
+                        feed_dict=feed_dict_Generator)
                     Loss_D += (Discriminator_Loss / total_batch)
                     Loss_G += (Generator_Loss / total_batch)
                     Loss_Distance += (Distance_Loss / total_batch)
-                print(
-                    "Discriminator Loss : {} / Generator Loss  : {} / {} loss : {}".format(Loss_D, Loss_G, distance_loss,
-                                                                                         Loss_Distance))
+                    sigmoid_D += D_real_simgoid / total_batch
+                    sigmoid_G += D_gene_simgoid / total_batch
+
+                print("Discriminator mean output : {} / Generator mean output : {}".format(np.mean(sigmoid_D),
+                                                                                           np.mean(sigmoid_G)))
+
+                if distance_loss == "L1" or distance_loss == "L2":
+                    print(
+                        "Discriminator Loss : {} / Generator Loss  : {} / {} loss : {}".format(Loss_D, Loss_G,
+                                                                                               distance_loss,
+                                                                                               Loss_Distance))
+                else:
+                    print(
+                        "Discriminator Loss : {} / Generator Loss  : {}".format(Loss_D, Loss_G, distance_loss))
 
                 if epoch % display_step == 0:
                     summary_str = sess.run(summary_operation, feed_dict=feed_dict_all)
@@ -393,26 +418,27 @@ def model(TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_sel
             print("Optimization Finished!")
 
         if TEST:
-            #테스트셋 하나씩 처리하기.
-            dataset = Dataset(batch_size=1, use_TFRecord=False, use_TrainDataset=False)
-            next_batch, data_length = dataset.iterator()
-            total_batch = int(data_length / batch_size)
-            for i in range(total_batch):
+            # 테스트셋 하나씩 처리하기.
+            dataset = Dataset(DB_name=DB_name, use_TFRecord=False, use_TrainDataset=False)
+            iterator, next_batch, data_length = dataset.iterator()
+            sess.run(iterator.initializer)
+            for i in range(data_length):
                 input, label = sess.run(next_batch)
                 feed_dict_Generator = {x: input, target: label}
                 translated_image = sess.run(G, feed_dict=feed_dict_Generator)
-                visualize(model_name=model_name, named_images=[i, input[0], label[0], translated_image[0]], save_path=save_path)
+                visualize(model_name=model_name, named_images=[i, input[0], label[0], translated_image[0]],
+                          save_path=save_path)
 
 
 if __name__ == "__main__":
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-    model(TEST=False, distance_loss="L2", distance_loss_weight=100, optimizer_selection="Adam",
+    model(DB_name="maps", TEST=False, distance_loss="L2", distance_loss_weight=100, optimizer_selection="Adam",
           beta1=0.5, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
           # batch_size는 1~10사이로 하자
           learning_rate=0.0002, training_epochs=15, batch_size=4, display_step=1, Dropout_rate=0.5,
-          using_moving_variable=False, # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수
-          save_path="translated_image") # 학습 완료 후 변환된 이미지가 저장될 폴더
+          using_moving_variable=False,  # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수
+          save_path="translated_image")  # 학습 완료 후 변환된 이미지가 저장될 폴더
 
 else:
     print("model imported")

@@ -2,14 +2,15 @@ import glob
 import os
 import tarfile
 import urllib.request
-import random
+
 import tensorflow as tf
 
 '''
 데이터셋은 아래에서 받았다.
-https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/edges2shoes.tar.gz
-'''
-'''나만의 이미지 데이터셋 만들기 - 텐서플로우의 API 만을 이용하여 만들자.
+https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz
+이미지(원본 이미지를)를 분할(Segmentation) 해보자
+
+나만의 이미지 데이터셋 만들기 - 텐서플로우의 API 만을 이용하여 만들자.
 많은 것을 지원해주는 텐서플로우 API 만을 이용해서 만들 경우 코드가 굉장히 짧아지면서 빠르다.
 하지만, 공부해야할 것이 꽤 많다. TFRecord, tf.data.Dataset API, tf.image API 등등 여러가지를 알아야 한다.
 
@@ -32,31 +33,54 @@ https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/edges2shoes
 2. tf.data.Dataset API 및 여러가지 유용한 텐서플로우 API 를 사용하여 학습이 가능한 데이터 형태로 만든다. 
     -> tf.read_file, tf.random_crop, tf.image.~ API를 사용하여 논문에서 설명한대로 이미지를 전처리하고 학습가능한 형태로 만든다.
 '''
+
+
 class Dataset(object):
 
-    def __init__(self, url="https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/edges2shoes.tar.gz",
-                 batch_size=4, use_TFRecord=False, use_TrainDataset=False):
+    def __init__(self, DB_name="maps",
+                 batch_size=1, use_TFRecord=False, use_TrainDataset=False):
 
-        self.url = url
         self.Dataset_Path = "Dataset"
+        self.DB_name = DB_name
+
+        if use_TFRecord:
+            self.Dataset_Path = "TFRecord"+self.Dataset_Path
+
         if not os.path.exists(self.Dataset_Path):
             os.makedirs(self.Dataset_Path)
 
-        self.dataset_name = os.path.join(self.Dataset_Path, "edges2shoes")
-        self.file_name = self.dataset_name + ".tar.gz"
-        self.batch_size = batch_size
+        self.url = "https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz".format(self.DB_name)
+        self.dataset_folder = os.path.join(self.Dataset_Path, self.DB_name)
+        self.dataset_targz = self.dataset_folder + ".tar.gz"
         self.use_TFRecord = use_TFRecord
 
-        # 데이터셋 다운로드 하고, use_TFRecord 가 True 이면 TFRecord 파일로 쓴다.
-        self.Preparing_Learning_Dataset()
-        
         # 학습용 데이터인지 테스트용 데이터인지 알려주는 변수
         self.use_TrainDataset = use_TrainDataset
-
-        if self.use_TrainDataset:
-            self.file_path_list = glob.glob(os.path.join(self.dataset_name, "train/*"))
+        # Test Dataset은 무조건 하나씩 처리하자.
+        if self.use_TrainDataset == False:
+            self.batch_size = 1
         else:
-            self.file_path_list = glob.glob(os.path.join(self.dataset_name, "val/*"))
+            self.batch_size = batch_size
+
+        # 데이터셋 다운로드 하고, use_TFRecord 가 True 이면 TFRecord 파일로 쓴다.E
+        if DB_name == "cityscapes":
+            self.file_size = 103441232
+        elif DB_name ==  "facades":
+            self.file_size = 30168306
+        elif DB_name =="maps":
+            self.file_size = 250242400
+
+        self.Preparing_Learning_Dataset()
+        if self.use_TrainDataset:
+            if use_TFRecord:
+                self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "train/*"))
+            else:
+                self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "train/*"))
+        else:
+            if use_TFRecord:
+                self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "val/*"))
+            else:
+                self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "val/*"))
 
     def __repr__(self):
         return "Dataset Loader"
@@ -67,29 +91,44 @@ class Dataset(object):
             self.TFRecord_Path = "TFRecord_Dataset"
             if not os.path.exists(self.TFRecord_Path):
                 os.makedirs(self.TFRecord_Path)
-            iterator, db_length = self.Using_TFRecordDataset()
+            iterator, next_batch, db_length = self.Using_TFRecordDataset()
         else:
-            iterator, db_length = self.Using_TFBasicDataset()
+            iterator, next_batch, db_length = self.Using_TFBasicDataset()
 
-        return iterator, db_length
+        return iterator, next_batch, db_length
 
     def Preparing_Learning_Dataset(self):
 
         # 1. 데이터셋 폴더가 존재하지 않으면 다운로드(다운로드 시간이 굉장히 오래걸립니다.)
-        if not os.path.exists(self.dataset_name):  # 데이터셋 폴더가 존재하지 않는 다면?
-            if not os.path.exists(self.file_name):  # 데이터셋 압축 파일이 존재하지 않는 다면, 다운로드
-                self.file_name, _ = urllib.request.urlretrieve(self.url, self.file_name)
-                print("{} Download Completed".format(self.file_name))
-            else:  # 만약 데이터셋 압축 파일이 존재한다면, 존재한다고 print를 띄워주자.
-                print("{} Exists".format(self.file_name))
-            # 2. 압축파일이 있는 상태이므로 압축을 푼다
-            with tarfile.open(self.file_name) as tar:
+        if not os.path.exists(self.dataset_folder):  # 데이터셋 폴더가 존재하지 않는 다면?
+            if not os.path.exists(self.dataset_targz):  # 데이터셋 압축 파일이 존재하지 않는 다면, 다운로드
+                print("{} Dataset Download required.".format(self.DB_name))
+                urllib.request.urlretrieve(self.url, self.dataset_targz)
+                print("{} Dataset Download Completed".format(self.DB_name))
+
+            # "{self.DB_name}.tar.gz"의 파일의 크기는 미리 구해놓음. (미리 확인이 필요함.)
+            elif os.path.exists(self.dataset_targz) and os.path.getsize(
+                    self.dataset_targz) == self.file_size:  # 완전한 데이터셋 압축 파일이 존재한다면, 존재한다고 print를 띄워주자.
+                print("ALL {} Dataset Exists".format(self.DB_name))
+
+            else:  # 데이터셋 압축파일이 존재하긴 하는데, 제대로 다운로드 되지 않은 상태라면, 삭제하고 다시 다운로드
+                print(
+                    "{} Dataset size must be : {}, but now size is {}".format(self.DB_name, self.file_size, os.path.getsize(self.dataset_targz)))
+                os.remove(self.dataset_targz)  # 완전하게 다운로드 되지 않은 기존의 데이터셋 압축 파일을 삭제
+                print("Deleting incomplete {} Dataset Completed".format(self.DB_name))
+                print("we need to download {} Dataset again".format(self.DB_name))
+                urllib.request.urlretrieve(self.url, self.dataset_targz)
+                print("{} Dataset Download Completed".format(self.DB_name))
+
+            # 2. 완전한 압축파일이 다운로드 된 상태이므로 압축을 푼다
+            with tarfile.open(self.dataset_targz) as tar:
                 tar.extractall(path=self.Dataset_Path)
-            print("{} Unzip Completed".format(self.file_name))
+            print("{} Unzip Completed".format(self.DB_name))
             # 3. 용량차지 하므로, tar.gz 파일을 지워주자. -> 데이터셋 폴더가 존재하므로
             # os.remove(self.file_name) # 하드디스크에 용량이 충분하다면, 굳이 필요 없는 코드다.
-        else:  # 데이터셋 폴더가 존재한다면, 존재한다고 print를 띄워주자
-            print("edges2shoes Dataset Exists")
+
+        else:  # 데이터셋 폴더가 존재하면 print를 띄워주자
+            print("{} Dataset Folder Exists".format(self.DB_name))
 
         if self.use_TFRecord:
             pass
@@ -129,7 +168,7 @@ class Dataset(object):
         input = Ip_scaled
         label = lb_scaled
 
-        #학습 시에만 동작
+        # Train Dataset 에서만 동작하게 하기 위함
         if self.use_TrainDataset:
             # 4. 286x286으로 키운다.
             Ip_resized = tf.image.resize_images(images=Ip_scaled, size=(286, 286))
@@ -147,32 +186,44 @@ class Dataset(object):
     # 1. 메모리에 다 올려버리는 방법
     def Using_TFBasicDataset(self):
 
-        random.shuffle(self.file_path_list) # 파일명 셔플
-        file_path_list_Tensor = tf.constant(tf.random_shuffle(self.file_path_list)) #tensor에 데이터셋 리스트를 담기
-        dataset = tf.data.Dataset.from_tensor_slices(file_path_list_Tensor)
+        random_file_path_list_Tensor = tf.random_shuffle(tf.constant(self.file_path_list))  # tensor에 데이터셋 리스트를 담기
+        # random_file_path_list_Tensor = tf.constant(self.file_path_list) # tensor에 데이터셋 리스트를 담기
+        dataset = tf.data.Dataset.from_tensor_slices(random_file_path_list_Tensor)
         dataset = dataset.map(self._image_preprocessing)
         '''
         buffer_size: A `tf.int64` scalar `tf.Tensor`, representing the
         number of elements from this dataset from which the new
         dataset will sample.
 
-        dataset.buffer_size란 정확히 무엇인가? shuffling 할 때 몇개를 뽑아서 랜덤하게 바꾸는건데, 이게
-        이미지 자체의 순서를 바꾸는 것이기 때문에 메모리도 많이 먹을 뿐더러 비효율적인다.(메모리가 16기가인 컴퓨터에서
+        dataset.buffer_size란 정확히 무엇인가? shuffling 할 때 몇개를 미리 뽑아서 랜덤하게 바꾸는건데 이상적으로 봤을 때 buffer_size가
+        파일 개수 만큼이면 좋겠지만, 이미지 자체의 순서를 바꾸는 것이기 때문에 메모리를 상당히 많이 먹는다. (메모리가 16기가인 컴퓨터에서
         buffer_size = 5000 만되도 컴퓨터가 강제 종료 된다.)
-        따라서 dataset.shuffle 의 매개 변수인 buffer_size를 1로 설정(1이라는 의미는 사용 안한다는 의미, 추후에 혹시 사용할 수 있으니 남겨놓는 용도)하거나,
-        아예 사용하지 않으면 된다.
+        따라서 dataset.shuffle 의 매개 변수인 buffer_size를  1000정도로 로 설정(buffer_size가 1이라는 의미는 사용 안한다는 의미)
         
-        더 좋은 방법? -> 파일명이 들어있는 리스트가  tf.data.Dataset.from_tensor_slices의 인자로 들어가기 전에 미리 섞는다.(random 모듈의 shuffle함수 이용)
+        더 좋은 방법? -> 파일명이 들어있는 리스트가  tf.data.Dataset.from_tensor_slices의 인자로 들어가기 전에 미리 섞는다.(tf.random_shuffle 을 사용)
+        문제점1 -> tf.random_shuffle을 사용하려면 dataset.make_one_shot_iterator()을 사용하면 안된다. tf.random_shuffle을 사용하지 않고
+        파일리스트를 램던함게 섞으려면 random 모듈의 shuffle을 사용해서 미리 self.file_path_list을 섞는다.
+        문제점2 -> 한번 섞고 말아버린다. -> buffer_size를 자기 컴퓨터의 메모리에 맞게 최대한으로 써보자.
         '''
         # dataset = dataset.shuffle(buffer_size=1).repeat().batch(self.batch_size)
-        dataset = dataset.batch(self.batch_size)
-        iterator = dataset.make_one_shot_iterator()
-        return iterator.get_next(), len(self.file_path_list)
+        dataset = dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
+
+        '''
+        위에서 tf.random_shuffle을 쓰고 아래의 make_one_shot_iterator()을 쓰면 오류가 발생한다. - stateful 관련 오류가 뜨는데, 추 후 해결될 듯?
+        이유가 궁금하다면 아래의 웹사이트를 참고하자.
+        https://stackoverflow.com/questions/44374083/tensorflow-cannot-capture-a-stateful-node-by-value-in-tf-contrib-data-api
+        '''
+        # iterator = dataset.make_one_shot_iterator()
+
+        # tf.random_shuffle을 쓰려면 아래와 같이 make_initializable_iterator을 써야한다. - stack overflow 에서 찾음
+        iterator = dataset.make_initializable_iterator()
+
+        return iterator, iterator.get_next(), len(self.file_path_list)
 
     # 2. 텐서플로로 바로 읽어 들일 수 있는 방법
     def Using_TFRecordDataset(self):
         pass
-        # # 4. TFRecordDataset()사용해서 읽어오기 -> 저장하기 전에 셔플해서 저장하자
+        # 4. TFRecordDataset()사용해서 읽어오기 -> 저장하기 전에 셔플해서 저장하자
         # file_name = tf.placeholder(tf.string, shape=[None])
         # dataset = tf.data.TFRecordDataset(file_name)
         # dataset = dataset.map()  #
@@ -184,9 +235,14 @@ class Dataset(object):
 
 
 if __name__ == "__main__":
-
-    dataset = Dataset(batch_size=4, use_TFRecord=False, use_TrainDataset=True)
-    next_batch, data_length = dataset.iterator()
+    '''
+    Dataset 은 아래에서 하나 고르자
+    "cityscapes"
+    "facades"
+    "maps"
+    '''
+    dataset = Dataset(DB_name="cityscapes", batch_size=4, use_TFRecord=False, use_TrainDataset=True)
+    iterator, next_batch, data_length = dataset.iterator()
 
 else:
     print("Dataset imported")

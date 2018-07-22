@@ -23,7 +23,7 @@ def show_image(model_name, generated_image, column_size=10, row_size=10):
     plt.show()
 
 
-def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2",
+def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distance_loss_weight=1,
           optimizer_selection="Adam", learning_rate=0.001, training_epochs=100,
           batch_size=128, display_step=10, batch_norm=True):
     mnist = input_data.read_data_sets("", one_hot=True)
@@ -89,7 +89,7 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2",
                 fully_2 = tf.nn.relu(layer(fully_1, [500, 100], [100]))
             with tf.variable_scope("output"):
                 output = layer(fully_2, [100, 1], [1])
-        return output
+        return output , tf.nn.sigmoid(output)
 
     def training(cost, var_list, scope=None):
         if scope == None:
@@ -127,9 +127,9 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2",
             with tf.name_scope("generator"):
                 G = generator(noise=z, target=target)
             with tf.name_scope("discriminator"):
-                D_real = discriminator(x=x, target=target)
+                D_real, sigmoid_D_real = discriminator(x=x, target=target)
                 # scope.reuse_variables()
-                D_gene = discriminator(x=G, target=target)
+                D_gene, sigmoid_D_gene = discriminator(x=G, target=target)
 
         # Algorithjm
         var_D = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
@@ -147,6 +147,8 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2",
 
         if not TEST:
 
+            # Algorithjm - 속이고 속이는 과정
+
             with tf.name_scope("Discriminator_loss"):
                 # for discriminator
                 D_Loss = min_max_loss(logits=D_real, labels=tf.ones_like(D_real)) + min_max_loss(logits=D_gene,
@@ -156,17 +158,19 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2",
                 # for generator
                 G_Loss = min_max_loss(logits=D_gene, labels=tf.ones_like(D_gene))
 
-            # Algorithjm
             if distance_loss == "L1":
                 with tf.name_scope("L1_loss"):
-                    distance_loss = tf.losses.absolute_difference(x, G)
-                    G_Loss += distance_loss
+                    dis_loss = tf.losses.absolute_difference(x, G)
+                    tf.summary.scalar("{} Loss".format(distance_loss), dis_loss)
+                    G_Loss += tf.multiply(dis_loss, distance_loss_weight)
             elif distance_loss == "L2":
                 with tf.name_scope("L1_loss"):
-                    distance_loss = tf.losses.mean_squared_error(x, G)
-                    G_Loss += distance_loss
+                    dis_loss = tf.losses.mean_squared_error(x, G)
+                    tf.summary.scalar("{} Loss".format(distance_loss), dis_loss)
+                    G_Loss += tf.multiply(dis_loss, distance_loss_weight)
+            else:
+                dis_loss = tf.constant(value=0, dtype=tf.float32)
 
-            # Algorithjm
             with tf.name_scope("Discriminator_trainer"):
                 D_train_op = training(D_Loss, var_D, scope=None)
             with tf.name_scope("Generator_trainer"):
@@ -199,18 +203,35 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2",
 
                 Loss_D = 0.
                 Loss_G = 0
+                Loss_Distance = 0
+                #아래의 두 값이 각각 0.5 씩을 갖는게 가장 이상적이다.
+                sigmoid_D = 0
+                sigmoid_G = 0
+
                 total_batch = int(mnist.train.num_examples / batch_size)
                 for i in range(total_batch):
                     mbatch_x, mbatch_y = mnist.train.next_batch(batch_size)
                     noise = np.random.normal(loc=0.0, scale=1.0, size=(batch_size, noise_size))
                     feed_dict_all = {x: mbatch_x, target: mbatch_y, z: noise}
                     feed_dict_Generator = {x: mbatch_x, target: mbatch_y, z: noise}
-                    _, Discriminator_Loss = sess.run([D_train_op, D_Loss], feed_dict=feed_dict_all)
-                    _, Generator_Loss = sess.run([G_train_op, G_Loss], feed_dict=feed_dict_Generator)
+                    _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real], feed_dict=feed_dict_all)
+                    _, Generator_Loss, Distance_Loss, D_gene_simgoid = sess.run([G_train_op, G_Loss, dis_loss, sigmoid_D_gene],
+                                                                feed_dict=feed_dict_Generator)
                     Loss_D += (Discriminator_Loss / total_batch)
                     Loss_G += (Generator_Loss / total_batch)
+                    Loss_Distance += (Distance_Loss / total_batch)
+                    sigmoid_D += D_real_simgoid / total_batch
+                    sigmoid_G += D_gene_simgoid / total_batch
 
-                print("Discriminator Loss : {}, Generator Loss  : {}".format(Loss_D, Loss_G))
+                print("Discriminator mean output : {} / Generator mean output : {}".format(np.mean(sigmoid_D), np.mean(sigmoid_G)))
+
+                if distance_loss == "L1" or distance_loss=="L2":
+                    print(
+                        "Discriminator Loss : {} / Generator Loss  : {} / {} loss : {}".format(Loss_D, Loss_G, distance_loss,
+                                                                                             Loss_Distance))
+                else:
+                    print(
+                        "Discriminator Loss : {} / Generator Loss  : {}".format(Loss_D, Loss_G, distance_loss))
 
                 if epoch % display_step == 0:
                     summary_str = sess.run(summary_operation, feed_dict=feed_dict_all)
@@ -257,7 +278,7 @@ if __name__ == "__main__":
     참고 : distance_loss를 사용하지 않고, batch_norm을 쓰면 생성이 잘 안된다. 네트워크 구조를 간단히 하기위해
     fully connected network를 사용해서 그런지 batch_norm이 generator가 숫자이미지를 생성하려는 것을 방해하는 것 같다.
     '''
-    model(TEST=True, noise_size=128, targeting=True, distance_loss="L2",
+    model(TEST=True, noise_size=128, targeting=True, distance_loss="L2", distance_loss_weight=1,
           optimizer_selection="Adam", learning_rate=0.0002, training_epochs=100,
           batch_size=128,
           display_step=1, batch_norm=False)

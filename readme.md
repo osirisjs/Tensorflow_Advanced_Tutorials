@@ -66,7 +66,7 @@
     
 >## **코드 실행에 필요한 파이썬 모듈** 
 * Tensorflow-1.8.0 
-* numpy, random, collections
+* numpy, collections
 * matplotlib, scikit-learn, opencv-python
 * tqdm, os, glob, shutil, urllib, zipfile, tarfile
 
