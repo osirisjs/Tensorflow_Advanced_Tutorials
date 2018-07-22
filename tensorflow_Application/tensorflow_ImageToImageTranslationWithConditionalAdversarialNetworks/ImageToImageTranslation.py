@@ -6,7 +6,6 @@ from tqdm import tqdm
 
 from Dataset import *
 
-
 def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=None):
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -17,13 +16,11 @@ def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=N
     cv2.imwrite(os.path.join(save_path, '{}_{}.png'.format(model_name, named_images[0])), image)
     print("{}_{}.png saved in {} folder".format(model_name, named_images[0], save_path))
 
-
-def model(DB_name="maps", TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_selection="Adam",
+def model(DB_name="maps", use_TFRecord=False, TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_selection="Adam",
           beta1=0.9, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
           learning_rate=0.001, training_epochs=100,
           batch_size=4, display_step=1, Dropout_rate=0.5, using_moving_variable=False, save_path="translated_image"):
-
     if distance_loss == "L1":
         print("target generative GAN with L1 loss")
         model_name = "Pix2PixConditionalGAN_WithL1loss"
@@ -33,9 +30,9 @@ def model(DB_name="maps", TEST=True, distance_loss="L2", distance_loss_weight=10
     else:
         print("target generative GAN")
         model_name = "Pix2PixConditionalGAN"
-    
-    #DB 이름도 추가
-    model_name = DB_name+"_"+model_name
+
+    # DB 이름도 추가
+    model_name = DB_name + "_" + model_name
 
     if batch_size == 1:
         norm_selection = "instance_norm"
@@ -108,7 +105,7 @@ def model(DB_name="maps", TEST=True, distance_loss="L2", distance_loss_weight=10
         with tf.variable_scope("Generator"):
             with tf.variable_scope("encoder"):
                 with tf.variable_scope("conv1"):
-                    conv1 = conv2d(x, weight_shape=(4, 4, 3, 64), bias_shape=(64),
+                    conv1 = conv2d(x, weight_shape=(4, 4, np.shape(x)[-1], 64), bias_shape=(64),
                                    strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 128, 128, 64)
                 with tf.variable_scope("conv2"):
@@ -280,10 +277,13 @@ def model(DB_name="maps", TEST=True, distance_loss="L2", distance_loss_weight=10
     # print(tf.get_default_graph()) #기본그래프이다.
     JG_Graph = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
     with JG_Graph.as_default():  # as_default()는 JG_Graph를 기본그래프로 설정한다.
-        with tf.name_scope("feed_dict"):
-            x = tf.placeholder(dtype=tf.float32, shape=[None, 256, 256, 3])
-            target = tf.placeholder(dtype=tf.float32, shape=[None, 256, 256, 3])
-        # Algorithjm
+
+        # 데이터 전처리
+        dataset = Dataset(DB_name=DB_name, batch_size=batch_size, use_TFRecord=use_TFRecord, use_TrainDataset=not TEST)
+        iterator, next_batch, data_length = dataset.iterator()
+
+        # 알고리즘
+        x, target = next_batch
         with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
             with tf.name_scope("Generator"):
                 G = generator(x=x)
@@ -341,6 +341,7 @@ def model(DB_name="maps", TEST=True, distance_loss="L2", distance_loss_weight=10
 
     config = tf.ConfigProto(log_device_placement=False, allow_soft_placement=True)
     config.gpu_options.allow_growth = True
+
     with tf.Session(graph=JG_Graph, config=config) as sess:
         print("initializing!!!")
         sess.run(tf.global_variables_initializer())
@@ -359,31 +360,28 @@ def model(DB_name="maps", TEST=True, distance_loss="L2", distance_loss_weight=10
 
         if not TEST:
             summary_writer = tf.summary.FileWriter(os.path.join("tensorboard", model_name), sess.graph)
-            dataset = Dataset(DB_name=DB_name, batch_size=batch_size, use_TFRecord=False, use_TrainDataset=True)
-            iterator, next_batch, data_length = dataset.iterator()
             sess.run(iterator.initializer)
             for epoch in tqdm(range(1, training_epochs + 1)):
                 Loss_D = 0
                 Loss_G = 0
                 Loss_Distance = 0
-                # 아래의 두 값이 각각 0.5 씩을 갖는게 가장 이상적이다.
+
+                # 아래의 두 변수가 각각 0.5 씩의 값을 갖는게 가장 이상적이다.
                 sigmoid_D = 0
                 sigmoid_G = 0
+
                 total_batch = int(data_length / batch_size)
                 for i in range(total_batch):
-                    input, label = sess.run(next_batch)
-                    feed_dict_all = {x: input, target: label}
-                    feed_dict_Generator = {x: input, target: label}
-                    _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real],
-                                                                     feed_dict=feed_dict_all)
+                    _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real])
                     _, Generator_Loss, Distance_Loss, D_gene_simgoid = sess.run(
-                        [G_train_op, G_Loss, dis_loss, sigmoid_D_gene],
-                        feed_dict=feed_dict_Generator)
+                        [G_train_op, G_Loss, dis_loss, sigmoid_D_gene])
+
                     Loss_D += (Discriminator_Loss / total_batch)
                     Loss_G += (Generator_Loss / total_batch)
                     Loss_Distance += (Distance_Loss / total_batch)
                     sigmoid_D += D_real_simgoid / total_batch
                     sigmoid_G += D_gene_simgoid / total_batch
+                    print("{} epoch : {} batch running of {} total batch...".format(epoch, i, total_batch))
 
                 print("Discriminator mean output : {} / Generator mean output : {}".format(np.mean(sigmoid_D),
                                                                                            np.mean(sigmoid_G)))
@@ -395,10 +393,10 @@ def model(DB_name="maps", TEST=True, distance_loss="L2", distance_loss_weight=10
                                                                                                Loss_Distance))
                 else:
                     print(
-                        "Discriminator Loss : {} / Generator Loss  : {}".format(Loss_D, Loss_G, distance_loss))
+                        "Discriminator Loss : {} / Generator Loss  : {}".format(Loss_D, Loss_G))
 
                 if epoch % display_step == 0:
-                    summary_str = sess.run(summary_operation, feed_dict=feed_dict_all)
+                    summary_str = sess.run(summary_operation)
                     summary_writer.add_summary(summary_str, global_step=epoch)
 
                     save_all_model_path = os.path.join(model_name, 'All/')
@@ -418,27 +416,20 @@ def model(DB_name="maps", TEST=True, distance_loss="L2", distance_loss_weight=10
             print("Optimization Finished!")
 
         if TEST:
-            # 테스트셋 하나씩 처리하기.
-            dataset = Dataset(DB_name=DB_name, use_TFRecord=False, use_TrainDataset=False)
-            iterator, next_batch, data_length = dataset.iterator()
             sess.run(iterator.initializer)
             for i in range(data_length):
-                input, label = sess.run(next_batch)
-                feed_dict_Generator = {x: input, target: label}
-                translated_image = sess.run(G, feed_dict=feed_dict_Generator)
+                translated_image, (input, label) = sess.run([G, next_batch])
                 visualize(model_name=model_name, named_images=[i, input[0], label[0], translated_image[0]],
                           save_path=save_path)
 
-
 if __name__ == "__main__":
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-    model(DB_name="maps", TEST=False, distance_loss="L2", distance_loss_weight=100, optimizer_selection="Adam",
+    model(DB_name="maps", use_TFRecord=False, TEST=False, distance_loss="L2", distance_loss_weight=100, optimizer_selection="Adam",
           beta1=0.5, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
           # batch_size는 1~10사이로 하자
           learning_rate=0.0002, training_epochs=15, batch_size=4, display_step=1, Dropout_rate=0.5,
           using_moving_variable=False,  # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수
           save_path="translated_image")  # 학습 완료 후 변환된 이미지가 저장될 폴더
-
 else:
     print("model imported")

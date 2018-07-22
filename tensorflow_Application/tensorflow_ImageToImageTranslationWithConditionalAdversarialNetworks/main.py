@@ -2,17 +2,18 @@ import ImageToImageTranslation as pix2pix
 
 '''
 1. 설명
-데이터셋 다운로드는 - https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/ 에서 <cityscapes 데이터셋> 을 내려받음. 
+데이터셋 다운로드는 - https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/ 에서 <데이터셋> 을 내려 받자. 
 (origin -> segmentation)
-논문에서 추천하기를 hyper parameter 는 200 epoch, 1 ~ 10 batch size 정도, beta1 = 0.5, beta2=0.999, lr=0.0002
-입력크기 : 256x256x3
+논문에서 추천하는 hyperparameter 는 200 epoch, 1 ~ 10 batch size 정도, beta1 = 0.5, beta2=0.999, lr=0.0002
+
+입력 크기 : <256x256x3>
 optimizers_ selection = "Adam" or "RMSP" or "SGD"
 batch_size = 1 -> instance norm, batch_size > 1 -> batch_norm
 저자코드 따라함 - https://github.com/phillipi/pix2pix/blob/master/models.lua
 generator는 unet을 사용한다.
 discriminator의 구조는 PatchGAN 70X70을 사용한다. 
 
-Training, Test Generator의 동작 방식이 같다. - 드롭아웃 적용, batchnorm 이동평균 안씀 - 그래도 옵션으로 주자
+Training, Test Generator의 동작 방식이 같다. - 드롭아웃 적용, batchnorm 이동 평균 안씀 - 그래도 옵션으로 주자
 At inference time, we run the generator net in exactly
 the same manner as during the training phase. This differs
 from the usual protocol in that we apply dropout at test time,
@@ -42,15 +43,17 @@ each corresponding to a different patch in the generated image.
 '''
 
 '''
-Dataset 은 아래에서 하나 고르자
-"cityscapes"
-"facades"
-"maps"
+DB_name 은 아래에서 하나 고르자
+1. "cityscapes"
+2. "facades"
+3. "maps"
+
+use_TFRecord 은 데이터셋을 텐서플로우 표준 파일형식(TFRecord)으로 변환해서 사용할건지?
 '''
-pix2pix.model(DB_name="maps", TEST=True, distance_loss="L1", distance_loss_weight=1, optimizer_selection="Adam",
+pix2pix.model(TEST=False, DB_name="maps", use_TFRecord=False, distance_loss="L1", distance_loss_weight=1, optimizer_selection="Adam",
               beta1=0.5, beta2=0.999,  # for Adam optimizer
               decay=0.999, momentum=0.9,  # for RMSProp optimizer
               # batch_size는 1~10사이로 하자
-              learning_rate=0.0002, training_epochs=100, batch_size=4, display_step=1, Dropout_rate=0.5,
+              learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1, Dropout_rate=0.5,
               using_moving_variable=False,  # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수
               save_path="translated_image")  # 학습 완료 후 변환된 이미지가 저장될 폴더

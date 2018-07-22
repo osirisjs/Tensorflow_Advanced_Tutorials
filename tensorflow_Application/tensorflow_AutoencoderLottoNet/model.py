@@ -20,10 +20,9 @@ def DataLoader(batch_size=None):
     직접 batch, shuffle등의 코드를 구현할 필요가 없습니다.!!! 
     '''
     dataset = tf.data.Dataset.from_tensor_slices((data.reshape((-1, 6)), label))  # 데이터셋 가져오기
-    dataset = dataset.shuffle(100000).repeat().batch(batch_size)
+    dataset = dataset.shuffle(len(data)).repeat().batch(batch_size)
     iterator = dataset.make_one_shot_iterator()
     return iterator.get_next(), len(data) + 1
-
 
 def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training_epochs=10000, batch_size=50,
           display_step=1,
@@ -79,9 +78,10 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
         # print(tf.get_default_graph()) #기본그래프이다.
         JG = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
         with JG.as_default():  # as_default()는 JG_Graph를 기본그래프로 설정한다.
-            with tf.name_scope("feed_dict"):
-                x = tf.placeholder("float", [None, 6])
-                y = tf.placeholder("float", [None, 6])
+
+            next_batch, data_length = DataLoader(batch_size)
+            x, y = next_batch
+
             with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
                 with tf.name_scope("inference"):
                     output = inference(x)
@@ -101,7 +101,7 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
             '''
             WHY? 아래 3줄의 코드를 적어 주지 않고, 학습을 하게되면, TEST부분에서 tf.train.import_meta_graph를 사용할 때 오류가 난다. 
             -> 단순히 그래프를 가져오고 가중치를 복원하는 것만으로는 안된다. 세션을 실행할때 인수로 사용할 변수에 대한 
-            추가 접근을 제공하지 않기 때문에 아래와 같이 저장을 해놓은 뒤 TEST씨에 불러와서 다시 사용 해야한다.
+            추가 접근을 제공하지 않기 때문에 아래와 같이 저장을 해놓은 뒤 TEST 시에 불러와서 다시 사용 해야한다.
             '''
             tf.add_to_collection('x', x)
             tf.add_to_collection('output', output)
@@ -120,18 +120,16 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
                 saver.restore(sess, ckpt.model_checkpoint_path)
 
             summary_writer = tf.summary.FileWriter(os.path.join("tensorboard"), sess.graph)
-            next_batch, data_length = DataLoader(batch_size)
             for epoch in tqdm(range(training_epochs)):
                 avg_cost = 0.
                 total_batch = int(data_length / batch_size)
                 for i in range(total_batch):
-                    data, label = sess.run(next_batch)
-                    _, minibatch_cost = sess.run([train_operation, cost], feed_dict={x: data, y: label})
+                    _, minibatch_cost = sess.run([train_operation, cost])
                     avg_cost += (minibatch_cost / total_batch)
 
                 print("L2 cost : {}".format(avg_cost))
                 if epoch % display_step == 0:
-                    summary_str = sess.run(summary_operation, feed_dict={x: data, y: label})
+                    summary_str = sess.run(summary_operation)
                     summary_writer.add_summary(summary_str, global_step=sess.run(global_step))
                     if not os.path.exists(model_name):
                         os.makedirs(model_name)
