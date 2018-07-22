@@ -55,6 +55,17 @@ class Dataset(object):
         self.Dataset_Path = "Dataset"
         self.DB_name = DB_name
 
+        if DB_name == "cityscapes":
+            self.file_size = 103441232
+        elif DB_name == "facades":
+            self.file_size = 30168306
+        elif DB_name == "maps":
+            self.file_size = 250242400
+        else:
+            print("Please enter ""DB_name"" correctly")
+            print("The program is forcibly terminated.")
+            exit(0)
+
         self.use_TFRecord = use_TFRecord
         if self.use_TFRecord:
             self.Dataset_Path = "TFRecord" + self.Dataset_Path
@@ -68,20 +79,14 @@ class Dataset(object):
 
         # 학습용 데이터인지 테스트용 데이터인지 알려주는 변수
         self.use_TrainDataset = use_TrainDataset
+
         # Test Dataset은 무조건 하나씩 처리하자.
         if self.use_TrainDataset == False:
             self.batch_size = 1
         else:
             self.batch_size = batch_size
 
-        # 데이터셋 다운로드 하고, use_TFRecord 가 True 이면 TFRecord 파일로 쓴다.E
-        if DB_name == "cityscapes":
-            self.file_size = 103441232
-        elif DB_name == "facades":
-            self.file_size = 30168306
-        elif DB_name == "maps":
-            self.file_size = 250242400
-
+        # 데이터셋 다운로드 하고, use_TFRecord 가 True 이면 TFRecord 파일로 쓴다.
         self.Preparing_Learning_Dataset()
 
         if self.use_TrainDataset:
@@ -206,7 +211,7 @@ class Dataset(object):
 
         return input, label
 
-    # 1. 메모리에 다 올려버리는 방법
+    # 1. tf.data.Dataset.from_tensor_slices 을 사용하는 방법 - 파일명 리스트에서 이미지를 불러와서 처리하기
     def Using_TFBasicDataset(self):
 
         random_file_path_list_Tensor = tf.random_shuffle(tf.constant(self.file_path_list))  # tensor에 데이터셋 리스트를 담기
@@ -242,7 +247,7 @@ class Dataset(object):
 
         return iterator, iterator.get_next(), len(self.file_path_list)
 
-    # 2. 텐서플로로 바로 읽어 들일 수 있는 방법
+    # 2. tf.data.TFRecordDataset를 사용하는 방법 - TRRecord(이진 파일, 직렬화된 입력 데이터)라는 텐서플로우 표준 파일형식으로 저장된 파일을 불러와서 처리하기
     def Using_TFRecordDataset(self):
 
         # 4. TFRecordDataset()사용해서 읽어오기
