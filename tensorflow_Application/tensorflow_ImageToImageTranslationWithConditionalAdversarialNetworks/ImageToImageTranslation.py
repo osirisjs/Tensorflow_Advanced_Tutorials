@@ -100,7 +100,7 @@ def model(DB_name="maps", AtoB=True, use_TFRecord=False, TEST=True, distance_los
         with tf.variable_scope("Generator"):
             with tf.variable_scope("encoder"):
                 with tf.variable_scope("conv1"):
-                    conv1 = conv2d(x, weight_shape=(4, 4, np.shape(x)[-1], 64), bias_shape=(64),
+                    conv1 = conv2d(x, weight_shape=(4, 4, 3, 64), bias_shape=(64),
                                    strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 128, 128, 64)
                 with tf.variable_scope("conv2"):
@@ -215,7 +215,7 @@ def model(DB_name="maps", AtoB=True, use_TFRecord=False, TEST=True, distance_los
         with tf.variable_scope("Discriminator"):
             with tf.variable_scope("conv1"):
                 conv1 = tf.nn.leaky_relu(
-                    conv2d(conditional_input, weight_shape=(4, 4, np.shape(conditional_input)[-1], 64), bias_shape=(64),
+                    conv2d(conditional_input, weight_shape=(4, 4, 6, 64), bias_shape=(64),
                            strides=[1, 2, 2, 1], padding="SAME"), alpha=0.2)
                 # result shape = (batch_size, 128, 128, 64)
             with tf.variable_scope("conv2"):

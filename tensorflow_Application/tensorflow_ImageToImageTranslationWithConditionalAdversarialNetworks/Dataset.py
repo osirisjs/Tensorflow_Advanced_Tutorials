@@ -163,12 +163,14 @@ class Dataset(object):
                 with tf.python_io.TFRecordWriter(self.TFRecord_path) as writer:
                     for image_address in tqdm(self.file_path_list):
                         img = self.load_image(image_address)
-                        # 넘파이 배열의 값을 바이트 스트링으로 변환한다.
+                        '''넘파이 배열의 값을 바이트 스트링으로 변환한다.
+                        tf.train.BytesList, tf.train.Int64List, tf.train.FloatList 을 지원한다.
+                        '''
                         feature = \
                             {'image': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(img.tostring())])),
-                            'height': tf.train.Feature(int64_list=tf.train.Int64List(value=[img.shape()[0]])),
-                             'width': tf.train.Feature(int64_list=tf.train.Int64List(value=[img.shape()[1]])),
-                             'depth': tf.train.Feature(int64_list=tf.train.Int64List(value=[img.shape()[2]]))}
+                            'height': tf.train.Feature(int64_list=tf.train.Int64List(value=[img.shape[0]])),
+                             'width': tf.train.Feature(int64_list=tf.train.Int64List(value=[img.shape[1]])),
+                             'depth': tf.train.Feature(int64_list=tf.train.Int64List(value=[img.shape[2]]))}
                         example = tf.train.Example(features=tf.train.Features(feature=feature))
                         #파일로 쓰자.
                         writer.write(example.SerializeToString())
@@ -186,6 +188,14 @@ class Dataset(object):
             height = tf.cast(features['height'], tf.int32)
             width = tf.cast(features['width'], tf.int32)
             depth = tf.cast(features['depth'], tf.int32)
+            '''
+            tf.reshape 도 shape을 제대로 반환하진 못하나. tf.image.resize_images을 사용 할 수 있다.
+            -> 그러나 메인코드에서 np.shape(conditional_input)[-1] 같은 것을 사용할 수 없다.
+            with tf.variable_scope("conv1"):
+                conv1 = tf.nn.leaky_relu(
+                    conv2d(conditional_input, weight_shape=(4, 4, np.shape(conditional_input)[-1], 64), bias_shape=(64),
+                           strides=[1, 2, 2, 1], padding="SAME"), alpha=0.2)
+            '''
             img_decoded = tf.reshape(img_decoded_raw, [height, width, depth])
         else:
             # 1. 이미지를 읽고 나눈다.

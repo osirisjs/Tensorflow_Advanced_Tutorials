@@ -50,14 +50,13 @@ DB_name 은 아래에서 하나 고르자
 use_TFRecord 은 데이터셋을 텐서플로우 표준 파일형식(TFRecord)으로 변환해서 사용할건지?
 
 AtoB -> A : image,  B : segmentation
-
 AtoB = True  -> image -> segmentation
 AtoB = False -> segmentation -> image
 '''
-pix2pix.model(TEST=True, AtoB=False, DB_name="facades", use_TFRecord=False, distance_loss="L1", distance_loss_weight=1, optimizer_selection="Adam",
+pix2pix.model(TEST=False, AtoB=True, DB_name="cityscapes", use_TFRecord=True, distance_loss="L1", distance_loss_weight=100, optimizer_selection="Adam",
               beta1=0.5, beta2=0.999,  # for Adam optimizer
               decay=0.999, momentum=0.9,  # for RMSProp optimizer
               # batch_size는 1~10사이로 하자
-              learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1, Dropout_rate=0.5,
+              learning_rate=0.0002, training_epochs=100, batch_size=32, display_step=1, Dropout_rate=0.5,
               using_moving_variable=False,  # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수
               save_path="translated_image")  # 학습 완료 후 변환된 이미지가 저장될 폴더
