@@ -2,7 +2,9 @@ import glob
 import os
 import tarfile
 import urllib.request
-
+from tqdm import tqdm
+import cv2
+import numpy as np
 import tensorflow as tf
 
 '''
@@ -47,6 +49,7 @@ https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz
     -> tf.read_file, tf.random_crop, tf.image.~ API를 사용하여 논문에서 설명한대로 이미지를 전처리하고 학습가능한 형태로 만든다.
 '''
 
+
 class Dataset(object):
 
     def __init__(self, DB_name="maps", AtoB=False,
@@ -84,15 +87,15 @@ class Dataset(object):
         else:
             self.batch_size = batch_size
 
-        # 데이터셋 다운로드 하고, use_TFRecord 가 True 이면 TFRecord 파일로 쓴다.
-        self.Preparing_Learning_Dataset()
-
         if self.use_TrainDataset:
             self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "train/*"))
-            self.TFRecord_path = os.path.join(self.dataset_folder,'train.tfrecords')
+            self.TFRecord_path = os.path.join(self.dataset_folder, 'train', 'train.tfrecords')
         else:
             self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "val/*"))
-            self.TFRecord_path = os.path.join(self.dataset_folder,'val.tfrecords')
+            self.TFRecord_path = os.path.join(self.dataset_folder, 'val', 'val.tfrecords')
+
+        # 데이터셋 다운로드 하고, use_TFRecord 가 True 이면 TFRecord 파일로 쓴다.
+        self.Preparing_Learning_Dataset()
 
     def __repr__(self):
         return "Dataset Loader"
@@ -105,6 +108,13 @@ class Dataset(object):
             iterator, next_batch, db_length = self.Using_TFBasicDataset()
 
         return iterator, next_batch, db_length
+
+    # TFRecord를 만들기위해 이미지를 불러올때 쓴다.
+    def load_image(self, address):
+        img = cv2.imread(address)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = img.astype(np.float32)
+        return img
 
     def Preparing_Learning_Dataset(self):
 
@@ -145,20 +155,20 @@ class Dataset(object):
         이런 전처리는 미리 되있어야 한다.'''
 
         # http: // machinelearninguru.com / deep_learning / data_preparation / tfrecord / tfrecord.html 참고했다.
+        # TFRecord로 바꾸기
         if self.use_TFRecord:
             print("Using TFRecord")
-            if not os.path.isfile(self.TFRecord_path):
-                writer = tf.python_io.TFRecordWriter(self.TFRecord_path)
-                for i in range(len(train_addrs)):
-                    img = load_image(train_addrs[i])
-                    feature = {'image': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(img.tostring())]))}
-                    example = tf.train.Example(features=tf.train.Features(feature=feature))
-
-                    #
-                    writer.write(example.SerializeToString())
-                writer.close()
-            print("Making TFRecord Completed")
-
+            if not os.path.exists(self.TFRecord_path): # TFRecord가 존재하지 않은 경우
+                with tf.python_io.TFRecordWriter(self.TFRecord_path) as writer:
+                    for image_address in tqdm(self.file_path_list):
+                        img = self.load_image(image_address)
+                        feature = {'image': tf.train.Feature(
+                            bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(img.tostring())]))}
+                        example = tf.train.Example(features=tf.train.Features(feature=feature))
+                        writer.write(example.SerializeToString())
+                print("Making TFRecord is Completed")
+            else: #TFRecord가 존재할 경우
+                print("TFRecord file is exist")
 
     def _image_preprocessing(self, image):
 
@@ -266,9 +276,8 @@ class Dataset(object):
         dataset = dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
         # Using_TFBasicDataset와 형태를 맞추기 위함이다. -> 사실 여기선 dataset.make_one_shot_iterator()을 사용해도 된다.
         iterator = dataset.make_initializable_iterator()
-
         # tf.python_io.tf_record_iterator는 무엇인가 ? TFRecord 파일에서 레코드를 읽을 수 있는 iterator이다.
-        return iterator, iterator.get_next(), sum(1 for _ in tf.python_io.tf_record_iterator(self.file_path_list))
+        return iterator, iterator.get_next(), sum(1 for _ in tf.python_io.tf_record_iterator(self.TFRecord_path))
 
 
 if __name__ == "__main__":
@@ -278,7 +287,7 @@ if __name__ == "__main__":
     "facades"
     "maps"
     '''
-    dataset = Dataset(DB_name="maps", AtoB=False, batch_size=4, use_TFRecord=False, use_TrainDataset=True)
+    dataset = Dataset(DB_name="maps", AtoB=False, batch_size=4, use_TFRecord=True, use_TrainDataset=True)
     iterator, next_batch, data_length = dataset.iterator()
 
 else:

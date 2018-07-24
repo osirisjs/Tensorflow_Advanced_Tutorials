@@ -1,9 +1,4 @@
 import shutil
-
-import cv2
-import numpy as np
-from tqdm import tqdm
-
 from Dataset import *
 
 def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=None):
