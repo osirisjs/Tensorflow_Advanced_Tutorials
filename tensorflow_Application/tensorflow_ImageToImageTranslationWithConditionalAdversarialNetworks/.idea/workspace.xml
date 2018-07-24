@@ -11,20 +11,20 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="main.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="main.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="467">
-              <caret line="43" lean-forward="true" selection-start-line="43" selection-end-line="43" />
+            <state relative-caret-position="334">
+              <caret line="53" column="37" selection-start-line="53" selection-start-column="37" selection-end-line="53" selection-end-column="37" />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Dataset.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="Dataset.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Dataset.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="525">
-              <caret line="264" column="7" lean-forward="true" selection-start-line="264" selection-start-column="7" selection-end-line="264" selection-end-column="7" />
+            <state relative-caret-position="-688">
+              <caret line="167" column="13" lean-forward="true" selection-start-line="167" selection-start-column="13" selection-end-line="167" selection-end-column="13" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -32,23 +32,41 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="ImageToImageTranslation.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ImageToImageTranslation.py">
+      <file leaf-file-name="parsing_ops.py" pinned="false" current-in-tab="false">
+        <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/ops/parsing_ops.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="7011">
-              <caret line="375" column="71" selection-start-line="375" selection-start-column="71" selection-end-line="375" selection-end-column="71" />
-              <folding>
-                <element signature="e#0#13#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="13300">
+              <caret line="722" column="4" selection-start-line="722" selection-start-column="4" selection-end-line="722" selection-end-column="4" />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="session.py" pinned="false" current-in-tab="false">
-        <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/client/session.py">
+      <file leaf-file-name="compat.py" pinned="false" current-in-tab="false">
+        <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/util/compat.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="14592">
-              <caret line="789" column="6" selection-start-line="789" selection-start-column="6" selection-end-line="789" selection-end-column="6" />
+            <state relative-caret-position="684">
+              <caret line="47" column="4" selection-start-line="47" selection-start-column="4" selection-end-line="47" selection-end-column="4" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="gen_parsing_ops.py" pinned="false" current-in-tab="false">
+        <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/ops/gen_parsing_ops.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="5073">
+              <caret line="284" column="4" selection-start-line="284" selection-start-column="4" selection-end-line="284" selection-end-column="4" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="ImageToImageTranslation.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/ImageToImageTranslation.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="5225">
+              <caret line="281" column="21" selection-start-line="281" selection-start-column="21" selection-end-line="281" selection-end-column="21" />
+              <folding>
+                <element signature="e#0#13#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -80,12 +98,14 @@
       <find>dis_loss</find>
       <find>self.file_name</find>
       <find>self.dataset_name</find>
-      <find>self.Dataset_Path</find>
       <find>use_TFRecord</find>
       <find>self.file_path_list</find>
       <find>self.dataset_folder</find>
       <find>data_length</find>
       <find>self.file_size</find>
+      <find>use_TrainDataset</find>
+      <find>self.Dataset_Path</find>
+      <find>self.use_TFRecord</find>
     </findStrings>
   </component>
   <component name="IdeDocumentHistory">
@@ -100,18 +120,17 @@
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds">
-    <option name="x" value="2" />
-    <option name="y" value="421" />
-    <option name="width" value="1399" />
-    <option name="height" value="1073" />
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="-78" />
+    <option name="y" value="180" />
+    <option name="width" value="1400" />
+    <option name="height" value="1075" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -119,10 +138,22 @@
               <item name="tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks" type="b2602c69:ProjectViewProjectNode" />
               <item name="tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks" type="462c0819:PsiDirectoryNode" />
             </path>
+            <path>
+              <item name="tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks" type="b2602c69:ProjectViewProjectNode" />
+              <item name="tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks" type="462c0819:PsiDirectoryNode" />
+              <item name="Dataset" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks" type="b2602c69:ProjectViewProjectNode" />
+              <item name="tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks" type="462c0819:PsiDirectoryNode" />
+              <item name="Dataset" type="462c0819:PsiDirectoryNode" />
+              <item name="facades" type="462c0819:PsiDirectoryNode" />
+            </path>
           </expand>
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -222,19 +253,18 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="2" y="421" width="1399" height="1073" extended-state="0" />
-    <editor active="true" />
+    <frame x="-7" y="-7" width="1550" height="838" extended-state="6" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.498708" visible="true" weight="0.19030125" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.498708" visible="true" weight="0.19695969" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Event Log" order="10" sideWeight="0.3258427" side_tool="true" type="SLIDING" weight="0.5740741" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.6741573" weight="0.34188035" />
       <window_info anchor="bottom" id="Version Control" order="9" show_stripe_button="false" />
       <window_info anchor="bottom" id="Python Console" order="7" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.6741573" weight="0.537037" />
       <window_info id="Structure" order="1" sideWeight="0.502809" side_tool="true" weight="0.08856577" />
       <window_info anchor="bottom" id="Terminal" order="8" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.3986207" />
       <window_info id="Favorites" order="2" sideWeight="0.501292" side_tool="true" weight="0.08856577" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.3986207" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
@@ -279,15 +309,6 @@
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/main.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="76">
-          <caret line="4" selection-start-line="4" selection-end-line="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ImageToImageTranslationWithConditionalAdversarialNetworks.py" />
-    <entry file="file://$PROJECT_DIR$/ImageToImageTranslationWithConditionalAdversarialNetworks.py" />
     <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/training/adam.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="226">
@@ -578,8 +599,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/ImageToImageTranslation.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="7011">
-          <caret line="375" column="71" selection-start-line="375" selection-start-column="71" selection-end-line="375" selection-end-column="71" />
+        <state relative-caret-position="5225">
+          <caret line="281" column="21" selection-start-line="281" selection-start-column="21" selection-end-line="281" selection-end-column="21" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
           </folding>
@@ -588,25 +609,46 @@
     </entry>
     <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/lib/io/tf_record.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="49">
-          <caret line="57" column="4" selection-start-line="57" selection-start-column="4" selection-end-line="57" selection-end-column="4" />
+        <state relative-caret-position="-71">
+          <caret line="97" column="6" selection-start-line="97" selection-start-column="6" selection-end-line="97" selection-end-column="6" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Dataset.py">
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/ops/gen_parsing_ops.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="525">
-          <caret line="264" column="7" lean-forward="true" selection-start-line="264" selection-start-column="7" selection-end-line="264" selection-end-column="7" />
-          <folding>
-            <element signature="e#0#11#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="5073">
+          <caret line="284" column="4" selection-start-line="284" selection-start-column="4" selection-end-line="284" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/util/compat.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="684">
+          <caret line="47" column="4" selection-start-line="47" selection-start-column="4" selection-end-line="47" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/ops/parsing_ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="13300">
+          <caret line="722" column="4" selection-start-line="722" selection-start-column="4" selection-end-line="722" selection-end-column="4" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="467">
-          <caret line="43" lean-forward="true" selection-start-line="43" selection-end-line="43" />
+        <state relative-caret-position="334">
+          <caret line="53" column="37" selection-start-line="53" selection-start-column="37" selection-end-line="53" selection-end-column="37" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Dataset.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-688">
+          <caret line="167" column="13" lean-forward="true" selection-start-line="167" selection-start-column="13" selection-end-line="167" selection-end-column="13" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

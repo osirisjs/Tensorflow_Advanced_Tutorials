@@ -49,11 +49,12 @@ https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz
 
 class Dataset(object):
 
-    def __init__(self, DB_name="maps",
+    def __init__(self, DB_name="maps", AtoB=False,
                  batch_size=1, use_TFRecord=False, use_TrainDataset=False):
 
         self.Dataset_Path = "Dataset"
         self.DB_name = DB_name
+        self.AtoB = AtoB
 
         if DB_name == "cityscapes":
             self.file_size = 103441232
@@ -67,9 +68,6 @@ class Dataset(object):
             exit(0)
 
         self.use_TFRecord = use_TFRecord
-        if self.use_TFRecord:
-            self.Dataset_Path = "TFRecord" + self.Dataset_Path
-
         if not os.path.exists(self.Dataset_Path):
             os.makedirs(self.Dataset_Path)
 
@@ -90,15 +88,11 @@ class Dataset(object):
         self.Preparing_Learning_Dataset()
 
         if self.use_TrainDataset:
-            if self.use_TFRecord:
-                self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "train/*"))
-            else:
-                self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "train/*"))
+            self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "train/*"))
+            self.TFRecord_path = os.path.join(self.dataset_folder,'train.tfrecords')
         else:
-            if self.use_TFRecord:
-                self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "val/*"))
-            else:
-                self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "val/*"))
+            self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "val/*"))
+            self.TFRecord_path = os.path.join(self.dataset_folder,'val.tfrecords')
 
     def __repr__(self):
         return "Dataset Loader"
@@ -146,12 +140,25 @@ class Dataset(object):
         else:  # 데이터셋 폴더가 존재하면 print를 띄워주자
             print("{} Dataset Folder Exists".format(self.DB_name))
 
-        if self.use_TFRecord:
-            pass
         '''3. 데이터형식을 텐서플로의 기본 데이터 형식인 TFRecord 로 바꾼다.(대용량의 데이터를 처리하므로 TFRecord를 사용하는게 좋다.)
         # 바꾸기전에 데이터를 입력, 출력으로 나눈 다음 덩어리로 저장한다. -> Generate_Batch의 map함수에서 입력, 출력 값으로 분리해도 되지만
-        이런 전처리는 미리 되있어야 한다.
-        '''
+        이런 전처리는 미리 되있어야 한다.'''
+
+        # http: // machinelearninguru.com / deep_learning / data_preparation / tfrecord / tfrecord.html 참고했다.
+        if self.use_TFRecord:
+            print("Using TFRecord")
+            if not os.path.isfile(self.TFRecord_path):
+                writer = tf.python_io.TFRecordWriter(self.TFRecord_path)
+                for i in range(len(train_addrs)):
+                    img = load_image(train_addrs[i])
+                    feature = {'image': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(img.tostring())]))}
+                    example = tf.train.Example(features=tf.train.Features(feature=feature))
+
+                    #
+                    writer.write(example.SerializeToString())
+                writer.close()
+            print("Making TFRecord Completed")
+
 
     def _image_preprocessing(self, image):
 
@@ -209,7 +216,10 @@ class Dataset(object):
             input = Ip_random_crop
             label = lb_random_crop
 
-        return input, label
+        if self.AtoB:
+            return input, label
+        else:
+            return label, input
 
     # 1. tf.data.Dataset.from_tensor_slices 을 사용하는 방법 - 파일명 리스트에서 이미지를 불러와서 처리하기
     def Using_TFBasicDataset(self):
@@ -257,7 +267,7 @@ class Dataset(object):
         # Using_TFBasicDataset와 형태를 맞추기 위함이다. -> 사실 여기선 dataset.make_one_shot_iterator()을 사용해도 된다.
         iterator = dataset.make_initializable_iterator()
 
-        # tf.python_io.tf_record_iterator는 무엇인가 ?
+        # tf.python_io.tf_record_iterator는 무엇인가 ? TFRecord 파일에서 레코드를 읽을 수 있는 iterator이다.
         return iterator, iterator.get_next(), sum(1 for _ in tf.python_io.tf_record_iterator(self.file_path_list))
 
 
@@ -268,7 +278,7 @@ if __name__ == "__main__":
     "facades"
     "maps"
     '''
-    dataset = Dataset(DB_name="maps", batch_size=4, use_TFRecord=False, use_TrainDataset=True)
+    dataset = Dataset(DB_name="maps", AtoB=False, batch_size=4, use_TFRecord=False, use_TrainDataset=True)
     iterator, next_batch, data_length = dataset.iterator()
 
 else:

@@ -3,7 +3,6 @@ import ImageToImageTranslation as pix2pix
 '''
 1. 설명
 데이터셋 다운로드는 - https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/ 에서 <데이터셋> 을 내려 받자. 
-(origin -> segmentation)
 논문에서 추천하는 hyperparameter 는 200 epoch, 1 ~ 10 batch size 정도, beta1 = 0.5, beta2=0.999, lr=0.0002
 
 입력 크기 : <256x256x3>
@@ -44,13 +43,18 @@ each corresponding to a different patch in the generated image.
 
 '''
 DB_name 은 아래에서 하나 고르자
-1. "cityscapes"
+1. "cityscapes" - 요것만 segmentation -> image 생성이다.
 2. "facades"
 3. "maps"
 
 use_TFRecord 은 데이터셋을 텐서플로우 표준 파일형식(TFRecord)으로 변환해서 사용할건지?
+
+AtoB -> A : image,  B : segmentation
+
+AtoB = True  -> image -> segmentation
+AtoB = False -> segmentation -> image
 '''
-pix2pix.model(TEST=False, DB_name="maps", use_TFRecord=False, distance_loss="L1", distance_loss_weight=1, optimizer_selection="Adam",
+pix2pix.model(TEST=False, AtoB=False, DB_name="facades", use_TFRecord=False, distance_loss="L1", distance_loss_weight=1, optimizer_selection="Adam",
               beta1=0.5, beta2=0.999,  # for Adam optimizer
               decay=0.999, momentum=0.9,  # for RMSProp optimizer
               # batch_size는 1~10사이로 하자
