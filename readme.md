@@ -46,11 +46,11 @@
                 * 어떤 도메인의 이미지의 다른 도메인의 이미지로의 변환이라는 거룩한 목적을 위해 고안된 네트워크입니다. ConditionalGAN 과 UNET을 사용하여 네트워크 구성 합니다.
                 * 네트워크 구조 및 학습 방법은 논문에서 제시한 내용과 거의 같습니다.(Discriminator 구조인 PatchGAN 의 크기도 70X70 입니다.)
                 * 2가지의 데이터 전처리 방법
-                    1. 효율적인 데이터 전처리를 위해 tf.data.Dataset을 사용합니다.
-                    2. 더 효율적인 데이터 전처리를 위해 TFRecord 형식으로 데이터를 저장하고  tf.data.TFRecordDataset 를 사용합니다.(진행중)
+                    1. 효율적인 데이터 전처리를 위해 tf.data.Dataset을 사용할 수 있습니다..
+                    2. 더 효율적인 데이터 전처리를 위해 TFRecord 형식으로 데이터를 저장하고  tf.data.TFRecordDataset 를 사용할 수 있습니다.
 
             * [***Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks***]()
-                * 진행 예정
+                * 진행중
             
     * ### **Sequence Model With Variable Length Dataset**
         * ASAP 

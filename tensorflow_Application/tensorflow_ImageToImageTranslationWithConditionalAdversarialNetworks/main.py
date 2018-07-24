@@ -54,7 +54,7 @@ AtoB -> A : image,  B : segmentation
 AtoB = True  -> image -> segmentation
 AtoB = False -> segmentation -> image
 '''
-pix2pix.model(TEST=False, AtoB=False, DB_name="facades", use_TFRecord=False, distance_loss="L1", distance_loss_weight=1, optimizer_selection="Adam",
+pix2pix.model(TEST=True, AtoB=False, DB_name="facades", use_TFRecord=False, distance_loss="L1", distance_loss_weight=1, optimizer_selection="Adam",
               beta1=0.5, beta2=0.999,  # for Adam optimizer
               decay=0.999, momentum=0.9,  # for RMSProp optimizer
               # batch_size는 1~10사이로 하자

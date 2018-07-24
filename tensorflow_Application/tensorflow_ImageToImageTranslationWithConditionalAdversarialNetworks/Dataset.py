@@ -2,10 +2,11 @@ import glob
 import os
 import tarfile
 import urllib.request
-from tqdm import tqdm
+
 import cv2
 import numpy as np
 import tensorflow as tf
+from tqdm import tqdm
 
 '''
 데이터셋은 아래에서 받았다.
@@ -158,23 +159,34 @@ class Dataset(object):
         # TFRecord로 바꾸기
         if self.use_TFRecord:
             print("Using TFRecord")
-            if not os.path.exists(self.TFRecord_path): # TFRecord가 존재하지 않은 경우
+            if not os.path.exists(self.TFRecord_path):  # TFRecord가 존재하지 않은 경우
                 with tf.python_io.TFRecordWriter(self.TFRecord_path) as writer:
                     for image_address in tqdm(self.file_path_list):
                         img = self.load_image(image_address)
-                        feature = {'image': tf.train.Feature(
-                            bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(img.tostring())]))}
+                        # 넘파이 배열의 값을 바이트 스트링으로 변환한다.
+                        feature = \
+                            {'image': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(img.tostring())])),
+                            'height': tf.train.Feature(int64_list=tf.train.Int64List(value=[img.shape()[0]])),
+                             'width': tf.train.Feature(int64_list=tf.train.Int64List(value=[img.shape()[1]])),
+                             'depth': tf.train.Feature(int64_list=tf.train.Int64List(value=[img.shape()[2]]))}
                         example = tf.train.Example(features=tf.train.Features(feature=feature))
+                        #파일로 쓰자.
                         writer.write(example.SerializeToString())
                 print("Making TFRecord is Completed")
-            else: #TFRecord가 존재할 경우
+            else:  # TFRecord가 존재할 경우
                 print("TFRecord file is exist")
 
     def _image_preprocessing(self, image):
 
         if self.use_TFRecord:
-            features = tf.parse_single_example(image, features={'image': tf.FixedLenFeature([], tf.string)})
-            img_decoded = tf.decode_raw(features['image'], tf.float32)
+            #TFRecord 불러오기
+            features = tf.parse_single_example(image, features={'image': tf.FixedLenFeature([], tf.string), 'height' : tf.FixedLenFeature([], tf.int64),
+                                                                'width' : tf.FixedLenFeature([], tf.int64), 'depth' : tf.FixedLenFeature([], tf.int64)})
+            img_decoded_raw = tf.decode_raw(features['image'], tf.float32)
+            height = tf.cast(features['height'], tf.int32)
+            width = tf.cast(features['width'], tf.int32)
+            depth = tf.cast(features['depth'], tf.int32)
+            img_decoded = tf.reshape(img_decoded_raw, [height, width, depth])
         else:
             # 1. 이미지를 읽고 나눈다.
             img = tf.read_file(image)
