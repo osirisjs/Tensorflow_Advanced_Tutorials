@@ -28,9 +28,9 @@ def model(DB_name="maps", AtoB=True, use_TFRecord=False, TEST=True, distance_los
 
     # DB 이름도 추가
     if AtoB:
-        model_name = "AtoB"+model_name
+        model_name = "AtoB_"+model_name
     else:
-        model_name = "BtoA"+model_name
+        model_name = "BtoA_"+model_name
 
     model_name = DB_name + "_" + model_name
 

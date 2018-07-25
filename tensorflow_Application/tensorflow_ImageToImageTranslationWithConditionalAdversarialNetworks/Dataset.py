@@ -95,7 +95,7 @@ class Dataset(object):
                 os.makedirs(TRF_Record_train_path)
             self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "train/*"))
             if self.AtoB:
-                self.TFRecord_path = os.path.join(TRF_Record_train_path, "TFRecord_train", 'AtoB_train.tfrecords')
+                self.TFRecord_path = os.path.join(TRF_Record_train_path, 'AtoB_train.tfrecords')
             else:
                 self.TFRecord_path = os.path.join(TRF_Record_train_path, 'BtoA_train.tfrecords')
         else:
@@ -133,49 +133,46 @@ class Dataset(object):
 
     def Preparing_Learning_Dataset(self):
 
-        # 1. 데이터셋 폴더가 존재하지 않으면 다운로드(다운로드 시간이 굉장히 오래걸립니다.)
-        if not os.path.exists(self.dataset_folder):  # 데이터셋 폴더가 존재하지 않는 다면?
-            if not os.path.exists(self.dataset_targz):  # 데이터셋 압축 파일이 존재하지 않는 다면, 다운로드
-                print("{} Dataset Download required.".format(self.DB_name))
-                urllib.request.urlretrieve(self.url, self.dataset_targz)
-                print("{} Dataset Download Completed".format(self.DB_name))
+        # 1. 데이터셋 폴더가 존재하지 않으면 다운로드
+        if not os.path.exists(self.dataset_targz):  # 데이터셋 압축 파일이 존재하지 않는 다면, 다운로드
+            print("{} Dataset Download required.".format(self.DB_name))
+            urllib.request.urlretrieve(self.url, self.dataset_targz)
+            print("{} Dataset Download Completed".format(self.DB_name))
 
-            # "{self.DB_name}.tar.gz"의 파일의 크기는 미리 구해놓음. (미리 확인이 필요함.)
-            elif os.path.exists(self.dataset_targz) and os.path.getsize(
-                    self.dataset_targz) == self.file_size:  # 완전한 데이터셋 압축 파일이 존재한다면, 존재한다고 print를 띄워주자.
-                print("ALL {} Dataset Exists".format(self.DB_name))
+        # "{self.DB_name}.tar.gz"의 파일의 크기는 미리 구해놓음. (미리 확인이 필요함.)
+        elif os.path.exists(self.dataset_targz) and os.path.getsize(
+                self.dataset_targz) == self.file_size:  # 완전한 데이터셋 압축 파일이 존재한다면, 존재한다고 print를 띄워주자.
+            print("ALL {} Dataset Exists".format(self.DB_name))
 
-            else:  # 데이터셋 압축파일이 존재하긴 하는데, 제대로 다운로드 되지 않은 상태라면, 삭제하고 다시 다운로드
-                print(
-                    "{} Dataset size must be : {}, but now size is {}".format(self.DB_name, self.file_size,
-                                                                              os.path.getsize(self.dataset_targz)))
-                os.remove(self.dataset_targz)  # 완전하게 다운로드 되지 않은 기존의 데이터셋 압축 파일을 삭제
-                print("Deleting incomplete {} Dataset Completed".format(self.DB_name))
-                print("we need to download {} Dataset again".format(self.DB_name))
-                urllib.request.urlretrieve(self.url, self.dataset_targz)
-                print("{} Dataset Download Completed".format(self.DB_name))
+        else:  # 데이터셋 압축파일이 존재하긴 하는데, 제대로 다운로드 되지 않은 상태라면, 삭제하고 다시 다운로드
+            print(
+                "{} Dataset size must be : {}, but now size is {}".format(self.DB_name, self.file_size,
+                                                                          os.path.getsize(self.dataset_targz)))
+            os.remove(self.dataset_targz)  # 완전하게 다운로드 되지 않은 기존의 데이터셋 압축 파일을 삭제
+            print("Deleting incomplete {} Dataset Completed".format(self.DB_name))
+            print("we need to download {} Dataset again".format(self.DB_name))
+            urllib.request.urlretrieve(self.url, self.dataset_targz)
+            print("{} Dataset Download Completed".format(self.DB_name))
 
-            # 2. 완전한 압축파일이 다운로드 된 상태이므로 압축을 푼다
-            with tarfile.open(self.dataset_targz) as tar:
-                tar.extractall(path=self.Dataset_Path)
-            print("{} Unzip Completed".format(self.DB_name))
-            # 3. 용량차지 하므로, tar.gz 파일을 지워주자. -> 데이터셋 폴더가 존재하므로
-            # os.remove(self.file_name) # 하드디스크에 용량이 충분하다면, 굳이 필요 없는 코드다.
+        # 2. 완전한 압축파일이 다운로드 된 상태이므로 압축을 푼다
+        with tarfile.open(self.dataset_targz) as tar:
+            tar.extractall(path=self.Dataset_Path)
+        print("{} Unzip Completed".format(self.DB_name))
 
-        else:  # 데이터셋 폴더가 존재하면 print를 띄워주자
-            print("{} Dataset Folder Exists".format(self.DB_name))
+        # 3. 용량차지 하므로, tar.gz 파일을 지워주자. -> 데이터셋 폴더가 존재하므로
+        # os.remove(self.file_name) # 하드디스크에 용량이 충분하다면, 굳이 필요 없는 코드다.
 
-        '''3. 데이터형식을 텐서플로의 기본 데이터 형식인 TFRecord 로 바꾼다.(대용량의 데이터를 처리하므로 TFRecord를 사용하는게 좋다.)
+        '''4. 데이터형식을 텐서플로의 기본 데이터 형식인 TFRecord 로 바꾼다.(대용량의 데이터를 처리하므로 TFRecord를 사용하는게 좋다.)
         # 바꾸기전에 데이터를 입력, 출력으로 나눈 다음 덩어리로 저장한다. -> Generate_Batch의 map함수에서 입력, 출력 값으로 분리해도 되지만
         이런 전처리는 미리 되있어야 한다.'''
-
         # http: // machinelearninguru.com / deep_learning / data_preparation / tfrecord / tfrecord.html 참고했다.
         # TFRecord로 바꾸기
         if self.use_TFRecord:
             print("Using TFRecord")
-            if not os.path.exists(self.TFRecord_path):  # TFRecord가 존재하지 않은 경우
+            if not os.path.exists(self.TFRecord_path):  # TFRecord 파일이 존재하지 않은 경우
                 with tf.python_io.TFRecordWriter(self.TFRecord_path) as writer:
                     for image_address in tqdm(self.file_path_list):
+                        print("ininin")
                         img = self.load_image(image_address)
                         '''넘파이 배열의 값을 바이트 스트링으로 변환한다.
                         tf.train.BytesList, tf.train.Int64List, tf.train.FloatList 을 지원한다.
