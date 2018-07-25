@@ -6,6 +6,7 @@ import ImageToImageTranslation as pix2pix
 논문에서 추천하는 hyperparameter 는 200 epoch, 1 ~ 10 batch size 정도, beta1 = 0.5, beta2=0.999, lr=0.0002
 
 입력 크기 : <256x256x3>
+출력 크기 : <256x256x3>
 optimizers_ selection = "Adam" or "RMSP" or "SGD"
 batch_size = 1 -> instance norm, batch_size > 1 -> batch_norm
 저자코드 따라함 - https://github.com/phillipi/pix2pix/blob/master/models.lua
@@ -53,7 +54,7 @@ AtoB -> A : image,  B : segmentation
 AtoB = True  -> image -> segmentation
 AtoB = False -> segmentation -> image
 '''
-pix2pix.model(TEST=False, AtoB=True, DB_name="cityscapes", use_TFRecord=True, distance_loss="L1", distance_loss_weight=100, optimizer_selection="Adam",
+pix2pix.model(TEST=True, AtoB=True, DB_name="cityscapes", use_TFRecord=True, distance_loss="L1", distance_loss_weight=200, optimizer_selection="Adam",
               beta1=0.5, beta2=0.999,  # for Adam optimizer
               decay=0.999, momentum=0.9,  # for RMSProp optimizer
               # batch_size는 1~10사이로 하자

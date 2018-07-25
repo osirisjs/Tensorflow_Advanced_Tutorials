@@ -60,6 +60,7 @@ class Dataset(object):
         self.DB_name = DB_name
         self.AtoB = AtoB
 
+        # "{self.DB_name}.tar.gz"의 파일의 크기는 미리 구해놓음. (미리 확인이 필요함.)
         if DB_name == "cityscapes":
             self.file_size = 103441232
         elif DB_name == "facades":
@@ -89,11 +90,23 @@ class Dataset(object):
             self.batch_size = batch_size
 
         if self.use_TrainDataset:
+            TRF_Record_train_path = os.path.join(self.dataset_folder, "TFRecord_train")
+            if self.use_TFRecord and not os.path.exists(TRF_Record_train_path):
+                os.makedirs(TRF_Record_train_path)
             self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "train/*"))
-            self.TFRecord_path = os.path.join(self.dataset_folder, 'train', 'train.tfrecords')
+            if self.AtoB:
+                self.TFRecord_path = os.path.join(TRF_Record_train_path, "TFRecord_train", 'AtoB_train.tfrecords')
+            else:
+                self.TFRecord_path = os.path.join(TRF_Record_train_path, 'BtoA_train.tfrecords')
         else:
+            TRF_Record_val_path = os.path.join(self.dataset_folder, "TFRecord_val")
+            if self.use_TFRecord and not os.path.exists(TRF_Record_val_path):
+                os.makedirs(TRF_Record_val_path)
             self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "val/*"))
-            self.TFRecord_path = os.path.join(self.dataset_folder, 'val', 'val.tfrecords')
+            if self.AtoB:
+                self.TFRecord_path = os.path.join(TRF_Record_val_path, 'AtoB_val.tfrecords')
+            else:
+                self.TFRecord_path = os.path.join(TRF_Record_val_path, 'BtoA_val.tfrecords')
 
         # 데이터셋 다운로드 하고, use_TFRecord 가 True 이면 TFRecord 파일로 쓴다.
         self.Preparing_Learning_Dataset()
@@ -113,6 +126,7 @@ class Dataset(object):
     # TFRecord를 만들기위해 이미지를 불러올때 쓴다.
     def load_image(self, address):
         img = cv2.imread(address)
+        img = cv2.resize(img, (512, 256), interpolation=cv2.INTER_AREA)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.astype(np.float32)
         return img
@@ -167,12 +181,10 @@ class Dataset(object):
                         tf.train.BytesList, tf.train.Int64List, tf.train.FloatList 을 지원한다.
                         '''
                         feature = \
-                            {'image': tf.train.Feature(bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(img.tostring())])),
-                            'height': tf.train.Feature(int64_list=tf.train.Int64List(value=[img.shape[0]])),
-                             'width': tf.train.Feature(int64_list=tf.train.Int64List(value=[img.shape[1]])),
-                             'depth': tf.train.Feature(int64_list=tf.train.Int64List(value=[img.shape[2]]))}
+                            {'image': tf.train.Feature(
+                                bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(img.tostring())]))}
                         example = tf.train.Example(features=tf.train.Features(feature=feature))
-                        #파일로 쓰자.
+                        # 파일로 쓰자.
                         writer.write(example.SerializeToString())
                 print("Making TFRecord is Completed")
             else:  # TFRecord가 존재할 경우
@@ -181,24 +193,14 @@ class Dataset(object):
     def _image_preprocessing(self, image):
 
         if self.use_TFRecord:
-            #TFRecord 불러오기
-            features = tf.parse_single_example(image, features={'image': tf.FixedLenFeature([], tf.string), 'height' : tf.FixedLenFeature([], tf.int64),
-                                                                'width' : tf.FixedLenFeature([], tf.int64), 'depth' : tf.FixedLenFeature([], tf.int64)})
+            # 1. 이미지를 읽는다.
+            feature = {'image': tf.FixedLenFeature([], tf.string)}
+            features = tf.parse_single_example(image, features=feature)
             img_decoded_raw = tf.decode_raw(features['image'], tf.float32)
-            height = tf.cast(features['height'], tf.int32)
-            width = tf.cast(features['width'], tf.int32)
-            depth = tf.cast(features['depth'], tf.int32)
-            '''
-            tf.reshape 도 shape을 제대로 반환하진 못하나. tf.image.resize_images을 사용 할 수 있다.
-            -> 그러나 메인코드에서 np.shape(conditional_input)[-1] 같은 것을 사용할 수 없다.
-            with tf.variable_scope("conv1"):
-                conv1 = tf.nn.leaky_relu(
-                    conv2d(conditional_input, weight_shape=(4, 4, np.shape(conditional_input)[-1], 64), bias_shape=(64),
-                           strides=[1, 2, 2, 1], padding="SAME"), alpha=0.2)
-            '''
-            img_decoded = tf.reshape(img_decoded_raw, [height, width, depth])
+            # 2. 이미지 사이즈를 256 x 512 x 3으로 reshape 한다.
+            img_decoded = tf.reshape(img_decoded_raw, [256, 512, 3])
         else:
-            # 1. 이미지를 읽고 나눈다.
+            # 1. 이미지를 읽는다
             img = tf.read_file(image)
             '''
             img_decoded = tf.image.decode_image(img, channels=3) 
@@ -206,10 +208,9 @@ class Dataset(object):
             이게 gif, jpeg, png, bmp를 다 처리하려다 보니 생긴 문제점 같은데, 추후에 해결될 것이라고 믿는다...
             '''
             # 이미지가 다른 포맷일 경우, tf.image.decode_bmp, tf.image.decode_png 등을 사용.
-            img_decoded = tf.image.decode_jpeg(img, channels=3)  # jpeg 파일 읽기
-
-        # 2. 이미지 사이즈를 256 x 512으로 조정하고, 256x512 이미지를 256x256, 256x256 2개로 나눈다.
-        resized_img_decoded = tf.image.resize_images(images=img_decoded, size=(256, 512))
+            print("### The image must have the 'jpg' format. ###")
+            # 2. 이미지 사이즈를 256 x 512으로 조정한다.
+            img_decoded = tf.image.resize_images(tf.image.decode_jpeg(img, channels=3), size=(256, 512))  # jpeg 파일 읽기
         '''
         논문에서...
         Random jitter was applied by resizing the 256 x 256 input images to 286 x 286
@@ -223,9 +224,11 @@ class Dataset(object):
         target_height: Height of the result.
         target_width: Width of the result.
         '''
-        Ip = tf.image.crop_to_bounding_box(resized_img_decoded, offset_height=0, offset_width=0, target_height=256,
+
+        # 3. 256x512 이미지를 256x256, 256x256 2개로 나눈다.
+        Ip = tf.image.crop_to_bounding_box(img_decoded, offset_height=0, offset_width=0, target_height=256,
                                            target_width=256)
-        lb = tf.image.crop_to_bounding_box(resized_img_decoded, offset_height=0, offset_width=256, target_height=256,
+        lb = tf.image.crop_to_bounding_box(img_decoded, offset_height=0, offset_width=256, target_height=256,
                                            target_width=256)
 
         # 3. gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
@@ -293,7 +296,7 @@ class Dataset(object):
     def Using_TFRecordDataset(self):
 
         # 4. TFRecordDataset()사용해서 읽어오기
-        dataset = tf.data.TFRecordDataset(self.file_path_list)
+        dataset = tf.data.TFRecordDataset(self.TFRecord_path)
         dataset = dataset.map(self._image_preprocessing)
         dataset = dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
         # Using_TFBasicDataset와 형태를 맞추기 위함이다. -> 사실 여기선 dataset.make_one_shot_iterator()을 사용해도 된다.
