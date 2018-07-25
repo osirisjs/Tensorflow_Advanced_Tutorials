@@ -1,5 +1,7 @@
 import shutil
+
 from Dataset import *
+
 
 def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=None):
     if not os.path.exists(save_path):
@@ -11,7 +13,9 @@ def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=N
     cv2.imwrite(os.path.join(save_path, '{}_{}.png'.format(model_name, named_images[0])), image)
     print("{}_{}.png saved in {} folder".format(model_name, named_images[0], save_path))
 
-def model(DB_name="maps", AtoB=True, use_TFRecord=False, TEST=True, distance_loss="L2", distance_loss_weight=100, optimizer_selection="Adam",
+
+def model(DB_name="maps", AtoB=True, use_TFRecord=False, TEST=True, distance_loss="L2", distance_loss_weight=100,
+          optimizer_selection="Adam",
           beta1=0.9, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
           learning_rate=0.001, training_epochs=100,
@@ -28,9 +32,9 @@ def model(DB_name="maps", AtoB=True, use_TFRecord=False, TEST=True, distance_los
 
     # DB 이름도 추가
     if AtoB:
-        model_name = "AtoB_"+model_name
+        model_name = "AtoB_" + model_name
     else:
-        model_name = "BtoA_"+model_name
+        model_name = "BtoA_" + model_name
 
     model_name = DB_name + "_" + model_name
 
@@ -279,7 +283,8 @@ def model(DB_name="maps", AtoB=True, use_TFRecord=False, TEST=True, distance_los
     with JG_Graph.as_default():  # as_default()는 JG_Graph를 기본그래프로 설정한다.
 
         # 데이터 전처리
-        dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TFRecord=use_TFRecord, use_TrainDataset=not TEST)
+        dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TFRecord=use_TFRecord,
+                          use_TrainDataset=not TEST)
         iterator, next_batch, data_length = dataset.iterator()
 
         # 알고리즘
@@ -422,9 +427,11 @@ def model(DB_name="maps", AtoB=True, use_TFRecord=False, TEST=True, distance_los
                 visualize(model_name=model_name, named_images=[i, input[0], label[0], translated_image[0]],
                           save_path=save_path)
 
+
 if __name__ == "__main__":
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-    model(DB_name="maps", AtoB=True, use_TFRecord=False, TEST=False, distance_loss="L2", distance_loss_weight=100, optimizer_selection="Adam",
+    model(DB_name="maps", AtoB=True, use_TFRecord=False, TEST=False, distance_loss="L2", distance_loss_weight=100,
+          optimizer_selection="Adam",
           beta1=0.5, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
           # batch_size는 1~10사이로 하자
