@@ -40,8 +40,10 @@ def model(DB_name="maps", AtoB=True, use_TFRecord=False, TEST=True, distance_los
 
     if batch_size == 1:
         norm_selection = "instance_norm"
+        model_name = "instancenorm_"+model_name
     else:
         norm_selection = "batch_norm"
+        model_name = "batchnorm_"+model_name
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
