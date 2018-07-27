@@ -50,7 +50,6 @@ https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz
     -> tf.read_file, tf.random_crop, tf.image.~ API를 사용하여 논문에서 설명한대로 이미지를 전처리하고 학습가능한 형태로 만든다.
 '''
 
-
 class Dataset(object):
 
     def __init__(self, DB_name="maps", AtoB=False,
