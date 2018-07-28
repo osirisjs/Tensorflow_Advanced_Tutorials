@@ -20,7 +20,7 @@ def DataLoader(batch_size=None):
     직접 batch, shuffle등의 코드를 구현할 필요가 없습니다.!!! 
     '''
     dataset = tf.data.Dataset.from_tensor_slices((data.reshape((-1, 6)), label))  # 데이터셋 가져오기
-    dataset = dataset.shuffle(len(data)).repeat().batch(batch_size)
+    dataset = dataset.shuffle(len(data)).repeat().batch(batch_size) # repeat() -> 계속 반복, batch() -> batchsize 지정
     iterator = dataset.make_one_shot_iterator()
     return iterator.get_next(), len(data) + 1
 
@@ -80,6 +80,8 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
         with JG.as_default():  # as_default()는 JG_Graph를 기본그래프로 설정한다.
 
             next_batch, data_length = DataLoader(batch_size)
+            # x, y 도 tensor 이다.
+            # tf.data.Dataset을 사용함으로써 graph의 일부분이 되었다. -> feed_dict 으로 값을 넣어줄 필요가 없다.
             x, y = next_batch
 
             with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
