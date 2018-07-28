@@ -37,8 +37,8 @@
             * [***LottoNet***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_AutoencoderLottoNet)
                 * 로또 당첨의 꿈을 이루고자 전방향 신경망을 사용해 단순히 로또 번호를 예측하는 코드입니다.
                 * 네트워크 Graph 구조를 담은 meta 파일을 저장하고 불러오는 코드가 포함되어 있습니다. tensorflow.add_to_collection, tensorflow.get_collection 를 사용합니다.
-                * tf.data.Dataset를 사용합니다. 이 API는 자신의 데이터를 학습네트워크에 적합한 형태로 쉽게 처리 할 수 있게 합니다.
-                    * 텐서플로우와 같은 머신러닝 프레임워크를 처음 접하는 경우, 저를 포함한 대부분의 사람들은 프레임워크 자체에서 처리되어 제공되는 MNIST, Cifar 같은 Toy 데이터들로 알고리즘 및 프레임워크 학습을 시작했을 것이라고 생각합니다. 이렇게 따로 손볼 필요가 없을 정도로 잘 처리되어 제공되는 데이터들을 가지고 여러가지 알고리즘을 적용해보며 놀다가, 갑자기 이런 생각이 듭니다. '나'만의 데이터를 사용해서 어떤 네트워크를 학습시켜보고 싶은데? 어떻게 처리 해야하지? batch, shuffle 등등을 언제 구현하고 앉아 있지? 이 질문에 대한 답은 'tf.data.Dataset'에 있습니다.
+                * tf.data.Dataset를 사용합니다. 자신의 데이터를 학습 네트워크에 적합한 형태로 쉽게 처리 할 수 있게 도와주는 API입니다.
+                    * Tensorflow를 막 처음 시작하는 대부분의 사람은 Tensorflow 자체에서 처리되어 제공되는 MNIST, CIFAR 같은 Toy 데이터들을 사용해서 여러 가지 학습 알고리즘들을 공부하게 됩니다. 어느 정도 학습이 진행되면 '나'만의 데이터를 사용해서 어떤 네트워크를 학습시켜보고 싶은데... 어떻게 처리 해야 하지? 조금 쉽게 하는 방법 없나? 라는 질문을 하게 됩니다. 이 질문에 대한 답이 'tf.data.Dataset'에 있습니다.
             * [***Neural Style***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_NeuralStyle)
                 * 내 사진을 예술 작품으로 바꿔주는 유명한 논문인 "A Neural Algorithm of Artistic Style" 의 구현 입니다.
             * [***Word2Vector SkipGram With TSNE***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_Word2Vector_SkipGram_WithTSNE)
