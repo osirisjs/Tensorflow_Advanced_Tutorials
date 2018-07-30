@@ -53,7 +53,7 @@
                     2. 더 효율적인 데이터 전처리를 위해 TFRecord 형식으로 데이터를 저장하고  tf.data.TFRecordDataset 를 사용할 수 있습니다.
             
             * [***Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks***]()
-                * 진행중
+                * 진행중 - 논문을 세세하게 읽는중
                 * Image To Image Translation With Conditional Adversarial Newort을 학습 시키기 위해선 입력과 출력이 한쌍인 데이터가 필요했습니다. 그러나 이 논문에서 제시한 방법은 입력과 출력이 쌍일 필요가 없습니다.
                 * 네트워크 구조 및 학습 방법은 논문에서 제시한 내용과 거의 같습니다.
                 * 2가지의 데이터 전처리 방법  
