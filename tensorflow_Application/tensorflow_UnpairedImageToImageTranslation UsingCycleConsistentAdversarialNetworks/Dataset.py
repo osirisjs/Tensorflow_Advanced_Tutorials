@@ -27,7 +27,7 @@ https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz
 
 3. tf.data.TFRecordDataset를 사용하여 TRRecord(이진 파일, 직렬화된 입력 데이터)라는 텐서플로우 표준 파일형식으로 저장된 파일을 불러온 다음
   그래프에 올려버리는 방법 - 아래의 두번째 방법
-  
+
 4. 멀티스레드 사용방법 - 이것은 공부가 더 필요하다. - 추 후 cycleGAN 을 구현 할시 공부해서 구현 해보자 
 
 <첫번째 방법>은 원래의 데이터파일을 불러와서 학습 한다.
@@ -49,6 +49,7 @@ https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz
 2. tf.data.Dataset API 및 여러가지 유용한 텐서플로우 API 를 사용하여 학습이 가능한 데이터 형태로 만든다. 
     -> tf.read_file, tf.random_crop, tf.image.~ API를 사용하여 논문에서 설명한대로 이미지를 전처리하고 학습가능한 형태로 만든다.
 '''
+
 
 class Dataset(object):
 

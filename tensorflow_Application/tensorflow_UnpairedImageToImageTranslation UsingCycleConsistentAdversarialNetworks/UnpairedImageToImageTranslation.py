@@ -1,7 +1,5 @@
 import shutil
-
 from Dataset import *
-
 
 def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=None):
     if not os.path.exists(save_path):
@@ -14,12 +12,13 @@ def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=N
     print("{}_{}.png saved in {} folder".format(model_name, named_images[0], save_path))
 
 
-def model(DB_name="maps", AtoB=True, use_TFRecord=False, TEST=True, distance_loss="L2", distance_loss_weight=100,
+def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_loss="L1", distance_loss_weight=100,
           optimizer_selection="Adam",
           beta1=0.9, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
           learning_rate=0.001, training_epochs=100,
           batch_size=4, display_step=1, Dropout_rate=0.5, using_moving_variable=False, save_path="translated_image"):
+
     if distance_loss == "L1":
         print("target generative GAN with L1 loss")
         model_name = "Pix2PixConditionalGAN_WithL1loss"
@@ -54,7 +53,7 @@ def model(DB_name="maps", AtoB=True, use_TFRecord=False, TEST=True, distance_los
                strides=[1, 1, 1, 1], padding="VALID"):
 
         # weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
-        weight_init = tf.truncated_normal_initializer(stddev=0.02)
+        weight_init = tf.random_normal_initializer(mean=0.0, stddev=0.02)
         bias_init = tf.constant_initializer(value=0)
 
         weight_decay = tf.constant(0, dtype=tf.float32)
@@ -100,7 +99,7 @@ def model(DB_name="maps", AtoB=True, use_TFRecord=False, TEST=True, distance_los
             return conv_out #tf.nn.bias_add(conv_out, b)
 
     # 유넷 - U-NET
-    def generator(x=None):
+    def generator(images=None, name="G_generator"):
 
         '''encoder의 활성화 함수는 모두 leaky_relu이며, decoder의 활성화 함수는 모두 relu이다.
         encoder의 첫번째 층에는 batch_norm이 적용 안된다.
@@ -108,10 +107,10 @@ def model(DB_name="maps", AtoB=True, use_TFRecord=False, TEST=True, distance_los
         총 16개의 층이다.
         '''
 
-        with tf.variable_scope("Generator"):
+        with tf.variable_scope(name):
             with tf.variable_scope("encoder"):
                 with tf.variable_scope("conv1"):
-                    conv1 = conv2d(x, weight_shape=(4, 4, np.shape(x)[-1], 64), bias_shape=(64),
+                    conv1 = conv2d(images, weight_shape=(4, 4, np.shape(images)[-1], 64), bias_shape=(64),
                                    strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 128, 128, 64)
                 with tf.variable_scope("conv2"):
@@ -290,10 +289,12 @@ def model(DB_name="maps", AtoB=True, use_TFRecord=False, TEST=True, distance_los
         iterator, next_batch, data_length = dataset.iterator()
 
         # 알고리즘
-        x, target = next_batch
+        x, y = next_batch
         with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
-            with tf.name_scope("Generator"):
-                G = generator(x=x)
+            with tf.name_scope("G_Generator"):
+                G = generator(images=x, name="G_generator")
+            with tf.name_scope("F_generator"):
+                F = generator(images=y, name="F_generator")
             with tf.name_scope("Discriminator"):
                 D_real, sigmoid_D_real = discriminator(input=target, condition=x)
                 # scope.reuse_variables()
@@ -432,13 +433,13 @@ def model(DB_name="maps", AtoB=True, use_TFRecord=False, TEST=True, distance_los
 
 if __name__ == "__main__":
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-    model(DB_name="maps", AtoB=True, use_TFRecord=False, TEST=False, distance_loss="L2", distance_loss_weight=100,
-          optimizer_selection="Adam",
-          beta1=0.5, beta2=0.999,  # for Adam optimizer
-          decay=0.999, momentum=0.9,  # for RMSProp optimizer
-          # batch_size는 1~10사이로 하자
-          learning_rate=0.0002, training_epochs=15, batch_size=4, display_step=1, Dropout_rate=0.5,
-          using_moving_variable=False,  # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수
-          save_path="translated_image")  # 학습 완료 후 변환된 이미지가 저장될 폴더
+    model(TEST=False, AtoB=True, DB_name="maps", use_TFRecord=True, distance_loss="L1",
+                  distance_loss_weight=100, optimizer_selection="Adam",
+                  beta1=0.5, beta2=0.999,  # for Adam optimizer
+                  decay=0.999, momentum=0.9,  # for RMSProp optimizer
+                  # batch_size는 1~10사이로 하자
+                  learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1, Dropout_rate=0.5,
+                  using_moving_variable=False,  # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수
+                  save_path="translated_image")  # 학습 완료 후 변환된 이미지가 저장될 폴더
 else:
     print("model imported")
