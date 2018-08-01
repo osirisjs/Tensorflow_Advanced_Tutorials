@@ -59,7 +59,7 @@ AtoB = False -> segmentation -> image
 local_device_protos = device_lib.list_local_devices()
 GPU_List = [x.name for x in local_device_protos if x.device_type == 'GPU']
 # gpu_number_list = []
-print("# 사용 가능한 GPU : {}대".format(len(GPU_List)))
+print("# 사용 가능한 GPU : {} 대".format(len(GPU_List)))
 print("# 사용 가능한 GPU 번호 :", end="")
 for i, GL in enumerate(GPU_List):
     num = GL.split(":")[-1]
@@ -74,7 +74,7 @@ print("<<< 경우의 수 1 : GPU가 여러대 설치 / 통합개발 환경에서
 print("<<< 경우의 수 2 : GPU가 여러대 설치 / 터미널 창에서 실행 / GPU 번호 지정 원하는 경우  -> CUDA_VISIBLE_DEVICES = 0(gpu 번호) python main,py 을 터미널 창에 적고 ENTER >>>")
 print("<<< CPU만 사용하고 싶다면? '현재 사용 가능한 GPU 번호' 에 없는 번호('-1' 이라던지)를 적어 넣으면 됨 >>>\n")
 
-pix2pix.model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_loss="L1",
+pix2pix.model(TEST=False, AtoB= True, DB_name="facades", use_TFRecord=True, distance_loss="L1",
               distance_loss_weight=100, optimizer_selection="Adam",
               beta1=0.5, beta2=0.999,  # for Adam optimizer
               decay=0.999, momentum=0.9,  # for RMSProp optimizer

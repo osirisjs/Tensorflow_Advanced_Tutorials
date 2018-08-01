@@ -12,28 +12,23 @@ def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=N
     print("{}_{}.png saved in {} folder".format(model_name, named_images[0], save_path))
 
 
-def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_loss="L1", distance_loss_weight=100,
+def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, cycle_consistency_loss="L1", cycle_consistency_loss_weight=10,
           optimizer_selection="Adam",
           beta1=0.9, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
           learning_rate=0.001, training_epochs=100,
           batch_size=4, display_step=1, Dropout_rate=0.5, using_moving_variable=False, save_path="translated_image"):
 
-    if distance_loss == "L1":
-        print("target generative GAN with L1 loss")
-        model_name = "Pix2PixConditionalGAN_WithL1loss"
-    elif distance_loss == "L2":
-        print("target generative GAN with L1 loss")
-        model_name = "Pix2PixConditionalGAN_WithL2loss"
-    else:
-        print("target generative GAN")
-        model_name = "Pix2PixConditionalGAN"
+    print("CycleGAN")
+    model_name = "CycleGAN"
 
-    # DB 이름도 추가
+    # # DB 이름도 추가
     if AtoB:
         model_name = "AtoB_" + model_name
+        save_path =  "AtoB_" + save_path
     else:
         model_name = "BtoA_" + model_name
+        save_path =  "BtoA_" + save_path
 
     model_name = DB_name + "_" + model_name
 
@@ -48,7 +43,6 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
         if os.path.exists("tensorboard/{}".format(model_name)):
             shutil.rmtree("tensorboard/{}".format(model_name))
 
-    # stride? -> [1, 2, 2, 1] = [one image, width, height, one channel]
     def conv2d(input, weight_shape=None, bias_shape=None, norm_selection=None,
                strides=[1, 1, 1, 1], padding="VALID"):
 
@@ -63,7 +57,6 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
         conv_out = tf.nn.conv2d(input, w, strides=strides, padding=padding)
 
-        # batch_norm을 적용하면 bias를 안써도 된다곤 하지만, 나는 썼다.
         if norm_selection == "batch_norm":
             if TEST and using_moving_variable:
                 return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=not TEST)
@@ -72,7 +65,7 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
         elif norm_selection == "instance_norm":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
         else:
-            return conv_out #tf.nn.bias_add(conv_out, b)
+            return tf.nn.bias_add(conv_out, b)
 
     def conv2d_transpose(input, output_shape=None, weight_shape=None, bias_shape=None, norm_selection=None,
                          strides=[1, 1, 1, 1], padding="VALID"):
@@ -87,7 +80,6 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
 
         conv_out = tf.nn.conv2d_transpose(input, w, output_shape=output_shape, strides=strides, padding=padding)
 
-        # batch_norm을 적용하면 bias를 안써도 된다곤 하지만, 나는 썼다.
         if norm_selection == "batch_norm":
             if TEST and using_moving_variable:
                 return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=not TEST)
@@ -96,9 +88,9 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
         elif norm_selection == "instance_norm":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
         else:
-            return conv_out #tf.nn.bias_add(conv_out, b)
+            return tf.nn.bias_add(conv_out, b)
 
-    # 유넷 - U-NET
+    # Residual Net
     def generator(images=None, name="G_generator"):
 
         '''encoder의 활성화 함수는 모두 leaky_relu이며, decoder의 활성화 함수는 모두 relu이다.
@@ -215,17 +207,16 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
         return output
 
     # PatchGAN
-    def discriminator(input=None, condition=None):
+    def discriminator(input=None, name=None):
 
         '''discriminator의 활성화 함수는 모두 leaky_relu이다.
         genertor와 마찬가지로 첫번째 층에는 batch_norm을 적용 안한다.
 
         왜 이런 구조를 사용? 아래의 구조 출력단의 ReceptiveField 크기를 구해보면 70이다.(ReceptiveFieldArithmetic/rf.py 에서 구해볼 수 있다.)'''
-        conditional_input = tf.concat([input, condition], axis=-1)
-        with tf.variable_scope("Discriminator"):
+        with tf.variable_scope(name):
             with tf.variable_scope("conv1"):
                 conv1 = tf.nn.leaky_relu(
-                    conv2d(conditional_input, weight_shape=(4, 4, np.shape(conditional_input)[-1], 64), bias_shape=(64),
+                    conv2d(input, weight_shape=(4, 4, np.shape(input)[-1], 64), bias_shape=(64),
                            strides=[1, 2, 2, 1], padding="SAME"), alpha=0.2)
                 # result shape = (batch_size, 128, 128, 64)
             with tf.variable_scope("conv2"):
@@ -289,30 +280,48 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
         iterator, next_batch, data_length = dataset.iterator()
 
         # 알고리즘
-        x, y = next_batch
+        A, B = next_batch
         with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
-            with tf.name_scope("G_Generator"):
-                G = generator(images=x, name="G_generator")
-            with tf.name_scope("F_generator"):
-                F = generator(images=y, name="F_generator")
-            with tf.name_scope("Discriminator"):
-                D_real, sigmoid_D_real = discriminator(input=target, condition=x)
-                # scope.reuse_variables()
-                D_gene, sigmoid_D_gene = discriminator(input=G, condition=x)
 
-        var_D = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                  scope='shared_variables/Discriminator')
+            with tf.name_scope("AtoB_Generator"):
+                AtoB_gene = generator(images=A, name="AtoB_generator")
+
+            with tf.name_scope("BtoA_generator"):
+                BtoA_gene = generator(images=B, name="BtoA_generator")
+
+            with tf.name_scope("AtoB_Discriminator"):
+                AtoB_Dreal, AtoB_sigmoid_Dreal = discriminator(input=B, name = "AtoB_Discriminator")
+                # scope.reuse_variables()
+                AtoB_Dgene, AtoB_sigmoid_Dgene = discriminator(input=AtoB_gene, name = "AtoB_Discriminator")
+
+            with tf.name_scope("BtoA_Discriminator"):
+                BtoA_Dreal, BtoA_sigmoid_Dreal = discriminator(input=A, name = "BtoA_Discriminator")
+                # scope.reuse_variables()
+                BtoA_Dgene, BtoA_sigmoid_gene = discriminator(input=BtoA_gene, name = "BtoA_Discriminator")
+
+        AtoB_varD = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                  scope='shared_variables/AtoB_Discriminator')
+
+        BtoA_varD = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                  scope='BtoA_Discriminator')
 
         # set으로 중복 제거 하고, 다시 list로 바꾼다.
-        var_G = list(set(np.concatenate(
-            (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/Generator'),
-             tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/Generator')),
+        AtoB_varG = list(set(np.concatenate(
+            (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/AtoB_generator'),
+             tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/AtoB_generator')),
+            axis=0)))
+
+        # set으로 중복 제거 하고, 다시 list로 바꾼다.
+        BtoA_varG = list(set(np.concatenate(
+            (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/BtoA_generator'),
+             tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/BtoA_generator')),
             axis=0)))
 
         # Adam optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
         with tf.name_scope("saver"):
             saver_all = tf.train.Saver(var_list=tf.global_variables(), max_to_keep=3)
-            saver_generator = tf.train.Saver(var_list=var_G, max_to_keep=3)
+            saver_AtoB_generator = tf.train.Saver(var_list=AtoB_varG, max_to_keep=3)
+            saver_BtoA_generator = tf.train.Saver(var_list=BtoA_varG, max_to_keep=3)
 
         if not TEST:
 
@@ -424,11 +433,14 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
             print("Optimization Finished!")
 
         if TEST:
+            if AtoB:
+                selection=0
+            else:
+                selection=1
             sess.run(iterator.initializer)
             for i in range(data_length):
-                translated_image, (input, label) = sess.run([G, next_batch])
-                visualize(model_name=model_name, named_images=[i, input[0], label[0], translated_image[0]],
-                          save_path=save_path)
+                translated_image, batch = sess.run([AtoB_gene, next_batch])
+                visualize(model_name=model_name, named_images=[i, batch[selection], translated_image[0]], save_path=save_path)
 
 
 if __name__ == "__main__":

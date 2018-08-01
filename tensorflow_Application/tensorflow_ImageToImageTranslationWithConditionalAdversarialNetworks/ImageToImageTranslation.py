@@ -72,7 +72,7 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
         elif norm_selection == "instance_norm":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
         else:
-            return conv_out #tf.nn.bias_add(conv_out, b)
+            return tf.nn.bias_add(conv_out, b)
 
     def conv2d_transpose(input, output_shape=None, weight_shape=None, bias_shape=None, norm_selection=None,
                          strides=[1, 1, 1, 1], padding="VALID"):
@@ -96,7 +96,7 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
         elif norm_selection == "instance_norm":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
         else:
-            return conv_out #tf.nn.bias_add(conv_out, b)
+            return tf.nn.bias_add(conv_out, b)
 
     # 유넷 - U-NET
     def generator(x=None):

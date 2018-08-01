@@ -7,9 +7,7 @@ from tensorflow.python.client import device_lib
 입력 크기 : <256x256x3>
 출력 크기 : <256x256x3>
 optimizers_ selection = "Adam" or "RMSP" or "SGD"
-batch_size = 1 -> instance norm, batch_size > 1 -> batch_norm
-저자코드 따라함 - https://github.com/phillipi/pix2pix/blob/master/models.lua
-G_generator, F_generator 는 residual net 을 사용한다.()
+AtoB_generator, BtoA_generator 는 residual net 을 사용한다.()
 discriminator의 구조는 PatchGAN 70X70을 사용한다. 
 -논문 내용과 똑같이 구현했다.
 '''
@@ -33,8 +31,9 @@ print("<<< 경우의 수 1 : GPU가 여러대 설치 / 통합개발 환경에서
 print("<<< 경우의 수 2 : GPU가 여러대 설치 / 터미널 창에서 실행 / GPU 번호 지정 원하는 경우  -> CUDA_VISIBLE_DEVICES = 0(gpu 번호) python main,py 을 터미널 창에 적고 ENTER >>>")
 print("<<< CPU만 사용하고 싶다면? '현재 사용 가능한 GPU 번호' 에 없는 번호('-1' 이라던지)를 적어 넣으면 됨 >>>\n")
 
-cycleGAN.model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_loss="L1",
-              distance_loss_weight=100, optimizer_selection="Adam",
+
+cycleGAN.model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, cycle_consistency_loss = "L1",
+              cycle_consistency_loss_weight=10, optimizer_selection="Adam",
               beta1=0.5, beta2=0.999,  # for Adam optimizer
               decay=0.999, momentum=0.9,  # for RMSProp optimizer
               # batch_size는 1~10사이로 하자
