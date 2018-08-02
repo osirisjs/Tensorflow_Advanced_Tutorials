@@ -229,10 +229,7 @@ class Dataset(object):
             input = Ip_random_crop
             label = lb_random_crop
 
-        if self.AtoB:
-            return input, label
-        else:
-            return label, input
+        return input, label
 
     # 1. tf.data.Dataset.from_tensor_slices 을 사용하는 방법 - 파일명 리스트에서 이미지를 불러와서 처리하기
     def Using_TFBasicDataset(self):
