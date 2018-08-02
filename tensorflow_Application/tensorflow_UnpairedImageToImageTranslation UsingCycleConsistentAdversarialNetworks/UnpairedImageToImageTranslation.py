@@ -12,12 +12,13 @@ def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=N
     print("{}_{}.png saved in {} folder".format(model_name, named_images[0], save_path))
 
 
-def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, cycle_consistency_loss="L1", cycle_consistency_loss_weight=10,
-          optimizer_selection="Adam",
-          beta1=0.9, beta2=0.999,  # for Adam optimizer
-          decay=0.999, momentum=0.9,  # for RMSProp optimizer
-          learning_rate=0.001, training_epochs=100,
-          batch_size=4, display_step=1, Dropout_rate=0.5, using_moving_variable=False, save_path="translated_image"):
+def model(TEST=False, AtoB=True, DB_name="maps", use_TFRecord=True, cycle_consistency_loss="L1",
+                   cycle_consistency_loss_weight=10,
+                   optimizer_selection="Adam", beta1=0.9, beta2=0.999,  # for Adam optimizer
+                   decay=0.999, momentum=0.9,  # for RMSProp optimizer
+                   use_identity_mapping=False,
+                   norm_selection="instance_norm", learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
+                   save_path="translated_image"):  # 학습 완료 후 변환된 이미지가 저장될 폴더 , AtoB=True -> AtoB_가 붙고, False -> BtoA_가 붙는다.
 
     print("CycleGAN")
     model_name = "CycleGAN"
@@ -32,12 +33,8 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, cycle_consi
 
     model_name = DB_name + "_" + model_name
 
-    if batch_size == 1:
-        norm_selection = "instance_norm"
-        model_name = "instancenorm_"+model_name
-    else:
-        norm_selection = "batch_norm"
-        model_name = "batchnorm_"+model_name
+    if norm_selection == "instance_norm":
+        model_name = "instancenorm_"+ model_name
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
@@ -46,7 +43,6 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, cycle_consi
     def conv2d(input, weight_shape=None, bias_shape=None, norm_selection=None,
                strides=[1, 1, 1, 1], padding="VALID"):
 
-        # weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
         weight_init = tf.random_normal_initializer(mean=0.0, stddev=0.02)
         bias_init = tf.constant_initializer(value=0)
 
@@ -57,12 +53,7 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, cycle_consi
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
         conv_out = tf.nn.conv2d(input, w, strides=strides, padding=padding)
 
-        if norm_selection == "batch_norm":
-            if TEST and using_moving_variable:
-                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=not TEST)
-            else:
-                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=TEST)
-        elif norm_selection == "instance_norm":
+        if norm_selection == "instance_norm":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
         else:
             return tf.nn.bias_add(conv_out, b)
@@ -80,12 +71,7 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, cycle_consi
 
         conv_out = tf.nn.conv2d_transpose(input, w, output_shape=output_shape, strides=strides, padding=padding)
 
-        if norm_selection == "batch_norm":
-            if TEST and using_moving_variable:
-                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=not TEST)
-            else:
-                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=TEST)
-        elif norm_selection == "instance_norm":
+        if norm_selection == "instance_norm":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
         else:
             return tf.nn.bias_add(conv_out, b)
@@ -244,7 +230,7 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, cycle_consi
                 # result shape = (batch_size, 30, 30, 1)
             return output, tf.nn.sigmoid(output)
 
-    def training(cost, var_list, scope=None):
+    def training(cost, var_list, global_step=None, scope=None):
         if scope == None:
             tf.summary.scalar("Discriminator Loss", cost)
         else:
@@ -256,15 +242,17 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, cycle_consi
         - GAN의 경우 예)discriminator의 optimizer는 batch norm의 param 전체를 업데이트해야하고
                         generator의 optimizer는 batch_norm param의 generator 부분만 업데이트 해야 한다.   
         '''
+        if global_step !=None:
+            starter_learning_rate = tf.train.exponential_decay(learning_rate, global_step, decay_steps=, decay_rate=, s)
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope=scope)
         with tf.control_dependencies(update_ops):
             if optimizer_selection == "Adam":
-                optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=beta1, beta2=beta2)
+                optimizer = tf.train.AdamOptimizer(learning_rate=starter_learning_rate, beta1=beta1, beta2=beta2)
             elif optimizer_selection == "RMSP":
-                optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate, decay=decay, momentum=momentum)
+                optimizer = tf.train.RMSPropOptimizer(learning_rate=starter_learning_rate, decay=decay, momentum=momentum)
             elif optimizer_selection == "SGD":
-                optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
-            train_operation = optimizer.minimize(cost, var_list=var_list)
+                optimizer = tf.train.GradientDescentOptimizer(learning_rate=starter_learning_rate)
+            train_operation = optimizer.minimize(cost, var_list=var_list, global_step=global_step)
         return train_operation
 
     def min_max_loss(logits=None, labels=None):
@@ -303,7 +291,7 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, cycle_consi
                                   scope='shared_variables/AtoB_Discriminator')
 
         BtoA_varD = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                  scope='BtoA_Discriminator')
+                                  scope='shared_variables/BtoA_Discriminator')
 
         # set으로 중복 제거 하고, 다시 list로 바꾼다.
         AtoB_varG = list(set(np.concatenate(
@@ -327,31 +315,46 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, cycle_consi
 
             # Algorithjm - 속이고 속이는 과정
 
-            with tf.name_scope("Discriminator_loss"):
+            '''
+            논문에 나와있듯이, log likelihood objective 대신 least-square loss를 사용한다.
+            '''
+            with tf.name_scope("AtoB_Discriminator_loss"):
                 # for discriminator
                 D_Loss = min_max_loss(logits=D_real, labels=tf.ones_like(D_real)) + min_max_loss(logits=D_gene,
                                                                                                  labels=tf.zeros_like(
                                                                                                      D_gene))
-            with tf.name_scope("Generator_loss"):
+            with tf.name_scope("AtoB_Generator_loss"):
                 # for generator
                 G_Loss = min_max_loss(logits=D_gene, labels=tf.ones_like(D_gene))
 
-            if distance_loss == "L1":
-                with tf.name_scope("{}_loss".format(distance_loss)):
-                    dis_loss = tf.losses.absolute_difference(target, G)
-                    tf.summary.scalar("{} Loss".format(distance_loss), dis_loss)
-                    G_Loss += tf.multiply(dis_loss, distance_loss_weight)
-            elif distance_loss == "L2":
-                with tf.name_scope("{}_loss".format(distance_loss)):
-                    dis_loss = tf.losses.mean_squared_error(target, G)
-                    tf.summary.scalar("{} Loss".format(distance_loss), dis_loss)
-                    G_Loss += tf.multiply(dis_loss, distance_loss_weight)
-            else:
-                dis_loss = tf.constant(value=0, dtype=tf.float32)
+            with tf.name_scope("BtoA_Discriminator_loss"):
+                # for discriminator
+                D_Loss = min_max_loss(logits=D_real, labels=tf.ones_like(D_real)) + min_max_loss(logits=D_gene,
+                                                                                                 labels=tf.zeros_like(
+                                                                                                     D_gene))
+            with tf.name_scope("BtoA_Generator_loss"):
+                # for generator
+                G_Loss = min_max_loss(logits=D_gene, labels=tf.ones_like(D_gene))
 
-            with tf.name_scope("Discriminator_trainer"):
+            if cycle_consistency_loss == "L1":
+                with tf.name_scope("{}_loss".format(cycle_consistency_loss)):
+                    dis_loss = tf.losses.absolute_difference(target, G)
+                    tf.summary.scalar("{} Loss".format(cycle_consistency_loss), dis_loss)
+                    G_Loss += tf.multiply(dis_loss, cycle_consistency_loss_weight)
+            else:
+                with tf.name_scope("{}_loss".format(cycle_consistency_loss)):
+                    dis_loss = tf.losses.mean_squared_error(target, G)
+                    tf.summary.scalar("{} Loss".format(cycle_consistency_loss), dis_loss)
+                    G_Loss += tf.multiply(dis_loss, cycle_consistency_loss_weight)
+
+            global_step = tf.Variable(0, trainable=False) # 논문에서
+            with tf.name_scope("AtoB_Discriminator_trainer"):
+                D_train_op = training(D_Loss, var_D, global_step=global_step, scope=None)
+            with tf.name_scope("AtoB_Generator_trainer"):
+                G_train_op = training(G_Loss, var_G, scope='shared_variables/generator')
+            with tf.name_scope("BtoA_Discriminator_trainer"):
                 D_train_op = training(D_Loss, var_D, scope=None)
-            with tf.name_scope("Generator_trainer"):
+            with tf.name_scope("BtoA_Generator_trainer"):
                 G_train_op = training(G_Loss, var_G, scope='shared_variables/generator')
             with tf.name_scope("tensorboard"):
                 summary_operation = tf.summary.merge_all()
@@ -363,7 +366,11 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, cycle_consi
         print("initializing!!!")
         sess.run(tf.global_variables_initializer())
         ckpt_all = tf.train.get_checkpoint_state(os.path.join(model_name, 'All'))
-        ckpt_generator = tf.train.get_checkpoint_state(os.path.join(model_name, 'Generator'))
+        if AtoB:
+            ckpt_generator = tf.train.get_checkpoint_state(os.path.join(model_name, 'AtoB_Generator'))
+        else:
+            ckpt_generator = tf.train.get_checkpoint_state(os.path.join(model_name, 'BtoA_Generator'))
+
         if (ckpt_all and tf.train.checkpoint_exists(ckpt_all.model_checkpoint_path)) \
                 or (ckpt_generator and tf.train.checkpoint_exists(ckpt_generator.model_checkpoint_path)):
             if not TEST:
@@ -373,7 +380,8 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, cycle_consi
             else:
                 print("generator variable retored except for optimizer parameter")
                 print("Restore {} checkpoint!!!".format(os.path.basename(ckpt_generator.model_checkpoint_path)))
-                saver_generator.restore(sess, ckpt_generator.model_checkpoint_path)
+                saver_AtoB_generator.restore(sess, ckpt_generator.model_checkpoint_path)
+                saver_BtoA_generator.restore(sess, ckpt_generator.model_checkpoint_path)
 
         if not TEST:
             summary_writer = tf.summary.FileWriter(os.path.join("tensorboard", model_name), sess.graph)
@@ -417,41 +425,48 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, cycle_consi
                     summary_writer.add_summary(summary_str, global_step=epoch)
 
                     save_all_model_path = os.path.join(model_name, 'All/')
-                    save_generator_model_path = os.path.join(model_name, 'Generator/')
+                    save_AtoB_generator_model_path = os.path.join(model_name, 'AtoB_Generator/')
+                    save_BtoA_generator_model_path = os.path.join(model_name, 'BtoA_Generator/')
 
                     if not os.path.exists(save_all_model_path):
                         os.makedirs(save_all_model_path)
-                    if not os.path.exists(save_generator_model_path):
-                        os.makedirs(save_generator_model_path)
+                    if not os.path.exists(save_AtoB_generator_model_path):
+                        os.makedirs(save_AtoB_generator_model_path)
+                    if not os.path.exists(save_BtoA_generator_model_path):
+                        os.makedirs(save_BtoA_generator_model_path)
 
                     saver_all.save(sess, save_all_model_path, global_step=epoch,
                                    write_meta_graph=False)
-                    saver_generator.save(sess, save_generator_model_path,
+                    saver_AtoB_generator.save(sess, save_AtoB_generator_model_path,
                                          global_step=epoch,
                                          write_meta_graph=False)
-
+                    saver_BtoA_generator.save(sess, save_BtoA_generator_model_path,
+                                         global_step=epoch,
+                                         write_meta_graph=False)
             print("Optimization Finished!")
 
         if TEST:
+
             if AtoB:
                 selection=0
+                gene=AtoB_gene
             else:
                 selection=1
+                gene=BtoA_gene
+
             sess.run(iterator.initializer)
             for i in range(data_length):
-                translated_image, batch = sess.run([AtoB_gene, next_batch])
+                translated_image, batch = sess.run([gene, next_batch])
                 visualize(model_name=model_name, named_images=[i, batch[selection], translated_image[0]], save_path=save_path)
 
 
 if __name__ == "__main__":
-    # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-    model(TEST=False, AtoB=True, DB_name="maps", use_TFRecord=True, distance_loss="L1",
-                  distance_loss_weight=100, optimizer_selection="Adam",
-                  beta1=0.5, beta2=0.999,  # for Adam optimizer
-                  decay=0.999, momentum=0.9,  # for RMSProp optimizer
-                  # batch_size는 1~10사이로 하자
-                  learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1, Dropout_rate=0.5,
-                  using_moving_variable=False,  # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수
-                  save_path="translated_image")  # 학습 완료 후 변환된 이미지가 저장될 폴더
-else:
+    model(TEST=False, AtoB=True, DB_name="maps", use_TFRecord=True, cycle_consistency_loss="L1",
+                   cycle_consistency_loss_weight=10,
+                   optimizer_selection="Adam", beta1=0.9, beta2=0.999,  # for Adam optimizer
+                   decay=0.999, momentum=0.9,  # for RMSProp optimizer
+                   use_identity_mapping=False,
+                   norm_selection="instance_norm",  # "instance_norm" or 아무거나
+                   learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
+                   save_path="translated_image")  # 학습 완료 후 변환된 이미지가 저장될 폴더 , AtoB=True -> AtoB_가 붙고, False -> BtoA_가 붙는다.
     print("model imported")
