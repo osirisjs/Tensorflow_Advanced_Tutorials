@@ -238,66 +238,66 @@ def model(TEST=False, AtoB=True, DB_name="maps", use_TFRecord=True, cycle_consis
             train_operation = optimizer.minimize(cost, var_list=var_list)
         return train_operation
 
+    if not TEST:
     # print(tf.get_default_graph()) #기본그래프이다.
-    JG_Graph = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
-    with JG_Graph.as_default():  # as_default()는 JG_Graph를 기본그래프로 설정한다.
+        JG_Graph = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
+        with JG_Graph.as_default():  # as_default()는 JG_Graph를 기본그래프로 설정한다.
 
-        # 데이터 전처리
-        dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TFRecord=use_TFRecord,
-                          use_TrainDataset=not TEST)
-        iterator, next_batch, data_length = dataset.iterator()
+            # 데이터 전처리
+            dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TFRecord=use_TFRecord,
+                              use_TrainDataset=not TEST)
+            iterator, next_batch, data_length = dataset.iterator()
 
-        # 알고리즘
-        A, B = next_batch
-        with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
+            # 알고리즘
+            A, B = next_batch
+            with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
 
-            with tf.name_scope("AtoB_Generator"):
-                AtoB_gene = generator(images=A, name="AtoB_generator")
+                with tf.name_scope("AtoB_Generator"):
+                    AtoB_gene = generator(images=A, name="AtoB_generator")
 
-            with tf.name_scope("BtoA_generator"):
-                BtoA_gene = generator(images=B, name="BtoA_generator")
+                with tf.name_scope("BtoA_generator"):
+                    BtoA_gene = generator(images=B, name="BtoA_generator")
 
-            #A -> B -> A
-            with tf.name_scope("Back_to_A"):
-                BackA = generator(images=AtoB_gene, name="BtoA_generator")
+                #A -> B -> A
+                with tf.name_scope("Back_to_A"):
+                    BackA = generator(images=AtoB_gene, name="BtoA_generator")
 
-            # B -> A -> B
-            with tf.name_scope("Back_to_B"):
-                BackB = generator(images=BtoA_gene, name="AtoB_generator")
+                # B -> A -> B
+                with tf.name_scope("Back_to_B"):
+                    BackB = generator(images=BtoA_gene, name="AtoB_generator")
 
-            with tf.name_scope("AtoB_Discriminator"):
-                AtoB_Dreal = discriminator(input=B, name="AtoB_Discriminator")
-                # scope.reuse_variables()
-                AtoB_Dgene = discriminator(input=AtoB_gene, name="AtoB_Discriminator")
+                with tf.name_scope("AtoB_Discriminator"):
+                    AtoB_Dreal = discriminator(input=B, name="AtoB_Discriminator")
+                    # scope.reuse_variables()
+                    AtoB_Dgene = discriminator(input=AtoB_gene, name="AtoB_Discriminator")
 
-            with tf.name_scope("BtoA_Discriminator"):
-                BtoA_Dreal = discriminator(input=A, name="BtoA_Discriminator")
-                # scope.reuse_variables()
-                BtoA_Dgene = discriminator(input=BtoA_gene, name="BtoA_Discriminator")
+                with tf.name_scope("BtoA_Discriminator"):
+                    BtoA_Dreal = discriminator(input=A, name="BtoA_Discriminator")
+                    # scope.reuse_variables()
+                    BtoA_Dgene = discriminator(input=BtoA_gene, name="BtoA_Discriminator")
 
-        AtoB_varD = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/AtoB_Discriminator')
-        # set으로 중복 제거 하고, 다시 list로 바꾼다.
+            AtoB_varD = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/AtoB_Discriminator')
+            # set으로 중복 제거 하고, 다시 list로 바꾼다.
 
-        AtoB_varG = list(set(np.concatenate(
-            (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/AtoB_generator'),
-             tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/AtoB_generator')),
-            axis=0)))
+            AtoB_varG = list(set(np.concatenate(
+                (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/AtoB_generator'),
+                 tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/AtoB_generator')),
+                axis=0)))
 
-        BtoA_varD = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/BtoA_Discriminator')
+            BtoA_varD = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/BtoA_Discriminator')
 
-        # set으로 중복 제거 하고, 다시 list로 바꾼다.
-        BtoA_varG = list(set(np.concatenate(
-            (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/BtoA_generator'),
-             tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/BtoA_generator')),
-            axis=0)))
+            # set으로 중복 제거 하고, 다시 list로 바꾼다.
+            BtoA_varG = list(set(np.concatenate(
+                (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/BtoA_generator'),
+                 tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/BtoA_generator')),
+                axis=0)))
 
-        # Adam optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
-        with tf.name_scope("saver"):
-            saver_all = tf.train.Saver(var_list=tf.global_variables(), max_to_keep=3)
-            saver_AtoB_generator = tf.train.Saver(var_list=AtoB_varG, max_to_keep=3)
-            saver_BtoA_generator = tf.train.Saver(var_list=BtoA_varG, max_to_keep=3)
+            # Adam optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
+            with tf.name_scope("saver"):
+                saver_all = tf.train.Saver(var_list=tf.global_variables(), max_to_keep=3)
+                saver_AtoB_generator = tf.train.Saver(var_list=AtoB_varG, max_to_keep=3)
+                saver_BtoA_generator = tf.train.Saver(var_list=BtoA_varG, max_to_keep=3)
 
-        if not TEST:
             '''
             논문에 나와있듯이, log likelihood objective 대신 least-square loss를 사용한다.
             '''
@@ -348,102 +348,126 @@ def model(TEST=False, AtoB=True, DB_name="maps", use_TFRecord=True, cycle_consis
             '''
             tf.add_to_collection('A', A)
             tf.add_to_collection('B', B)
-
             #graph 구조를 파일에 쓴다.
-            saver_AtoB_generator.export_meta_graph(os.path.join(model_name, "Lotto_Graph.meta"), collection_list=['A', 'B'])
-            saver_BtoA_generator.export_meta_graph(os.path.join(model_name, "Lotto_Graph.meta"), collection_list=['A', 'B'])
+            saver_AtoB_generator.export_meta_graph(os.path.join(model_name, "AtoB.meta"), collection_list=['A', 'B'])
+            saver_BtoA_generator.export_meta_graph(os.path.join(model_name, "BtoA.meta"), collection_list=['A', 'B'])
 
-    config = tf.ConfigProto(log_device_placement=False, allow_soft_placement=True)
-    config.gpu_options.allow_growth = True
+            config = tf.ConfigProto(log_device_placement=False, allow_soft_placement=True)
+            config.gpu_options.allow_growth = True
 
-    with tf.Session(graph=JG_Graph, config=config) as sess:
-        print("initializing!!!")
-        sess.run(tf.global_variables_initializer())
-        ckpt_all = tf.train.get_checkpoint_state(os.path.join(model_name, 'All'))
+            with tf.Session(graph=JG_Graph, config=config) as sess:
+                print("initializing!!!")
+                sess.run(tf.global_variables_initializer())
+                ckpt_all = tf.train.get_checkpoint_state(os.path.join(model_name, 'All'))
 
-        if (ckpt_all and tf.train.checkpoint_exists(ckpt_all.model_checkpoint_path)):
-            print("all variable retored except for optimizer parameter")
-            print("Restore {} checkpoint!!!".format(os.path.basename(ckpt_all.model_checkpoint_path)))
-            saver_all.restore(sess, ckpt_all.model_checkpoint_path)
+                if (ckpt_all and tf.train.checkpoint_exists(ckpt_all.model_checkpoint_path)):
+                    print("all variable retored except for optimizer parameter")
+                    print("Restore {} checkpoint!!!".format(os.path.basename(ckpt_all.model_checkpoint_path)))
+                    saver_all.restore(sess, ckpt_all.model_checkpoint_path)
 
-        if not TEST:
-            summary_writer = tf.summary.FileWriter(os.path.join("tensorboard", model_name), sess.graph)
-            sess.run(iterator.initializer)
-            for epoch in tqdm(range(1, training_epochs + 1)):
+                summary_writer = tf.summary.FileWriter(os.path.join("tensorboard", model_name), sess.graph)
+                sess.run(iterator.initializer)
+                for epoch in tqdm(range(1, training_epochs + 1)):
 
-                #논문에서 100epoch가 넘으면 선형적으로 학습률(learning rate)을 감소시킨다고 했다.
-                if epoch > 100:
-                    learning_rate*=0.999
+                    #논문에서 100epoch가 넘으면 선형적으로 학습률(learning rate)을 감소시킨다고 했다.
+                    if epoch > 100:
+                        learning_rate*=0.999
 
-                AtoB_DLoss = 0
-                AtoB_GLoss = 0
-                BtoA_DLoss = 0
-                BtoA_GLoss = 0
+                    AtoB_DLoss = 0
+                    AtoB_GLoss = 0
+                    BtoA_DLoss = 0
+                    BtoA_GLoss = 0
 
-                # 아래의 두 변수가 각각 0.5 씩의 값을 갖는게 가장 이상적이다.
-                AtoB_sigmoidD = 0
-                AtoB_sigmoidG = 0
+                    # 아래의 두 변수가 각각 0.5 씩의 값을 갖는게 가장 이상적이다.
+                    AtoB_sigmoidD = 0
+                    AtoB_sigmoidG = 0
 
-                # 아래의 두 변수가 각각 0.5 씩의 값을 갖는게 가장 이상적이다.
-                BtoA_sigmoidD = 0
-                BtoA_sigmoidG = 0
+                    # 아래의 두 변수가 각각 0.5 씩의 값을 갖는게 가장 이상적이다.
+                    BtoA_sigmoidD = 0
+                    BtoA_sigmoidG = 0
 
-                total_batch = int(data_length / batch_size)
-                for i in range(total_batch):
-                    _, AtoB_D_Loss, AtoB_Dreal_simgoid = sess.run([AtoB_D_train_op, AtoB_DLoss, AtoB_Dreal],
-                                                                  feed_dict={lr: learning_rate})
-                    _, AtoB_G_Loss, AtoB_Dgene_simgoid = sess.run([AtoB_G_train_op, AtoB_GLoss, AtoB_Dgene],
-                                                                  feed_dict={lr: learning_rate})
-                    _, BtoA_D_Loss, BtoA_Dreal_simgoid = sess.run([BtoA_D_train_op, BtoA_DLoss, BtoA_Dreal],
-                                                                  feed_dict={lr: learning_rate})
-                    _, BtoA_G_Loss, BtoA_Dgene_simgoid = sess.run([BtoA_G_train_op, BtoA_GLoss, BtoA_Dgene],
-                                                                  feed_dict={lr: learning_rate})
+                    total_batch = int(data_length / batch_size)
+                    for i in range(total_batch):
+                        _, AtoB_D_Loss, AtoB_Dreal_simgoid = sess.run([AtoB_D_train_op, AtoB_DLoss, AtoB_Dreal],
+                                                                      feed_dict={lr: learning_rate})
+                        _, AtoB_G_Loss, AtoB_Dgene_simgoid = sess.run([AtoB_G_train_op, AtoB_GLoss, AtoB_Dgene],
+                                                                      feed_dict={lr: learning_rate})
+                        _, BtoA_D_Loss, BtoA_Dreal_simgoid = sess.run([BtoA_D_train_op, BtoA_DLoss, BtoA_Dreal],
+                                                                      feed_dict={lr: learning_rate})
+                        _, BtoA_G_Loss, BtoA_Dgene_simgoid = sess.run([BtoA_G_train_op, BtoA_GLoss, BtoA_Dgene],
+                                                                      feed_dict={lr: learning_rate})
 
-                    AtoB_DLoss += (AtoB_D_Loss / total_batch)
-                    AtoB_GLoss += (AtoB_G_Loss / total_batch)
-                    BtoA_DLoss += (BtoA_D_Loss / total_batch)
-                    BtoA_GLoss += (BtoA_G_Loss / total_batch)
+                        AtoB_DLoss += (AtoB_D_Loss / total_batch)
+                        AtoB_GLoss += (AtoB_G_Loss / total_batch)
+                        BtoA_DLoss += (BtoA_D_Loss / total_batch)
+                        BtoA_GLoss += (BtoA_G_Loss / total_batch)
 
-                    AtoB_sigmoidD += AtoB_Dreal_simgoid / total_batch
-                    AtoB_sigmoidG += AtoB_Dgene_simgoid / total_batch
-                    BtoA_sigmoidD += BtoA_Dreal_simgoid / total_batch
-                    BtoA_sigmoidG += BtoA_Dgene_simgoid / total_batch
+                        AtoB_sigmoidD += AtoB_Dreal_simgoid / total_batch
+                        AtoB_sigmoidG += AtoB_Dgene_simgoid / total_batch
+                        BtoA_sigmoidD += BtoA_Dreal_simgoid / total_batch
+                        BtoA_sigmoidG += BtoA_Dgene_simgoid / total_batch
 
-                    print("{} epoch : {} batch running of {} total batch...".format(epoch, i, total_batch))
+                        print("{} epoch : {} batch running of {} total batch...".format(epoch, i, total_batch))
 
-                print("<<< AtoB Discriminator mean output : {} / AtoB Generator mean output : {} >>>".format(
-                    np.mean(AtoB_sigmoidD), np.mean(AtoB_sigmoidG)))
-                print("<<< BtoA Discriminator mean output : {} / BtoA Generator mean output : {} >>>".format(
-                    np.mean(AtoB_sigmoidD), np.mean(AtoB_sigmoidG)))
-                print("<<< AtoB Discriminator Loss : {} / AtoB Generator Loss  : {} >>>".format(AtoB_DLoss, AtoB_GLoss))
-                print("<<< BtoA Discriminator Loss : {} / BtoA Generator Loss  : {} >>>".format(BtoA_DLoss, BtoA_GLoss))
+                    print("<<< AtoB Discriminator mean output : {} / AtoB Generator mean output : {} >>>".format(
+                        np.mean(AtoB_sigmoidD), np.mean(AtoB_sigmoidG)))
+                    print("<<< BtoA Discriminator mean output : {} / BtoA Generator mean output : {} >>>".format(
+                        np.mean(AtoB_sigmoidD), np.mean(AtoB_sigmoidG)))
+                    print("<<< AtoB Discriminator Loss : {} / AtoB Generator Loss  : {} >>>".format(AtoB_DLoss, AtoB_GLoss))
+                    print("<<< BtoA Discriminator Loss : {} / BtoA Generator Loss  : {} >>>".format(BtoA_DLoss, BtoA_GLoss))
 
-                if epoch % display_step == 0:
-                    summary_str = sess.run(summary_operation)
-                    summary_writer.add_summary(summary_str, global_step=epoch)
+                    if epoch % display_step == 0:
+                        summary_str = sess.run(summary_operation)
+                        summary_writer.add_summary(summary_str, global_step=epoch)
 
-                    save_all_model_path = os.path.join(model_name, 'All/')
-                    save_AtoB_generator_model_path = os.path.join(model_name, 'AtoB_Generator/')
-                    save_BtoA_generator_model_path = os.path.join(model_name, 'BtoA_Generator/')
+                        save_all_model_path = os.path.join(model_name, 'All/')
+                        save_AtoB_generator_model_path = os.path.join(model_name, 'AtoB_Generator/')
+                        save_BtoA_generator_model_path = os.path.join(model_name, 'BtoA_Generator/')
 
-                    if not os.path.exists(save_all_model_path):
-                        os.makedirs(save_all_model_path)
-                    if not os.path.exists(save_AtoB_generator_model_path):
-                        os.makedirs(save_AtoB_generator_model_path)
-                    if not os.path.exists(save_BtoA_generator_model_path):
-                        os.makedirs(save_BtoA_generator_model_path)
+                        if not os.path.exists(save_all_model_path):
+                            os.makedirs(save_all_model_path)
+                        if not os.path.exists(save_AtoB_generator_model_path):
+                            os.makedirs(save_AtoB_generator_model_path)
+                        if not os.path.exists(save_BtoA_generator_model_path):
+                            os.makedirs(save_BtoA_generator_model_path)
 
-                    saver_all.save(sess, save_all_model_path, global_step=epoch,
-                                   write_meta_graph=False)
-                    saver_AtoB_generator.save(sess, save_AtoB_generator_model_path,
-                                              global_step=epoch,
-                                              write_meta_graph=False)
-                    saver_BtoA_generator.save(sess, save_BtoA_generator_model_path,
-                                              global_step=epoch,
-                                              write_meta_graph=False)
-            print("Optimization Finished!")
+                        saver_all.save(sess, save_all_model_path, global_step=epoch,
+                                       write_meta_graph=False)
+                        saver_AtoB_generator.save(sess, save_AtoB_generator_model_path,
+                                                  global_step=epoch,
+                                                  write_meta_graph=False)
+                        saver_BtoA_generator.save(sess, save_BtoA_generator_model_path,
+                                                  global_step=epoch,
+                                                  write_meta_graph=False)
+                print("Optimization Finished!")
 
-        if TEST:
+    else:
+        tf.reset_default_graph()
+        AtoB_meta_path=glob.glob(os.path.join(model_name,'*.meta'))
+        if len(meta_path)==0:
+            print("Lotto Graph가 존재 하지 않습니다.")
+            exit(0)
+        else:
+            print("Lotto Graph가 존재 합니다.")
+
+        # print(tf.get_default_graph()) #기본그래프이다.
+        JG = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
+        with JG.as_default():  # as_default()는 JG를 기본그래프로 설정한다.
+            '''
+            WHY? 아래 3줄의 코드를 적어 주지 않으면 오류가 난다. 
+            -> 단순히 그래프를 가져오고 가중치를 복원하는 것만으로는 안된다. 세션을 실행할때 인수로 사용할 변수에 대한 
+            추가 접근을 제공하지 않기 때문에 아래와 같이 get_colltection으로 입,출력 변수들을 불러와서 다시 사용 해야 한다.
+            '''
+            saver = tf.train.import_meta_graph(meta_path[0], clear_devices=True)  # meta graph 읽어오기
+            if saver==None:
+                print("meta 파일을 읽을 수 없습니다.")
+                exit(0)
+
+            A = tf.get_collection('A')[0]
+            B = tf.get_collection('B')[0]
+            AtoB_gene = tf.get_collection('AtoB')[0]
+            BtoA_gene = tf.get_collection('BtoA')[0]
+
             # # DB 이름도 추가
             if AtoB:
                 model_name = "AtoB_" + model_name
