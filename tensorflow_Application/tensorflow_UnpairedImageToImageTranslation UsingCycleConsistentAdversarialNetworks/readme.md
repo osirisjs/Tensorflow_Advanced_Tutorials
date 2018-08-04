@@ -2,17 +2,15 @@
 
 * 논문
 
-    [Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networkss](https://arxiv.org/pdf/1703.10593.pdf). 
+    [Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks](https://arxiv.org/pdf/1703.10593.pdf)
 
-* **cityscapes** Training DBt로 100 epoch 학습한 후 Test DB로 평가한 결과(image -> segmentation)
+* horse(A) to zebra(B)
     
-    * (왼쪽부터 오른쪽 순서로) image, Ground Truth, Generated Image) 
+    *  A to B
 
-        <br>
-        <img src="result_image/instancenorm_cityscapes_AtoB_Pix2PixConditionalGAN_WithL1loss_486.png" width="200px"/> 
+        <img src="result_image/instancenorm_cityscapes_AtoB_Pix2PixConditionalGAN_WithL1loss_487.png" height = "128px" width="384px"/> 
+        
+    *  B to A
 
-        <img src="result_image/instancenorm_cityscapes_AtoB_Pix2PixConditionalGAN_WithL1loss_487.png" width="200px"/>
-        <br>
-        <img src="result_image/instancenorm_cityscapes_AtoB_Pix2PixConditionalGAN_WithL1loss_491.png" width="200px"/>
-        <img src="result_image/instancenorm_cityscapes_AtoB_Pix2PixConditionalGAN_WithL1loss_493.png" width="200px"/> 
+        <img src="result_image/instancenorm_cityscapes_AtoB_Pix2PixConditionalGAN_WithL1loss_489.png" height = "128px" width="384px"/> 
 
