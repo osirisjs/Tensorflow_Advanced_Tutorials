@@ -1,8 +1,8 @@
-# **CycleGAN**
+# **Pix2PixGAN**
 
 * 논문
 
-    [Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networkss](https://arxiv.org/pdf/1703.10593.pdf). 
+    [Image-to-Image Translation with Conditional Adversarial Networks](https://arxiv.org/pdf/1611.07004.pdf). 
 
 * **cityscapes** Training DBt로 100 epoch 학습한 후 Test DB로 평가한 결과(image -> segmentation)
     
