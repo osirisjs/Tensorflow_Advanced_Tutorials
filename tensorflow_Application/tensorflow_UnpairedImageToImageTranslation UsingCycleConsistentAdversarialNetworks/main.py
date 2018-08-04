@@ -31,10 +31,13 @@ print("<<< 경우의 수 1 : GPU가 여러대 설치 / 통합개발 환경에서
 print("<<< 경우의 수 2 : GPU가 여러대 설치 / 터미널 창에서 실행 / GPU 번호 지정 원하는 경우  -> CUDA_VISIBLE_DEVICES = 0(gpu 번호) python main,py 을 터미널 창에 적고 ENTER >>>")
 print("<<< CPU만 사용하고 싶다면? '현재 사용 가능한 GPU 번호' 에 없는 번호('-1' 이라던지)를 적어 넣으면 됨 >>>\n")
 
-cycleGAN.model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, cycle_consistency_loss = "L1", cycle_consistency_loss_weight=10,
+
+cycleGAN.model(TEST=False, DB_name="maps", use_TFRecord=True, cycle_consistency_loss = "L1",
+              cycle_consistency_loss_weight=10,
               optimizer_selection="Adam", beta1=0.9, beta2=0.999,  # for Adam optimizer
               decay=0.999, momentum=0.9,  # for RMSProp optimizer
-              use_identity_mapping=False,
+              use_identity_mapping=False, # painting -> photo 일때만 사용 -> 사용하지 않음
               norm_selection="instance_norm", # "instance_norm" or nothing
               learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
-              save_path="translated_image")  # 학습 완료 후 변환된 이미지가 저장될 폴더 , AtoB=True -> AtoB_가 붙고, False -> BtoA_가 붙는다.
+               # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
+              save_path="translated_image")

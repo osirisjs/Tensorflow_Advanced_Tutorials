@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 '''
 데이터셋은 아래에서 받았다.
-https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz
+https://people.eecs.berkeley.edu/~taesung_park/CycleGAN/datasets/
 이미지(원본 이미지를)를 분할(Segmentation) 해보자
 
 나만의 이미지 데이터셋 만들기 - 텐서플로우의 API 만을 이용하여 만들자.
@@ -28,7 +28,7 @@ https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz
 3. tf.data.TFRecordDataset를 사용하여 TRRecord(이진 파일, 직렬화된 입력 데이터)라는 텐서플로우 표준 파일형식으로 저장된 파일을 불러온 다음
   그래프에 올려버리는 방법 - 아래의 두번째 방법
 
-4. 멀티스레드 사용방법 - 이것은 공부가 더 필요하다. - 추 후 cycleGAN 을 구현 할시 공부해서 구현 해보자 
+4. 멀티스레드 사용방법 - 이것은 공부가 더 필요할듯 하다. - tf.data.TFRecordDataset과 결합하는 방법이 있나?
 
 <첫번째 방법>은 원래의 데이터파일을 불러와서 학습 한다.
 <두번째 방법>은 TFRecord(텐서플로우의 표준 파일 형식)으로 원래의 데이터를 저장한뒤 불러와서 학습하는 방식이다.
@@ -53,12 +53,11 @@ https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz
 
 class Dataset(object):
 
-    def __init__(self, DB_name="maps", AtoB=False,
+    def __init__(self, DB_name="maps",
                  batch_size=1, use_TFRecord=False, use_TrainDataset=False):
 
         self.Dataset_Path = "Dataset"
         self.DB_name = DB_name
-        self.AtoB = AtoB
 
         # "{self.DB_name}.tar.gz"의 파일의 크기는 미리 구해놓음. (미리 확인이 필요함.)
         if DB_name == "cityscapes":
