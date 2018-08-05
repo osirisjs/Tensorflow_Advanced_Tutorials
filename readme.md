@@ -4,6 +4,14 @@
 
     * **니킬부두마의 **딥러닝의 정석**에서 소개하는 내용들과 개인적으로 공부한 내용들에 대해 정리하며 작성한 코드들입니다.**  
 
+    * 모든 코드는 main.py 에서 실행합니다.
+        ```cmd
+        1. cmd(window) or Terminal(Ubuntu)에서는 python main.py 명령어로 실행합니다. # argparser를 사용하지 않습니다. 2번에서 실행하는 것을 추천 드립니다. 
+
+        2. IDE(pycharm, vscode and so on.) main.py를 실행합니다.  
+        ```
+
+
     * ### **Model With Fixed Length Dataset**
         
         * [***Fully Connected Layer***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_ModelWithFixedLengthDataset/tensorflow_FullyConnectedNeuralNetwork)
