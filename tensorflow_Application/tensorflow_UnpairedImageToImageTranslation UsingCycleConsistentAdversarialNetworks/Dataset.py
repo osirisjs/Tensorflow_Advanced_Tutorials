@@ -1,17 +1,15 @@
 import glob
+import zipfile
 import os
-import tarfile
 import urllib.request
-
 import cv2
 import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
-
+import random
 '''
 데이터셋은 아래에서 받았다.
-https://people.eecs.berkeley.edu/~taesung_park/CycleGAN/datasets/
-이미지(원본 이미지를)를 분할(Segmentation) 해보자
+https://people.eecs.berkeley.edu/~taesung_park/CycleGAN/datasets/horse2zebra.zip
 
 나만의 이미지 데이터셋 만들기 - 텐서플로우의 API 만을 이용하여 만들자.
 많은 것을 지원해주는 텐서플로우 API 만을 이용해서 만들 경우 코드가 굉장히 짧아지면서 빠르다.
@@ -50,22 +48,17 @@ https://people.eecs.berkeley.edu/~taesung_park/CycleGAN/datasets/
     -> tf.read_file, tf.random_crop, tf.image.~ API를 사용하여 논문에서 설명한대로 이미지를 전처리하고 학습가능한 형태로 만든다.
 '''
 
-
 class Dataset(object):
 
-    def __init__(self, DB_name="maps",
+    def __init__(self, DB_name = "horse2zebra",
                  batch_size=1, use_TFRecord=False, use_TrainDataset=False):
 
         self.Dataset_Path = "Dataset"
         self.DB_name = DB_name
 
-        # "{self.DB_name}.tar.gz"의 파일의 크기는 미리 구해놓음. (미리 확인이 필요함.)
-        if DB_name == "cityscapes":
-            self.file_size = 103441232
-        elif DB_name == "facades":
-            self.file_size = 30168306
-        elif DB_name == "maps":
-            self.file_size = 250242400
+        # "{self.DB_name}.zip"의 파일의 크기는 미리 구해놓음. (미리 확인이 필요함.)
+        if DB_name == "horse2zebra":
+            self.file_size = 116871168
         else:
             print("Please enter ""DB_name"" correctly")
             print("The program is forcibly terminated.")
@@ -75,9 +68,9 @@ class Dataset(object):
         if not os.path.exists(self.Dataset_Path):
             os.makedirs(self.Dataset_Path)
 
-        self.url = "https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz".format(self.DB_name)
+        self.url = "https://people.eecs.berkeley.edu/~taesung_park/CycleGAN/datasets/{}.zip".format(self.DB_name)
         self.dataset_folder = os.path.join(self.Dataset_Path, self.DB_name)
-        self.dataset_targz = self.dataset_folder + ".tar.gz"
+        self.dataset_zip = self.dataset_folder + ".zip"
 
         # 학습용 데이터인지 테스트용 데이터인지 알려주는 변수
         self.use_TrainDataset = use_TrainDataset
@@ -94,31 +87,36 @@ class Dataset(object):
         # TFRecord를 쓰기 위한 변수, use_TFRecord 가 True 이면 TFRecord 파일로 쓴다.
         if self.use_TrainDataset:
             # (1). tf.data.Dataset.from_tensor_slices
-            self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "train/*"))
+            self.file_path_Alist = glob.glob(os.path.join(self.dataset_folder, "trainA/*"))
+            self.file_path_Blist = glob.glob(os.path.join(self.dataset_folder, "trainB/*"))
+            self.file_path_list =[self.file_path_Alist, self.file_path_Blist]
 
             # (2). TFRecord
             if self.use_TFRecord:
+
                 self.TFRecord_train_path = os.path.join(self.dataset_folder, "TFRecord_train")
                 if not os.path.exists(self.TFRecord_train_path):
                     os.makedirs(self.TFRecord_train_path)
-                if self.AtoB:
-                    self.TFRecord_path = os.path.join(self.TFRecord_train_path, 'AtoB_train.tfrecords')
-                else:
-                    self.TFRecord_path = os.path.join(self.TFRecord_train_path, 'BtoA_train.tfrecords')
+                self.TFRecord_Apath = os.path.join(self.TFRecord_train_path, 'trainA.tfrecords')
+                self.TFRecord_Bpath = os.path.join(self.TFRecord_train_path, 'trainB.tfrecords')
+                self.TFRecord_path = [self.TFRecord_Apath, self.TFRecord_Bpath]
                 # TFRecord 파일로 쓰기.
                 self.TFRecordWriter()
         else:
             # (1). tf.data.Dataset.from_tensor_slices
-            self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "val/*"))
+            self.file_path_Alist = glob.glob(os.path.join(self.dataset_folder, "testA/*"))
+            self.file_path_Blist = glob.glob(os.path.join(self.dataset_folder, "testB/*"))
+            self.file_path_list =[self.file_path_Alist, self.file_path_Blist]
+
             # (2). TFRecord
             if self.use_TFRecord:
-                self.TFRecord_val_path = os.path.join(self.dataset_folder, "TFRecord_val")
+
+                self.TFRecord_val_path = os.path.join(self.dataset_folder, "TFRecord_test")
                 if not os.path.exists(self.TFRecord_val_path):
                     os.makedirs(self.TFRecord_val_path)
-                if self.AtoB:
-                    self.TFRecord_path = os.path.join(self.TFRecord_val_path, 'AtoB_val.tfrecords')
-                else:
-                    self.TFRecord_path = os.path.join(self.TFRecord_val_path, 'BtoA_val.tfrecords')
+                self.TFRecord_Apath = os.path.join(self.TFRecord_val_path, 'testA.tfrecords')
+                self.TFRecord_Bpath = os.path.join(self.TFRecord_val_path, 'testB.tfrecords')
+                self.TFRecord_path = [self.TFRecord_Apath, self.TFRecord_Bpath]
                 # TFRecord 파일로 쓰기.
                 self.TFRecordWriter()
 
@@ -128,41 +126,42 @@ class Dataset(object):
     def iterator(self):
 
         if self.use_TFRecord:
-            iterator, next_batch, db_length = self.Using_TFRecordDataset()
+            A_iterator, A_next_batch, B_iterator, B_next_batch, data_length = self.Using_TFRecordDataset()
         else:
-            iterator, next_batch, db_length = self.Using_TFBasicDataset()
+            A_iterator, A_next_batch, B_iterator, B_next_batch, data_length = self.Using_TFBasicDataset()
 
-        return iterator, next_batch, db_length
+        return A_iterator, A_next_batch, B_iterator, B_next_batch, data_length
 
     def Preparing_Learning_Dataset(self):
 
         # 1. 데이터셋 폴더가 존재하지 않으면 다운로드
         if not os.path.exists(self.dataset_folder):
-            if not os.path.exists(self.dataset_targz):  # 데이터셋 압축 파일이 존재하지 않는 다면, 다운로드
+            if not os.path.exists(self.dataset_zip):  # 데이터셋 압축 파일이 존재하지 않는 다면, 다운로드
                 print("<<< {} Dataset Download required >>>".format(self.DB_name))
-                urllib.request.urlretrieve(self.url, self.dataset_targz)
+                urllib.request.urlretrieve(self.url, self.dataset_zip)
                 print("<<< {} Dataset Download Completed >>>".format(self.DB_name))
 
             # "{self.DB_name}.tar.gz"의 파일의 크기는 미리 구해놓음. (미리 확인이 필요함.)
-            elif os.path.exists(self.dataset_targz) and os.path.getsize(
-                    self.dataset_targz) == self.file_size:  # 완전한 데이터셋 압축 파일이 존재한다면, 존재한다고 print를 띄워주자.
+            elif os.path.exists(self.dataset_zip) and os.path.getsize(
+                    self.dataset_zip) == self.file_size:  # 완전한 데이터셋 압축 파일이 존재한다면, 존재한다고 print를 띄워주자.
                 print("<<< ALL {} Dataset Exists >>>".format(self.DB_name))
 
             else:  # 데이터셋 압축파일이 존재하긴 하는데, 제대로 다운로드 되지 않은 상태라면, 삭제하고 다시 다운로드
                 print(
                     "<<< {} Dataset size must be : {}, but now size is {} >>>".format(self.DB_name, self.file_size,
                                                                                       os.path.getsize(
-                                                                                          self.dataset_targz)))
-                os.remove(self.dataset_targz)  # 완전하게 다운로드 되지 않은 기존의 데이터셋 압축 파일을 삭제
+                                                                                          self.dataset_zip)))
+                os.remove(self.dataset_zip)  # 완전하게 다운로드 되지 않은 기존의 데이터셋 압축 파일을 삭제
                 print("<<< Deleting incomplete {} Dataset Completed >>>".format(self.DB_name))
                 print("<<< we need to download {} Dataset again >>>".format(self.DB_name))
-                urllib.request.urlretrieve(self.url, self.dataset_targz)
+                urllib.request.urlretrieve(self.url, self.dataset_zip)
                 print("<<< {} Dataset Download Completed >>>".format(self.DB_name))
 
             # 2. 완전한 압축파일이 다운로드 된 상태이므로 압축을 푼다
-            with tarfile.open(self.dataset_targz) as tar:
-                tar.extractall(path=self.Dataset_Path)
-            print("<<< {} Unzip Completed >>>".format(os.path.basename(self.dataset_targz)))
+            with zipfile.ZipFile(self.dataset_zip, 'r') as zf:
+                zf.extractall(path=self.Dataset_Path)
+
+            print("<<< {} Unzip Completed >>>".format(os.path.basename(self.dataset_zip)))
             print("<<< {} Dataset now exists >>>".format(self.DB_name))
         else:
             print("<<< {} Dataset is already Exists >>>".format(self.DB_name))
@@ -174,8 +173,8 @@ class Dataset(object):
             feature = {'image': tf.FixedLenFeature([], tf.string)}
             features = tf.parse_single_example(image, features=feature)
             img_decoded_raw = tf.decode_raw(features['image'], tf.float32)
-            # 2. 이미지 사이즈를 256 x 512 x 3으로 reshape 한다.
-            img_decoded = tf.reshape(img_decoded_raw, [256, 512, 3])
+            # 2. 이미지 사이즈를 256 x 256 x 3으로 reshape 한다.
+            img_decoded = tf.reshape(img_decoded_raw, [256, 256, 3])
         else:
             # 1. 이미지를 읽는다
             img = tf.read_file(image)
@@ -186,56 +185,27 @@ class Dataset(object):
             '''
             # 이미지가 다른 포맷일 경우, tf.image.decode_bmp, tf.image.decode_png 등을 사용.
             print("### The image must have the 'jpg' format. ###")
-            # 2. 이미지 사이즈를 256 x 512으로 조정한다.
-            img_decoded = tf.image.resize_images(tf.image.decode_jpeg(img, channels=3), size=(256, 512))  # jpeg 파일 읽기
-        '''
-        논문에서...
-        Random jitter was applied by resizing the 256 x 256 input images to 286 x 286
-        and then randomly cropping back to size 256 x 256
-
-        This op cuts a rectangular part out of image. The top-left corner of the returned image is at offset_height, 
-        offset_width in image, and its lower-right corner is at offset_height + target_height, offset_width + target_width.
-
-        offset_height: Vertical coordinate of the top-left corner of the result in the input.
-        offset_width: Horizontal coordinate of the top-left corner of the result in the input.
-        target_height: Height of the result.
-        target_width: Width of the result.
-        '''
-
-        # 3. 256x512 이미지를 256x256, 256x256 2개로 나눈다.
-        Ip = tf.image.crop_to_bounding_box(img_decoded, offset_height=0, offset_width=0, target_height=256,
-                                           target_width=256)
-        lb = tf.image.crop_to_bounding_box(img_decoded, offset_height=0, offset_width=256, target_height=256,
-                                           target_width=256)
+            # 2. 이미지 사이즈를 256 x 256으로 조정한다.
+            img_decoded = tf.image.resize_images(tf.image.decode_jpeg(img, channels=3), size=(256, 256))  # jpeg 파일 읽기
 
         # 3. gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
-        Ip_scaled = tf.subtract(tf.divide(tf.cast(Ip, tf.float32), 127.5), 1)  # gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
-        lb_scaled = tf.subtract(tf.divide(tf.cast(lb, tf.float32), 127.5), 1)  # gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
-
-        input = Ip_scaled
-        label = lb_scaled
-
-        # Train Dataset 에서만 동작하게 하기 위함
-        if self.use_TrainDataset:
-            # 4. 286x286으로 키운다.
-            Ip_resized = tf.image.resize_images(images=Ip_scaled, size=(286, 286))
-            lb_resized = tf.image.resize_images(images=lb_scaled, size=(286, 286))
-
-            # 5. 이미지를 256x256으로 랜덤으로 자른다.
-            Ip_random_crop = tf.random_crop(Ip_resized, size=(256, 256, 3))
-            lb_random_crop = tf.random_crop(lb_resized, size=(256, 256, 3))
-
-            input = Ip_random_crop
-            label = lb_random_crop
-
-        return input, label
+        input= tf.subtract(tf.divide(tf.cast(img_decoded, tf.float32), 127.5), 1)  # gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
+        return input
 
     # 1. tf.data.Dataset.from_tensor_slices 을 사용하는 방법 - 파일명 리스트에서 이미지를 불러와서 처리하기
     def Using_TFBasicDataset(self):
 
-        random_file_path_list_Tensor = tf.random_shuffle(tf.constant(self.file_path_list))  # tensor에 데이터셋 리스트를 담기
-        dataset = tf.data.Dataset.from_tensor_slices(random_file_path_list_Tensor)
-        dataset = dataset.map(self._image_preprocessing)
+        A_length = len(self.file_path_Alist)
+        B_length = len(self.file_path_Blist)
+
+        random_file_path_Alist_Tensor = tf.random_shuffle(tf.constant(self.file_path_Alist))  # tensor에 데이터셋 리스트를 담기
+        random_file_path_Blist_Tensor = tf.random_shuffle(tf.constant(self.file_path_Blist))  # tensor에 데이터셋 리스트를 담기
+
+        A_dataset = tf.data.Dataset.from_tensor_slices(random_file_path_Alist_Tensor)
+        B_dataset = tf.data.Dataset.from_tensor_slices(random_file_path_Blist_Tensor)
+
+        A_dataset = A_dataset.map(self._image_preprocessing)
+        B_dataset = B_dataset.map(self._image_preprocessing)
         '''
         buffer_size: A `tf.int64` scalar `tf.Tensor`, representing the
         number of elements from this dataset from which the new
@@ -252,7 +222,8 @@ class Dataset(object):
         문제점2 -> 한번 섞고 말아버린다. -> buffer_size를 자기 컴퓨터의 메모리에 맞게 최대한으로 써보자.
         '''
         # dataset = dataset.shuffle(buffer_size=1).repeat().batch(self.batch_size)
-        dataset = dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
+        A_dataset = A_dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
+        B_dataset = B_dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
 
         '''
         위에서 tf.random_shuffle을 쓰고 아래의 make_one_shot_iterator()을 쓰면 오류가 발생한다. - stateful 관련 오류가 뜨는데, 추 후 해결 되겠지...
@@ -262,14 +233,17 @@ class Dataset(object):
         # iterator = dataset.make_one_shot_iterator()
 
         # tf.random_shuffle을 쓰려면 아래와 같이 make_initializable_iterator을 써야한다. - stack overflow 에서 찾음
-        iterator = dataset.make_initializable_iterator()
+        A_iterator = A_dataset.make_initializable_iterator()
+        B_iterator = B_dataset.make_initializable_iterator()
 
-        return iterator, iterator.get_next(), len(self.file_path_list)
+        return A_iterator, A_iterator.get_next(), B_iterator, B_iterator.get_next(), \
+               A_length if A_length > B_length else B_length
 
-    # TFRecord를 만들기위해 이미지를 불러올때 쓴다.
+
+        # TFRecord를 만들기위해 이미지를 불러올때 쓴다.
     def load_image(self, address):
         img = cv2.imread(address)
-        img = cv2.resize(img, (512, 256), interpolation=cv2.INTER_AREA)
+        img = cv2.resize(img, (256, 256), interpolation=cv2.INTER_AREA)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.astype(np.float32)
         return img
@@ -282,46 +256,55 @@ class Dataset(object):
         # http: // machinelearninguru.com / deep_learning / data_preparation / tfrecord / tfrecord.html 참고했다.
         # TFRecord로 바꾸기
         print("<<< Using TFRecord format >>>")
-        if not os.path.isfile(self.TFRecord_path):  # TFRecord 파일이 존재하지 않은 경우
-            print("<<< Making {} >>>".format(os.path.basename(self.TFRecord_path)))
-            with tf.python_io.TFRecordWriter(self.TFRecord_path) as writer:  # TFRecord로 쓰자
-                for image_address in tqdm(self.file_path_list):
-                    img = self.load_image(image_address)
-                    '''넘파이 배열의 값을 바이트 스트링으로 변환한다.
-                    tf.train.BytesList, tf.train.Int64List, tf.train.FloatList 을 지원한다.
-                    '''
-                    feature = \
-                        {'image': tf.train.Feature(
-                            bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(img.tostring())]))}
-                    example = tf.train.Example(features=tf.train.Features(feature=feature))
-                    # 파일로 쓰자.
-                    writer.write(example.SerializeToString())
-            print("<<< Making {} is Completed >>>".format(os.path.basename(self.TFRecord_path)))
-        else:  # TFRecord가 존재할 경우
-            print("<<< {} already exists >>>".format(os.path.basename(self.TFRecord_path)))
+
+        for TFRecord_path, file_path_list in zip(self.TFRecord_path, self.file_path_list):
+
+            if not os.path.isfile(TFRecord_path):  # TFRecord 파일이 존재하지 않은 경우
+                print("<<< Making {} >>>".format(os.path.basename(TFRecord_path)))
+                with tf.python_io.TFRecordWriter(TFRecord_path) as writer:  # TFRecord로 쓰자
+                    random.shuffle(file_path_list)
+                    for image_address in tqdm(file_path_list):
+                        img = self.load_image(image_address)
+                        '''넘파이 배열의 값을 바이트 스트링으로 변환한다.
+                        tf.train.BytesList, tf.train.Int64List, tf.train.FloatList 을 지원한다.
+                        '''
+                        feature = \
+                            {'image': tf.train.Feature(
+                                bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(img.tostring())]))}
+                        example = tf.train.Example(features=tf.train.Features(feature=feature))
+                        # 파일로 쓰자.
+                        writer.write(example.SerializeToString())
+                print("<<< Making {} is Completed >>>".format(os.path.basename(TFRecord_path)))
+            else:  # TFRecord가 존재할 경우
+                print("<<< {} already exists >>>".format(os.path.basename(TFRecord_path)))
 
     # 2. tf.data.TFRecordDataset를 사용하는 방법 - TRRecord(이진 파일, 직렬화된 입력 데이터)라는 텐서플로우 표준 파일형식으로 저장된 파일을 불러와서 처리하기
     def Using_TFRecordDataset(self):
 
-        # 4. TFRecordDataset()사용해서 읽어오기
-        dataset = tf.data.TFRecordDataset(self.TFRecord_path)
-        dataset = dataset.map(self._image_preprocessing)
-        dataset = dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
-        # Using_TFBasicDataset와 형태를 맞추기 위함이다. -> 사실 여기선 dataset.make_one_shot_iterator()을 사용해도 된다.
-        iterator = dataset.make_initializable_iterator()
-        # tf.python_io.tf_record_iterator는 무엇인가 ? TFRecord 파일에서 레코드를 읽을 수 있는 iterator이다.
-        return iterator, iterator.get_next(), sum(1 for _ in tf.python_io.tf_record_iterator(self.TFRecord_path))
+        A_length = sum(1 for _ in tf.python_io.tf_record_iterator(self.TFRecord_Apath))
+        B_length = sum(1 for _ in tf.python_io.tf_record_iterator(self.TFRecord_Bpath))
 
+        # 4. TFRecordDataset()사용해서 읽어오기
+        A_dataset = tf.data.TFRecordDataset(self.TFRecord_Apath)
+        B_dataset = tf.data.TFRecordDataset(self.TFRecord_Bpath)
+        A_dataset = A_dataset.map(self._image_preprocessing)
+        B_dataset = B_dataset.map(self._image_preprocessing)
+        A_dataset = A_dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
+        B_dataset = B_dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
+        # Using_TFBasicDataset와 형태를 맞추기 위함이다. -> 사실 여기선 dataset.make_one_shot_iterator()을 사용해도 된다.
+        A_iterator = A_dataset.make_initializable_iterator()
+        B_iterator = B_dataset.make_initializable_iterator()
+        # tf.python_io.tf_record_iterator는 무엇인가 ? TFRecord 파일에서 레코드를 읽을 수 있는 iterator이다.
+
+        return A_iterator, A_iterator.get_next(), B_iterator, B_iterator.get_next(), \
+               A_length if A_length > B_length else B_length
 
 if __name__ == "__main__":
     '''
-    Dataset 은 아래에서 하나 고르자
-    "cityscapes"
-    "facades"
-    "maps"
+    Dataset "horse2zebra" 만..
     '''
-    dataset = Dataset(DB_name="cityscapes", AtoB=True, batch_size=4, use_TFRecord=True, use_TrainDataset=True)
-    # iterator, next_batch, data_length = dataset.iterator()
+    dataset = Dataset(DB_name="horse2zebra", batch_size=4, use_TFRecord=True, use_TrainDataset=False)
+    A_iterator, A_next_batch, B_iterator, B_next_batch, data_length = dataset.iterator()
 
 else:
     print("Dataset imported")

@@ -72,9 +72,9 @@ for i, GL in enumerate(GPU_List):
 print("* 한대의 컴퓨터에 여러대의 GPU 가 설치되어 있을 경우 참고할 사항")
 print("<<< 경우의 수 1 : GPU가 여러대 설치 / 통합개발 환경에서 실행 / GPU 번호 지정 원하는 경우 -> "'os.environ["CUDA_VISIBLE_DEVICES"]'"를 pix2pix.model() 호출 전에 작성해 넣으면 됨 >>>")
 print("<<< 경우의 수 2 : GPU가 여러대 설치 / 터미널 창에서 실행 / GPU 번호 지정 원하는 경우  -> CUDA_VISIBLE_DEVICES = 0(gpu 번호) python main,py 을 터미널 창에 적고 ENTER >>>")
-print("<<< CPU만 사용하고 싶다면? '현재 사용 가능한 GPU 번호' 에 없는 번호('-1' 이라던지)를 적어 넣으면 됨 >>>\n")
+print("<<< CPU만 사용하고 싶다면? '현재 사용 가능한 GPU 번호' 에 없는 번호('-1'과 같은)를 적어 넣으면 됨 >>>\n")
 
-pix2pix.model(TEST=False, AtoB= True, DB_name="facades", use_TFRecord=True, distance_loss="L1",
+pix2pix.model(TEST=True, AtoB= True, DB_name="facades", use_TFRecord=True, distance_loss="L1",
               distance_loss_weight=100, optimizer_selection="Adam",
               beta1=0.5, beta2=0.999,  # for Adam optimizer
               decay=0.999, momentum=0.9,  # for RMSProp optimizer

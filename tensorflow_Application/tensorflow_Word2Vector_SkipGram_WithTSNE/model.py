@@ -32,7 +32,7 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
 
     # encoder, decoder의 가중치중 어떤 것을 쓸지 결정해야함
     def evaluate(embedding_matrix=None, validation_inputs=None):
-        norm = tf.sqrt(tf.reduce_sum(tf.square(embedding_matrix), axis=1, keep_dims=True))
+        norm = tf.sqrt(tf.reduce_sum(tf.square(embedding_matrix), axis=1, keepdims=True))
         normalized = tf.divide(embedding_matrix, norm)
         val_embeddings = tf.nn.embedding_lookup(normalized, validation_inputs)
         '''  
@@ -124,11 +124,11 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
             # 학습데이터중 앞에서부터 tSNE_plot개의 단어중 validation_numbe개를 무작위로 선택하여 비슷한 단어들을 출력하는 변수.
             validation_inputs = tf.constant(np.random.choice(tSNE_plot, validation_number, replace=False),
                                             dtype=tf.int32)
-            with tf.name_scope("using_encoder_evaluation"):
+
+            if weight_selection == "encoder":
                 using_encoder_evaluate_operation = evaluate(embedding_matrix=e_matrix,
                                                             validation_inputs=validation_inputs)
-
-            with tf.name_scope("using_decoder_evaluation"):
+            else:
                 using_decoder_evaluate_operation = evaluate(embedding_matrix=nce_weight,
                                                             validation_inputs=validation_inputs)
 
@@ -187,8 +187,8 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
                 # neighbors = (-similarity[i, :]).argsort()[0:similarity_number+1]  # -1 ~ -similarity_number-1 까지의 값
                 print_str = "< Nearest neighbor of {} / ".format(val_word)
 
-                #word2vec도 결국은 autoencoder 이다. 가장 가까운 단어는 자기 자신이 나온다.[index = 0]
-                # 해당 단어와 가장 가까운 것은 자기자신이기 -> 학습 하는 과정에서 자연스럽게 정해진다.
+                # word2vec도 결국은 autoencoder 이다. 가장 가까운 단어는 자기 자신이 나온다.[index = 0]
+                # 해당 단어와 가장 가까운 것은 자기 자신이기 때문에 학습 하는 과정에서 자연스럽게 정해진다.
                 '''
                 학습이 전혀 되지 않는 상태에서, Test만 해도 0번은 자기 자신이 나오는데 이는
                 embedding_init가 균일분포로 초기화 되었기 때문이다.(tf.random_uniform(embedding_shape, minval=-1, maxval=1))
@@ -206,6 +206,7 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
             labels = [dp.reverse_dictionary[i] for i in range(tSNE_plot)]
 
             figure = plt.figure(figsize=(18, 18))  # in inches
+            figure.suptitle("Visualizing Word2Vector using T-SNE")
             for i, label in enumerate(labels):
                 x, y = low_dim_embs[i, :]
                 plt.scatter(x, y)

@@ -2,6 +2,7 @@ import shutil
 
 from Dataset import *
 
+
 def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=None):
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -13,26 +14,23 @@ def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=N
     print("{}_{}.png saved in {} folder".format(model_name, named_images[0], save_path))
 
 
-def model(TEST=False, DB_name="maps", use_TFRecord=True, cycle_consistency_loss="L1",
+def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
           cycle_consistency_loss_weight=10,
           optimizer_selection="Adam", beta1=0.9, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
-          use_identity_mapping=False,
-          norm_selection="instance_norm", learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
+          use_identity_mapping=True,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용했다고 함.
+          norm_selection="instance_norm",  # "instance_norm" or nothing
+          learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
           # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
           save_path="translated_image"):
-
     print("CycleGAN")
-    model_name = norm_selection + DB_name + "_" + "CycleGAN" +"With"+cycle_consistency_loss+'CycleLoss'
+    model_name = "Using" + DB_name + "DB_" + norm_selection + "_{}".format(cycle_consistency_loss + "cLoss")
     if use_identity_mapping:
-        model_name += "_Plus_IdentityLoss"
+        model_name += "_ILoss"
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
             shutil.rmtree("tensorboard/{}".format(model_name))
-
-    # 학습률 - 논문에서 100epoch 후에 선형적으로 줄인다고 했다.
-    lr = tf.placeholder(dtype=tf.float32)
 
     def conv2d(input, weight_shape=None, bias_shape=None, norm_selection=None,
                strides=[1, 1, 1, 1], padding="VALID"):
@@ -70,132 +68,110 @@ def model(TEST=False, DB_name="maps", use_TFRecord=True, cycle_consistency_loss=
         else:
             return tf.nn.bias_add(conv_out, b)
 
+    def residual_block(x):
+
+        y = tf.pad(x, [[0, 0], [1, 1], [1, 1], [0, 0]], "REFLECT")
+        y = tf.nn.relu(conv2d(y, weight_shape=(3, 3, 128, 128), bias_shape=(128),
+                              norm_selection=norm_selection,
+                              strides=[1, 1, 1, 1], padding="VALID"))
+        y = tf.pad(y, [[0, 0], [1, 1], [1, 1], [0, 0]], "REFLECT")
+        y = tf.nn.relu(conv2d(y, weight_shape=(3, 3, 128, 128), bias_shape=(128),
+                              norm_selection=norm_selection,
+                              strides=[1, 1, 1, 1], padding="VALID"))
+        return y + x
+
     # Residual Net
-    def generator(images=None, name="G_generator"):
+    def generator(images=None, name=None):
 
-        '''encoder의 활성화 함수는 모두 leaky_relu이며, decoder의 활성화 함수는 모두 relu이다.
-        encoder의 첫번째 층에는 batch_norm이 적용 안된다.
-
-        총 16개의 층이다.
         '''
-
+        논문에서
+        256x256 입력일 때 9 block!!!
+        -layer 구성-
+        c7s1-32 -> 7x7 Convolution-InstanceNorm-Relu-32filter-1stride
+         |
+        d64 -> 3x3 Convolution-InstanceNorm-Relu--64filter-2stride
+         |
+        d128 -> 3x3 Convolution-InstanceNorm-Relu--128filter-2stride
+        |
+        R128 -> P128 - R128 - R128 - R128 - R128 - R128 - R128 - R128 :  / 이게 9개
+         |
+        u64 -> 3x3 fractionalstridedConvolution-InstanceNorm-Relu-64filter-1/2stride
+         |
+        u32 -> 3x3 fractionalstridedConvolution-InstanceNorm-Relu-32filter-1/2stride
+         |
+        c7s1-3 -> 7x7 Convolution-InstanceNorm-Relu-3filter-1stride
+        '''
         with tf.variable_scope(name):
-            with tf.variable_scope("encoder"):
-                with tf.variable_scope("conv1"):
-                    conv1 = conv2d(images, weight_shape=(4, 4, np.shape(images)[-1], 64), bias_shape=(64),
-                                   strides=[1, 2, 2, 1], padding="SAME")
-                    # result shape = (batch_size, 128, 128, 64)
-                with tf.variable_scope("conv2"):
-                    conv2 = conv2d(tf.nn.leaky_relu(conv1, alpha=0.2), weight_shape=(4, 4, 64, 128), bias_shape=(128),
-                                   norm_selection=norm_selection,
-                                   strides=[1, 2, 2, 1], padding="SAME")
-                    # result shape = (batch_size, 64, 64, 128)
-                with tf.variable_scope("conv3"):
-                    conv3 = conv2d(tf.nn.leaky_relu(conv2, alpha=0.2), weight_shape=(4, 4, 128, 256), bias_shape=(256),
-                                   norm_selection=norm_selection,
-                                   strides=[1, 2, 2, 1], padding="SAME")
-                    # result shape = (batch_size, 32, 32, 256)
-                with tf.variable_scope("conv4"):
-                    conv4 = conv2d(tf.nn.leaky_relu(conv3, alpha=0.2), weight_shape=(4, 4, 256, 512), bias_shape=(512),
-                                   norm_selection=norm_selection,
-                                   strides=[1, 2, 2, 1], padding="SAME")
-                    # result shape = (batch_size, 16, 16, 512)
-                with tf.variable_scope("conv5"):
-                    conv5 = conv2d(tf.nn.leaky_relu(conv4, alpha=0.2), weight_shape=(4, 4, 512, 512), bias_shape=(512),
-                                   norm_selection=norm_selection,
-                                   strides=[1, 2, 2, 1], padding="SAME")
-                    # result shape = (batch_size, 8, 8, 512)
-                with tf.variable_scope("conv6"):
-                    conv6 = conv2d(tf.nn.leaky_relu(conv5, alpha=0.2), weight_shape=(4, 4, 512, 512), bias_shape=(512),
-                                   norm_selection=norm_selection,
-                                   strides=[1, 2, 2, 1], padding="SAME")
-                    # result shape = (batch_size, 4, 4, 512)
-                with tf.variable_scope("conv7"):
-                    conv7 = conv2d(tf.nn.leaky_relu(conv6, alpha=0.2), weight_shape=(4, 4, 512, 512), bias_shape=(512),
-                                   norm_selection=norm_selection,
-                                   strides=[1, 2, 2, 1], padding="SAME")
-                    # result shape = (batch_size, 2, 2, 512)
-                with tf.variable_scope("conv8"):
-                    conv8 = conv2d(tf.nn.leaky_relu(conv7, alpha=0.2), weight_shape=(4, 4, 512, 512), bias_shape=(512),
-                                   strides=[1, 2, 2, 1], padding="SAME")
-                    # result shape = (batch_size, 1, 1, 512)
+            with tf.variable_scope("conv1"):
+                padded_images = tf.pad(images, [[0, 0], [3, 3], [3, 3], [0, 0]], "REFLECT")
+                conv1 = tf.nn.relu(
+                    conv2d(padded_images, weight_shape=(7, 7, images.get_shape()[-1], 32), bias_shape=(32),
+                           norm_selection=norm_selection,
+                           strides=[1, 1, 1, 1], padding="VALID"))
+                # result shape = (batch_size, 256, 256, 64)
+            with tf.variable_scope("conv2"):
+                conv2 = tf.nn.relu(conv2d(conv1, weight_shape=(3, 3, 32, 64), bias_shape=(64),
+                                          norm_selection=norm_selection,
+                                          strides=[1, 2, 2, 1], padding="SAME"))
+                # result shape = (batch_size, 128, 128, 64)
+            with tf.variable_scope("conv3"):
+                conv3 = tf.nn.relu(conv2d(conv2, weight_shape=(3, 3, 64, 128), bias_shape=(128),
+                                          norm_selection=norm_selection,
+                                          strides=[1, 2, 2, 1], padding="SAME"))
+                # result shape = (batch_size, 64, 64, 128)
 
-            with tf.variable_scope("decoder"):
-                with tf.variable_scope("trans_conv1"):
-                    trans_conv1 = tf.nn.dropout(
-                        conv2d_transpose(tf.nn.relu(conv8), output_shape=tf.shape(conv7), weight_shape=(4, 4, 512, 512),
-                                         bias_shape=(512), norm_selection=norm_selection,
-                                         strides=[1, 2, 2, 1], padding="SAME"), keep_prob=Dropout_rate)
-                    # result shape = (batch_size, 2, 2, 512)
-                    # 주의 : 활성화 함수 들어가기전의 encoder 요소를 concat 해줘야함
-                    trans_conv1 = tf.concat([trans_conv1, conv7], axis=-1)
-                    # result shape = (batch_size, 2, 2, 1024)
+            with tf.variable_scope("9_residual_block"):
+                r1 = residual_block(conv3)
+                r2 = residual_block(r1)
+                r3 = residual_block(r2)
+                r4 = residual_block(r3)
+                r5 = residual_block(r4)
+                r6 = residual_block(r5)
+                r7 = residual_block(r6)
+                r8 = residual_block(r7)
+                r9 = residual_block(r8)
+                # result shape = (batch_size, 64, 64, 128)
 
-                with tf.variable_scope("trans_conv2"):
-                    trans_conv2 = tf.nn.dropout(
-                        conv2d_transpose(tf.nn.relu(trans_conv1), output_shape=tf.shape(conv6),
-                                         weight_shape=(4, 4, 512, 1024),
-                                         bias_shape=(512), norm_selection=norm_selection,
-                                         strides=[1, 2, 2, 1], padding="SAME"), keep_prob=Dropout_rate)
-                    trans_conv2 = tf.concat([trans_conv2, conv6], axis=-1)
-                    # result shape = (batch_size, 4, 4, 1024)
+            with tf.variable_scope("trans_conv1"):
+                '''output_shape = tf.shape(conv2) ???
+                output_shape 을 직접 지정 해주는 경우 예를 들어 (batch_size, 2, 2, 512) 이런식으로 지정해준다면,
+                trans_conv1 의 결과는 무조건 (batch_size, 2, 2, 512) 이어야 한다. 그러나 tf.shape(conv2)로 쓸 경우
+                나중에 session에서 실행될 때 입력이 되므로, batch_size에 종속되지 않는다. 
+                어쨌든 output_shape = tf.shape(conv2) 처럼 코딩하는게 무조건 좋다. 
+                '''
+                trans_conv1 = tf.nn.relu(conv2d_transpose(r9, output_shape=tf.shape(conv2),
+                                                          weight_shape=(3, 3, 64, 128),
+                                                          bias_shape=(64), norm_selection=norm_selection,
+                                                          strides=[1, 2, 2, 1], padding="SAME"))
+                # result shape = (batch_size, 128, 128, 64)
 
-                with tf.variable_scope("trans_conv3"):
-                    trans_conv3 = tf.nn.dropout(
-                        conv2d_transpose(tf.nn.relu(trans_conv2), output_shape=tf.shape(conv5),
-                                         weight_shape=(4, 4, 512, 1024),
-                                         bias_shape=(512), norm_selection=norm_selection,
-                                         strides=[1, 2, 2, 1], padding="SAME"), keep_prob=Dropout_rate)
-                    trans_conv3 = tf.concat([trans_conv3, conv5], axis=-1)
-                    # result shape = (batch_size, 8, 8, 1024)
+            with tf.variable_scope("trans_conv2"):
+                trans_conv2 = tf.nn.relu(conv2d_transpose(trans_conv1, output_shape=tf.shape(conv1),
+                                                          weight_shape=(3, 3, 32, 64),
+                                                          bias_shape=(32), norm_selection=norm_selection,
+                                                          strides=[1, 2, 2, 1], padding="SAME"))
+                # result shape = (batch_size, 256, 256, 32)
 
-                with tf.variable_scope("trans_conv4"):
-                    trans_conv4 = conv2d_transpose(tf.nn.relu(trans_conv3), output_shape=tf.shape(conv4),
-                                                   weight_shape=(4, 4, 512, 1024),
-                                                   bias_shape=(512), norm_selection=norm_selection,
-                                                   strides=[1, 2, 2, 1], padding="SAME")
-                    trans_conv4 = tf.concat([trans_conv4, conv4], axis=-1)
-                    # result shape = (batch_size, 16, 16, 1024)
-                with tf.variable_scope("trans_conv5"):
-                    trans_conv5 = conv2d_transpose(tf.nn.relu(trans_conv4), output_shape=tf.shape(conv3),
-                                                   weight_shape=(4, 4, 256, 1024),
-                                                   bias_shape=(256), norm_selection=norm_selection,
-                                                   strides=[1, 2, 2, 1], padding="SAME")
-                    trans_conv5 = tf.concat([trans_conv5, conv3], axis=-1)
-                    # result shape = (batch_size, 32, 32, 512)
-                with tf.variable_scope("trans_conv6"):
-                    trans_conv6 = conv2d_transpose(tf.nn.relu(trans_conv5), output_shape=tf.shape(conv2),
-                                                   weight_shape=(4, 4, 128, 512),
-                                                   bias_shape=(128), norm_selection=norm_selection,
-                                                   strides=[1, 2, 2, 1], padding="SAME")
-                    trans_conv6 = tf.concat([trans_conv6, conv2], axis=-1)
-                    # result shape = (batch_size, 64, 64, 256)
-                with tf.variable_scope("trans_conv7"):
-                    trans_conv7 = conv2d_transpose(tf.nn.relu(trans_conv6), output_shape=tf.shape(conv1),
-                                                   weight_shape=(4, 4, 64, 256),
-                                                   bias_shape=(64), norm_selection=norm_selection,
-                                                   strides=[1, 2, 2, 1], padding="SAME")
-                    trans_conv7 = tf.concat([trans_conv7, conv1], axis=-1)
-                    # result shape = (batch_size, 128, 128, 128)
-                with tf.variable_scope("trans_conv8"):
-                    output = tf.nn.tanh(
-                        conv2d_transpose(tf.nn.relu(trans_conv7), output_shape=tf.shape(target),
-                                         weight_shape=(4, 4, 3, 128),
-                                         bias_shape=(3),
-                                         strides=[1, 2, 2, 1], padding="SAME"))
-                    # result shape = (batch_size, 256, 256, 3)
+            with tf.variable_scope("output"):
+                padded_trans_conv2 = tf.pad(trans_conv2, [[0, 0], [3, 3], [3, 3], [0, 0]], "REFLECT")
+                output = tf.nn.tanh(conv2d(padded_trans_conv2, weight_shape=(7, 7, 32, 3), bias_shape=(3),
+                                           norm_selection=norm_selection,
+                                           strides=[1, 1, 1, 1], padding="VALID"))
+            # result shape = (batch_size, 256, 256, 3)
         return output
 
     # PatchGAN
-    def discriminator(input=None, name=None):
+    def discriminator(images=None, name=None):
 
         '''discriminator의 활성화 함수는 모두 leaky_relu(slope = 0.2)이다.
         첫 번째 층에는 instance normalization 을 적용하지 않는다.
-        왜 이런 구조를 사용? 아래의 구조 출력단의 ReceptiveField 크기를 구해보면 70이다.(ReceptiveFieldArithmetic/rf.py 에서 구해볼 수 있다.)'''
+        왜 이런 구조를 사용? 아래의 구조 출력단의 ReceptiveField 크기를 구해보면 70이다.(ReceptiveFieldArithmetic/rf.py 에서 구해볼 수 있다.)
+        layer 구성 은 pix2pix gan 의 discriminator와 같다.(PatchGAN 70X70)
+        '''
         with tf.variable_scope(name):
             with tf.variable_scope("conv1"):
                 conv1 = tf.nn.leaky_relu(
-                    conv2d(input, weight_shape=(4, 4, np.shape(input)[-1], 64), bias_shape=(64),
+                    conv2d(images, weight_shape=(4, 4, images.get_shape()[-1], 64), bias_shape=(64),
                            strides=[1, 2, 2, 1], padding="SAME"), alpha=0.2)
                 # result shape = (batch_size, 128, 128, 64)
             with tf.variable_scope("conv2"):
@@ -242,13 +218,16 @@ def model(TEST=False, DB_name="maps", use_TFRecord=True, cycle_consistency_loss=
         JG_Graph = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
         with JG_Graph.as_default():  # as_default()는 JG_Graph를 기본그래프로 설정한다.
 
+            # 학습률 - 논문에서 100epoch 후에 선형적으로 줄인다고 했다.
+            lr = tf.placeholder(dtype=tf.float32)
+
             # 데이터 전처리
             dataset = Dataset(DB_name=DB_name, batch_size=batch_size, use_TFRecord=use_TFRecord,
                               use_TrainDataset=not TEST)
-            iterator, next_batch, data_length = dataset.iterator()
+            A_iterator, A_next_batch, B_iterator, B_next_batch, data_length = dataset.iterator()
 
             # 알고리즘
-            A, B = next_batch
+            A, B = A_next_batch, B_next_batch
             with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
 
                 with tf.name_scope("AtoB_Generator"):
@@ -266,19 +245,19 @@ def model(TEST=False, DB_name="maps", use_TFRecord=True, cycle_consistency_loss=
                     BackB = generator(images=BtoA_gene, name="AtoB_generator")
 
                 with tf.name_scope("AtoB_Discriminator"):
-                    AtoB_Dreal = discriminator(input=B, name="AtoB_Discriminator")
+                    AtoB_Dreal = discriminator(images=B, name="AtoB_Discriminator")
                     # scope.reuse_variables()
-                    AtoB_Dgene = discriminator(input=AtoB_gene, name="AtoB_Discriminator")
+                    AtoB_Dgene = discriminator(images=AtoB_gene, name="AtoB_Discriminator")
 
                 with tf.name_scope("BtoA_Discriminator"):
-                    BtoA_Dreal = discriminator(input=A, name="BtoA_Discriminator")
+                    BtoA_Dreal = discriminator(images=A, name="BtoA_Discriminator")
                     # scope.reuse_variables()
-                    BtoA_Dgene = discriminator(input=BtoA_gene, name="BtoA_Discriminator")
+                    BtoA_Dgene = discriminator(images=BtoA_gene, name="BtoA_Discriminator")
 
                 if use_identity_mapping:
                     with tf.name_scope("identity_generator"):
                         im_AtoB_GeneratorWithB = generator(images=B, name="AtoB_generator")
-                        im_BtoA_GeneratorWithA =  generator(images=A, name="BtoA_generator")
+                        im_BtoA_GeneratorWithA = generator(images=A, name="BtoA_generator")
 
             AtoB_varD = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/AtoB_Discriminator')
             # set으로 중복 제거 하고, 다시 list로 바꾼다.
@@ -334,14 +313,14 @@ def model(TEST=False, DB_name="maps", use_TFRecord=True, cycle_consistency_loss=
                     AtoB_GLoss += tf.multiply(cycle_loss, cycle_consistency_loss_weight)
                     BtoA_GLoss += tf.multiply(cycle_loss, cycle_consistency_loss_weight)
 
-            # Identity mapping -> input과 output의 컬러 구성을 보존하기 위해 쓰이는것(논문에서는 painting -> photo)
+            # Identity mapping -> input과 output의 컬러 구성을 보존하기 위해 쓴다고 함(논문에서는 painting -> photo DB로 학습할 때 씀)
             if use_identity_mapping:
                 with tf.name_scope("{}_loss".format("Identity_mapping_Loss")):
                     Identity_mapping_Loss = tf.losses.absolute_difference(im_AtoB_GeneratorWithB, B) + \
-                                            tf.losses.absolute_difference(im_BtoA_GeneratorWithA , A)
+                                            tf.losses.absolute_difference(im_BtoA_GeneratorWithA, A)
                     tf.summary.scalar("{} Loss".format(cycle_consistency_loss), Identity_mapping_Loss)
-                    AtoB_GLoss += tf.multiply(Identity_mapping_Loss, 0.5*cycle_consistency_loss_weight)
-                    BtoA_GLoss += tf.multiply(Identity_mapping_Loss, 0.5*cycle_consistency_loss_weight)
+                    AtoB_GLoss += tf.multiply(Identity_mapping_Loss, 0.5 * cycle_consistency_loss_weight)
+                    BtoA_GLoss += tf.multiply(Identity_mapping_Loss, 0.5 * cycle_consistency_loss_weight)
 
             with tf.name_scope("AtoB_Discriminator_trainer"):
                 AtoB_D_train_op = training(AtoB_DLoss, AtoB_varD, scope='shared_variables/AtoB_Discriminator')
@@ -365,8 +344,8 @@ def model(TEST=False, DB_name="maps", use_TFRecord=True, cycle_consistency_loss=
             tf.add_to_collection('AtoB', AtoB_gene)
             tf.add_to_collection('BtoA', BtoA_gene)
 
-            # graph 구조를 파일에 쓴다.
-            saver_generator.export_meta_graph(os.path.join(model_name, "Generator_Graph.meta"),
+            # generator graph 구조를 파일에 쓴다.
+            saver_generator.export_meta_graph(os.path.join(model_name, 'Generator', 'Generator_Graph.meta'),
                                               collection_list=['A', 'B', "AtoB", "BtoA"])
 
             config = tf.ConfigProto(log_device_placement=False, allow_soft_placement=True)
@@ -382,18 +361,19 @@ def model(TEST=False, DB_name="maps", use_TFRecord=True, cycle_consistency_loss=
                     print("Restore {} checkpoint!!!".format(os.path.basename(ckpt_all.model_checkpoint_path)))
                     saver_all.restore(sess, ckpt_all.model_checkpoint_path)
 
-                summary_writer = tf.summary.FileWriter(os.path.join("tensorboard", model_name), sess.graph)
-                sess.run(iterator.initializer)
+                summary_writer = tf.summary.FileWriter(os.path.join('tensorboard', model_name), sess.graph)
+                sess.run(A_iterator.initializer)
+                sess.run(B_iterator.initializer)
                 for epoch in tqdm(range(1, training_epochs + 1)):
 
-                    # 논문에서 100 epoch가 넘으면 선형적으로 학습률(learning rate)을 감소시킨다고 했다.
+                    # 논문에서 100 epoch가 넘으면 선형적으로 학습률(learning rate)을 감소시킨다고 했다. 1 epoch마다 0.99 씩 줄여보자
                     if epoch > 100:
                         learning_rate *= 0.99
 
-                    AtoB_DLoss = 0
-                    AtoB_GLoss = 0
-                    BtoA_DLoss = 0
-                    BtoA_GLoss = 0
+                    AtoB_LossD = 0
+                    AtoB_LossG = 0
+                    BtoA_LossD = 0
+                    BtoA_LossG = 0
 
                     # 아래의 두 변수가 각각 0.5 씩의 값을 갖는게 가장 이상적이다.
                     AtoB_sigmoidD = 0
@@ -404,7 +384,18 @@ def model(TEST=False, DB_name="maps", use_TFRecord=True, cycle_consistency_loss=
                     BtoA_sigmoidG = 0
 
                     total_batch = int(data_length / batch_size)
+
                     for i in range(total_batch):
+                        ''' 
+                        Second, to reduce model oscillation [14], we follow
+                        Shrivastava et al’s strategy [45] and update the discriminators
+                        using a history of generated images rather than the ones
+                        produced by the latest generative networks. We keep an image
+                        buffer that stores the 50 previously generated images.
+                        -> discriminator 업데이트를 이전에 저장해놓은 generated images로 한다.- 과거의 생성 이미지로!!!
+                        '''
+                        # AtoB_Dgene, BtoA_Dgene =Image_pool()
+
                         _, AtoB_D_Loss, AtoB_Dreal_simgoid = sess.run([AtoB_D_train_op, AtoB_DLoss, AtoB_Dreal],
                                                                       feed_dict={lr: learning_rate})
                         _, AtoB_G_Loss, AtoB_Dgene_simgoid = sess.run([AtoB_G_train_op, AtoB_GLoss, AtoB_Dgene],
@@ -414,10 +405,10 @@ def model(TEST=False, DB_name="maps", use_TFRecord=True, cycle_consistency_loss=
                         _, BtoA_G_Loss, BtoA_Dgene_simgoid = sess.run([BtoA_G_train_op, BtoA_GLoss, BtoA_Dgene],
                                                                       feed_dict={lr: learning_rate})
 
-                        AtoB_DLoss += (AtoB_D_Loss / total_batch)
-                        AtoB_GLoss += (AtoB_G_Loss / total_batch)
-                        BtoA_DLoss += (BtoA_D_Loss / total_batch)
-                        BtoA_GLoss += (BtoA_G_Loss / total_batch)
+                        AtoB_LossD += (AtoB_D_Loss / total_batch)
+                        AtoB_LossG += (AtoB_G_Loss / total_batch)
+                        BtoA_LossD += (BtoA_D_Loss / total_batch)
+                        BtoA_LossG += (BtoA_G_Loss / total_batch)
 
                         AtoB_sigmoidD += (AtoB_Dreal_simgoid / total_batch)
                         AtoB_sigmoidG += (AtoB_Dgene_simgoid / total_batch)
@@ -455,31 +446,33 @@ def model(TEST=False, DB_name="maps", use_TFRecord=True, cycle_consistency_loss=
                 print("Optimization Finished!")
 
     else:
+
         tf.reset_default_graph()
-        meta_path = glob.glob(os.path.join(model_name, '*.meta'))
+        meta_path = glob.glob(os.path.join(model_name, 'Generator', '*.meta'))
         if len(meta_path) == 0:
-            print("{} Graph가 존재 하지 않습니다.".format(meta_path))
+            print("<<< Graph가 존재 하지 않습니다. >>>")
+            exit(0)
         else:
-            print("{} Graph가 존재 합니다.".format(meta_path))
+            print("<<< Graph가 존재 합니다. >>>")
 
         # print(tf.get_default_graph()) #기본그래프이다.
         JG = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
         with JG.as_default():  # as_default()는 JG를 기본그래프로 설정한다.
 
-            #Test Dataset 가져오기
-            dataset = Dataset(DB_name=DB_name, batch_size=1, use_TFRecord=use_TFRecord,
-                              use_TrainDataset=TEST)
-            iterator, next_batch, data_length = dataset.iterator()
-            A_tensor, B_tensor = next_batch
+            # Test Dataset 가져오기
+            dataset = Dataset(DB_name=DB_name, use_TFRecord=use_TFRecord,
+                              use_TrainDataset=not TEST)
+            A_iterator, A_next_batch, B_iterator, B_next_batch, data_length = dataset.iterator()
+            A_tensor, B_tensor = A_next_batch, B_next_batch
 
             '''
             WHY? 아래 3줄의 코드를 적어 주지 않으면 오류가 난다. 
             -> 단순히 그래프를 가져오고 가중치를 복원하는 것만으로는 안된다. 세션을 실행할때 인수로 사용할 변수에 대한 
             추가 접근을 제공하지 않기 때문에 아래와 같이 get_colltection으로 입,출력 변수들을 불러와서 다시 사용 해야 한다.
             '''
-            saver = tf.train.import_meta_graph(meta_path, clear_devices=True)  # meta graph 읽어오기
+            saver = tf.train.import_meta_graph(meta_path[0], clear_devices=True)  # meta graph 읽어오기
             if saver == None:
-                print("{} meta 파일을 읽을 수 없습니다.".format(saver))
+                print("<<< meta 파일을 읽을 수 없습니다. >>>")
                 exit(0)
 
             A = tf.get_collection('A')[0]
@@ -488,23 +481,37 @@ def model(TEST=False, DB_name="maps", use_TFRecord=True, cycle_consistency_loss=
             BtoA_gene = tf.get_collection('BtoA')[0]
 
             with tf.Session(graph=JG) as sess:
-                sess.run(iterator.initializer)
+                sess.run(A_iterator.initializer)
+                sess.run(B_iterator.initializer)
+                sess.run(tf.global_variables_initializer())
+                ckpt = tf.train.get_checkpoint_state(os.path.join(model_name, 'Generator'))
+                if ckpt == None:
+                    print("<<< checkpoint file does not exist>>>")
+                    print("<<< Exit the program >>>")
+                    exit(0)
+                if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
+                    print("generator variable retored except for optimizer parameter")
+                    print("Restore {} checkpoint!!!".format(os.path.basename(ckpt.model_checkpoint_path)))
+                    saver.restore(sess, ckpt.model_checkpoint_path)
+
                 for i in range(data_length):
-                    A_numpy, B_numpy = sess.run([A_tensor, B_tensor]) # 이런식으로 하는 것은 상당히 비효율적 -> tf.data.Dataset 에 더익숙해지고자!!!
-                    AtoB_translated_image, BtoA_translated_image = sess.run([AtoB_gene, BtoA_gene], feed_dict={A : A_numpy, B : B_numpy})
-                    visualize(model_name="AtoB"+model_name, named_images=[i, A_numpy , AtoB_translated_image[0]],
-                              save_path="AtoB"+save_path)
-                    visualize(model_name="BtoA"+model_name, named_images=[i, B_numpy, BtoA_translated_image[0]],
-                              save_path="BtoA"+save_path)
+                    A_numpy, B_numpy = sess.run(
+                        [A_tensor, B_tensor])  # 이런식으로 하는 것은 상당히 비효율적 -> tf.data.Dataset 에 더익숙해지고자!!!
+                    AtoB_translated_image, BtoA_translated_image = sess.run([AtoB_gene, BtoA_gene],
+                                                                            feed_dict={A: A_numpy, B: B_numpy})
+                    visualize(model_name="AtoB" + model_name, named_images=[i, A_numpy, AtoB_translated_image[0]],
+                              save_path="AtoB" + save_path)
+                    visualize(model_name="BtoA" + model_name, named_images=[i, B_numpy, BtoA_translated_image[0]],
+                              save_path="BtoA" + save_path)
 
 
 if __name__ == "__main__":
-    model(TEST=False, AtoB=True, DB_name="maps", use_TFRecord=True, cycle_consistency_loss="L1",
+    model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
           cycle_consistency_loss_weight=10,
           optimizer_selection="Adam", beta1=0.9, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
-          use_identity_mapping=False,
-          norm_selection="instance_norm",  # "instance_norm" or 아무거나
+          use_identity_mapping=True,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용했다고 함.
+          norm_selection="instance_norm",  # "instance_norm" or nothing
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
           # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
           save_path="translated_image")

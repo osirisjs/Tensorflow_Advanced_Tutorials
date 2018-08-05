@@ -143,10 +143,10 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
         tf.reset_default_graph()
         meta_path=glob.glob(os.path.join(model_name,'*.meta'))
         if len(meta_path)==0:
-            print("Lotto Graph가 존재 하지 않습니다.")
+            print("<<< Lotto Graph가 존재 하지 않습니다. >>>")
             exit(0)
         else:
-            print("Lotto Graph가 존재 합니다.")
+            print("<<< Lotto Graph가 존재 합니다. >>>")
 
         # print(tf.get_default_graph()) #기본그래프이다.
         JG = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
@@ -158,7 +158,7 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
             '''
             saver = tf.train.import_meta_graph(meta_path[0], clear_devices=True)  # meta graph 읽어오기
             if saver==None:
-                print("meta 파일을 읽을 수 없습니다.")
+                print("<<< meta 파일을 읽을 수 없습니다. >>>")
                 exit(0)
 
             x = tf.get_collection('x')[0]
@@ -167,6 +167,10 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
             with tf.Session(graph=JG) as sess:
                 sess.run(tf.global_variables_initializer())
                 ckpt = tf.train.get_checkpoint_state(model_name)
+                if ckpt == None:
+                    print("<<< checkpoint file does not exist>>>")
+                    print("<<< Exit the program >>>")
+                    exit(0)
                 if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
                     print("Restore {} checkpoint!!!".format(os.path.basename(ckpt.model_checkpoint_path)))
                     saver.restore(sess, ckpt.model_checkpoint_path)

@@ -99,7 +99,7 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
             return tf.nn.bias_add(conv_out, b)
 
     # 유넷 - U-NET
-    def generator(x=None):
+    def generator(images=None):
 
         '''encoder의 활성화 함수는 모두 leaky_relu이며, decoder의 활성화 함수는 모두 relu이다.
         encoder의 첫번째 층에는 batch_norm이 적용 안된다.
@@ -110,7 +110,7 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
         with tf.variable_scope("Generator"):
             with tf.variable_scope("encoder"):
                 with tf.variable_scope("conv1"):
-                    conv1 = conv2d(x, weight_shape=(4, 4, np.shape(x)[-1], 64), bias_shape=(64),
+                    conv1 = conv2d(images, weight_shape=(4, 4, images.get_shape()[-1], 64), bias_shape=(64),
                                    strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 128, 128, 64)
                 with tf.variable_scope("conv2"):
@@ -150,6 +150,12 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
 
             with tf.variable_scope("decoder"):
                 with tf.variable_scope("trans_conv1"):
+                    '''output_shape = tf.shape(conv2) ???
+                    output_shape 을 직접 지정 해주는 경우 예를 들어 (batch_size, 2, 2, 512) 이런식으로 지정해준다면,
+                    trans_conv1 의 결과는 무조건 (batch_size, 2, 2, 512) 이어야 한다. 그러나 tf.shape(conv2)로 쓸 경우
+                    나중에 session에서 실행될 때 입력이 되므로, batch_size에 종속되지 않는다. 
+                    어쨌든 output_shape = tf.shape(conv2) 처럼 코딩하는게 무조건 좋다. 
+                    '''
                     trans_conv1 = tf.nn.dropout(
                         conv2d_transpose(tf.nn.relu(conv8), output_shape=tf.shape(conv7), weight_shape=(4, 4, 512, 512),
                                          bias_shape=(512), norm_selection=norm_selection,
@@ -215,17 +221,17 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
         return output
 
     # PatchGAN
-    def discriminator(input=None, condition=None):
+    def discriminator(images=None, condition=None):
 
         '''discriminator의 활성화 함수는 모두 leaky_relu이다.
         genertor와 마찬가지로 첫번째 층에는 batch_norm을 적용 안한다.
 
         왜 이런 구조를 사용? 아래의 구조 출력단의 ReceptiveField 크기를 구해보면 70이다.(ReceptiveFieldArithmetic/rf.py 에서 구해볼 수 있다.)'''
-        conditional_input = tf.concat([input, condition], axis=-1)
+        conditional_input = tf.concat([images, condition], axis=-1)
         with tf.variable_scope("Discriminator"):
             with tf.variable_scope("conv1"):
                 conv1 = tf.nn.leaky_relu(
-                    conv2d(conditional_input, weight_shape=(4, 4, np.shape(conditional_input)[-1], 64), bias_shape=(64),
+                    conv2d(conditional_input, weight_shape=(4, 4, conditional_input.get_shape()[-1], 64), bias_shape=(64),
                            strides=[1, 2, 2, 1], padding="SAME"), alpha=0.2)
                 # result shape = (batch_size, 128, 128, 64)
             with tf.variable_scope("conv2"):
@@ -292,11 +298,11 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
         x, target = next_batch
         with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
             with tf.name_scope("Generator"):
-                G = generator(x=x)
+                G = generator(images=x)
             with tf.name_scope("Discriminator"):
-                D_real, sigmoid_D_real = discriminator(input=target, condition=x)
+                D_real, sigmoid_D_real = discriminator(images=target, condition=x)
                 # scope.reuse_variables()
-                D_gene, sigmoid_D_gene = discriminator(input=G, condition=x)
+                D_gene, sigmoid_D_gene = discriminator(images=G, condition=x)
 
         var_D = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
                                   scope='shared_variables/Discriminator')

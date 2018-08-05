@@ -41,6 +41,7 @@
                 * 네트워크 Graph 구조를 담은 meta 파일을 저장하고 불러오는 코드가 포함되어 있습니다. tensorflow.add_to_collection, tensorflow.get_collection 를 사용합니다.
                 * tf.data.Dataset를 사용합니다. 자신의 데이터를 학습 네트워크에 적합한 형태로 쉽게 처리 할 수 있게 도와주는 API입니다.
                     * Tensorflow를 막 처음 시작하는 대부분의 사람은 Tensorflow 자체에서 처리되어 제공되는 MNIST, CIFAR 같은 Toy 데이터들을 사용해서 여러 가지 학습 알고리즘들을 공부하게 됩니다. 어느 정도 학습이 진행되면 '나'만의 데이터를 사용해서 어떤 네트워크를 학습시켜보고 싶은데... 어떻게 처리 해야 하지? 조금 쉽게 하는 방법 없나? 라는 질문을 하게 됩니다. 이 질문에 대한 답이 'tf.data.Dataset'에 있습니다.
+                * tf.train.Saver().export_meta_graph API 와 tf.train.import_meta_graph API를 사용하여 Training, Test 코드를 각각 실행합니다.
             * [***Neural Style***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_NeuralStyle)
                 * 내 사진을 예술 작품으로 바꿔주는 유명한 논문인 "A Neural Algorithm of Artistic Style" 의 구현 입니다.
             * [***Word2Vector SkipGram With TSNE***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_Word2Vector_SkipGram_WithTSNE)
@@ -53,13 +54,14 @@
                     2. 더 효율적인 데이터 전처리를 위해 TFRecord 형식으로 데이터를 저장하고  tf.data.TFRecordDataset 를 사용할 수 있습니다.
             
             * [***Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks***]()
-                * 진행중 - 논문 분석, 코드 구현 같이 하는중 
                 * Image To Image Translation With Conditional Adversarial Newort을 학습 시키기 위해선 입력과 출력이 한쌍인 데이터가 필요했습니다. 그러나 이 논문에서 제시한 방법은 입력과 출력이 쌍일 필요가 없습니다.
                 * CycleGan은 전혀 다른 도메인에 위치해 있는 두 종류의 데이터 집단을 자연스럽게 이어주는 연결고리를 찾아내는 과정이라고 생각합니다.(오직 저 만의 생각)
                 * 네트워크 구조 및 학습 방법은 논문에서 제시한 내용과 거의 같습니다.
                 * 2가지의 데이터 전처리 방법  
                     1. 효율적인 데이터 전처리를 위해 tf.data.Dataset을 사용할 수 있습니다.
                     2. 더 효율적인 데이터 전처리를 위해 TFRecord 형식으로 데이터를 저장하고  tf.data.TFRecordDataset 를 사용할 수 있습니다.
+                * tf.train.Saver().export_meta_graph API 와 tf.train.import_meta_graph API를 사용하여 Training, Test 코드를 각각 실행합니다.
+                * 거의 완성
             
     * ### **Sequence Model With Variable Length Dataset**
         * ASAP 
@@ -75,7 +77,7 @@
     
 >## **코드 실행에 필요한 파이썬 모듈** 
 * Tensorflow-1.8.0 
-* numpy, collections
+* numpy, collections, random
 * matplotlib, scikit-learn, opencv-python
 * tqdm, os, glob, shutil, urllib, zipfile, tarfile
 

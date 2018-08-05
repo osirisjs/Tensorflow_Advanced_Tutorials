@@ -2,7 +2,7 @@ import glob
 import os
 import tarfile
 import urllib.request
-
+import random
 import cv2
 import numpy as np
 import tensorflow as tf
@@ -208,7 +208,7 @@ class Dataset(object):
         lb = tf.image.crop_to_bounding_box(img_decoded, offset_height=0, offset_width=256, target_height=256,
                                            target_width=256)
 
-        # 3. gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
+        # 4. gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
         Ip_scaled = tf.subtract(tf.divide(tf.cast(Ip, tf.float32), 127.5), 1)  # gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
         lb_scaled = tf.subtract(tf.divide(tf.cast(lb, tf.float32), 127.5), 1)  # gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
 
@@ -217,11 +217,11 @@ class Dataset(object):
 
         # Train Dataset 에서만 동작하게 하기 위함
         if self.use_TrainDataset:
-            # 4. 286x286으로 키운다.
+            # 5. 286x286으로 키운다.
             Ip_resized = tf.image.resize_images(images=Ip_scaled, size=(286, 286))
             lb_resized = tf.image.resize_images(images=lb_scaled, size=(286, 286))
 
-            # 5. 이미지를 256x256으로 랜덤으로 자른다.
+            # 6. 이미지를 256x256으로 랜덤으로 자른다.
             Ip_random_crop = tf.random_crop(Ip_resized, size=(256, 256, 3))
             lb_random_crop = tf.random_crop(lb_resized, size=(256, 256, 3))
 
@@ -288,6 +288,7 @@ class Dataset(object):
         if not os.path.isfile(self.TFRecord_path):  # TFRecord 파일이 존재하지 않은 경우
             print("<<< Making {} >>>".format(os.path.basename(self.TFRecord_path)))
             with tf.python_io.TFRecordWriter(self.TFRecord_path) as writer:  # TFRecord로 쓰자
+                random.shuffle(self.file_path_list)
                 for image_address in tqdm(self.file_path_list):
                     img = self.load_image(image_address)
                     '''넘파이 배열의 값을 바이트 스트링으로 변환한다.

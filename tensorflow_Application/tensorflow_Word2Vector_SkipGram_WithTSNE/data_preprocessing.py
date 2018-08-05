@@ -12,7 +12,6 @@ https://github.com/tensorflow/tensorflow/blob/r1.8/tensorflow/examples/tutorials
 코드를 수정
 '''
 
-
 class data_preprocessing(object):
 
     def __init__(self, url='http://mattmahoney.net/dc/', filename='text8.zip',
@@ -34,7 +33,9 @@ class data_preprocessing(object):
         """Download a file if not present, and make sure it's the right size."""
         # Step 1: Download the data.
         if not os.path.exists(self.filename):
+            print("<<< {} Dataset Download required >>>".format(self.filename))
             self.filename, _ = urllib.request.urlretrieve(self.url + self.filename, self.filename)
+            print("<<< {} Dataset Download Completed >>>".format(self.filename))
         statinfo = os.stat(self.filename)
         if statinfo.st_size == self.expected_bytes:
             print('Found and verified', self.filename)
@@ -104,7 +105,7 @@ class data_preprocessing(object):
             for j in range(num_skips):
 
                 # 아래의 3줄의 코드는 제대로된 데이터를 생성하는데 중요한 역할을 한다.
-                while context in context_to_avoid:  # targets_to_avoid 안에있는 값이 target이 아닐때까지 실행
+                while context in context_to_avoid:  # targets_to_avoid 안에 있는 값이 target이 아닐때까지 실행
                     context = random.randint(0, span - 1)
                 context_to_avoid.append(context)  # 이미 (문맥)출력으로 사용된 값을 제외시키는 역할
 
