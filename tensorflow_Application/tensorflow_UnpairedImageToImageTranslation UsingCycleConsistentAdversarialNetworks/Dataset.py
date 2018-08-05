@@ -299,6 +299,57 @@ class Dataset(object):
         return A_iterator, A_iterator.get_next(), B_iterator, B_iterator.get_next(), \
                A_length if A_length > B_length else B_length
 
+''' 
+to reduce model oscillation [14], we follow
+Shrivastava et al’s strategy [45] and update the discriminators
+using a history of generated images rather than the ones
+produced by the latest generative networks. We keep an image
+buffer that stores the 50 previously generated images.
+
+imagePool 클래스
+# https://github.com/xhujoy/CycleGAN-tensorflow/blob/master/utils.py 를 참고해서 변형했다.
+'''
+class ImagePool(object):
+
+    def __init__(self, image_pool_size=50):
+
+        self.image_pool_size = image_pool_size
+        self.image_count = 0
+        self.images_appender = []
+
+    def __repr__(self):
+        return "Image Pool class"
+
+    def __call__(self, images=None):
+
+        #1. self.image_pool_size 사이즈가 0이거나 작으면, ImagePool을 사용하지 않는다.
+        if self.image_pool_size <= 0:
+            return images
+
+        '''2. self.num_img 이 self.image_pool_size 보다 작으면, self.image_count을 하나씩 늘려주면서
+        self.images_appender에 images를 추가해준다.
+        self.image_pool_size 개 self.images_appender에 이전 images를 저장한다.'''
+        if self.image_count < self.image_pool_size:
+            self.images_appender.append(images)
+            self.image_count += 1
+            return images
+
+
+        #np.random.rand()는 0~1 사이의 무작위 값을 출력한다.
+        if np.random.rand() > 0.1:
+            index = np.random.randint(low=0, high=self.image_pool_size, size=None)
+            #얕은 복사 정도면 충분하다
+            tmp1 = self.images_appender[index][0][:]
+            self.images_appender[index][0] = images[0]
+            index = np.random.randint(low=0, high=self.image_pool_size, size=None)
+            #얕은 복사 정도면 충분하다
+            tmp2 = self.images_appender[index][1][:]
+            self.images_appender[index][1] = images[1]
+            return tmp1, tmp2
+
+        else:
+            return images
+
 if __name__ == "__main__":
     '''
     Dataset "horse2zebra" 만..

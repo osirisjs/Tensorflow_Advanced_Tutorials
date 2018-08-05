@@ -1,7 +1,5 @@
 import shutil
-
 from Dataset import *
-
 
 def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=None):
     if not os.path.exists(save_path):
@@ -20,6 +18,8 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
           use_identity_mapping=True,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용했다고 함.
           norm_selection="instance_norm",  # "instance_norm" or nothing
+          image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
+          image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
           # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
           save_path="translated_image"):
@@ -214,12 +214,31 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
         return train_operation
 
     if not TEST:
+
         # print(tf.get_default_graph()) #기본그래프이다.
         JG_Graph = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
         with JG_Graph.as_default():  # as_default()는 JG_Graph를 기본그래프로 설정한다.
 
-            # 학습률 - 논문에서 100epoch 후에 선형적으로 줄인다고 했다.
-            lr = tf.placeholder(dtype=tf.float32)
+            # 학습률 - 논문에서 100epoch 후에 선형적으로 줄인다고 했으므로, 아래의 변수가 필요하다. 2가지 방법
+
+            '''
+            * Variable과 placeholder의 차이점
+            tf.Variable 을 사용하면 선언 할 때 초기 값을 제공해야하고 
+            tf.placeholder 를 사용하면 초기 값을 제공 할 필요가 없으므로 Session.run 의 feed_dict 인수를 사용하여 런타임에 지정할 수 있다.
+            
+            * Variable과 placeholder의 공통점
+            둘 다 feed_dict 인수를 사용하여 런타임에 지정할 수 있다.
+            
+            * 추가설명
+            궁금한 사람을 위해? Variable 도 feed_dict으로 값을 넣어 줄 수 있는 이유? 
+            - 텐서플로는 그래프 구조이다. 이말은 그래프가 그려지고 나면, feed_dict 인수로 자유롭게 변수들에 접근이 가능하다는 말.
+            '''
+
+            # `GraphKeys.TRAINABLE_VARIABLES` 에 추가될 필요가 없으니 trainable=False 로 한다.
+            lr = tf.Variable(initial_value=learning_rate, trainable=False, dtype=tf.float32)
+
+            # 일반적인 방법
+            # lr = tf.placeholder(dtype=tf.float32)
 
             # 데이터 전처리
             dataset = Dataset(DB_name=DB_name, batch_size=batch_size, use_TFRecord=use_TFRecord,
@@ -292,11 +311,11 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 AtoB_GLoss = tf.reduce_mean(tf.square(AtoB_Dgene - tf.ones_like(AtoB_Dgene)))
 
             with tf.name_scope("BtoA_Discriminator_loss"):
-                # for AtoB discriminator
+                # for BtoA discriminator
                 BtoA_DLoss = tf.reduce_mean(tf.square(BtoA_Dreal - tf.ones_like(BtoA_Dreal))) + tf.reduce_mean(
                     tf.square(BtoA_Dgene - tf.zeros_like(BtoA_Dgene)))
             with tf.name_scope("BtoA_Generator_loss"):
-                # for AtoB generator
+                # for BtoA generator
                 BtoA_GLoss = tf.reduce_mean(tf.square(BtoA_Dgene - tf.ones_like(BtoA_Dgene)))
 
             # Cycle Consistency Loss
@@ -348,9 +367,11 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
             saver_generator.export_meta_graph(os.path.join(model_name, 'Generator', 'Generator_Graph.meta'),
                                               collection_list=['A', 'B', "AtoB", "BtoA"])
 
+            if image_pool and batch_size == 1:
+                imagepool=ImagePool(image_pool_size=image_pool_size)
+
             config = tf.ConfigProto(log_device_placement=False, allow_soft_placement=True)
             config.gpu_options.allow_growth = True
-
             with tf.Session(graph=JG_Graph, config=config) as sess:
                 print("initializing!!!")
                 sess.run(tf.global_variables_initializer())
@@ -364,6 +385,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 summary_writer = tf.summary.FileWriter(os.path.join('tensorboard', model_name), sess.graph)
                 sess.run(A_iterator.initializer)
                 sess.run(B_iterator.initializer)
+
                 for epoch in tqdm(range(1, training_epochs + 1)):
 
                     # 논문에서 100 epoch가 넘으면 선형적으로 학습률(learning rate)을 감소시킨다고 했다. 1 epoch마다 0.99 씩 줄여보자
@@ -386,24 +408,30 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                     total_batch = int(data_length / batch_size)
 
                     for i in range(total_batch):
-                        ''' 
-                        Second, to reduce model oscillation [14], we follow
-                        Shrivastava et al’s strategy [45] and update the discriminators
-                        using a history of generated images rather than the ones
-                        produced by the latest generative networks. We keep an image
-                        buffer that stores the 50 previously generated images.
-                        -> discriminator 업데이트를 이전에 저장해놓은 generated images로 한다.- 과거의 생성 이미지로!!!
-                        '''
-                        # AtoB_Dgene, BtoA_Dgene =Image_pool()
 
-                        _, AtoB_D_Loss, AtoB_Dreal_simgoid = sess.run([AtoB_D_train_op, AtoB_DLoss, AtoB_Dreal],
-                                                                      feed_dict={lr: learning_rate})
+                        # Generator Update
                         _, AtoB_G_Loss, AtoB_Dgene_simgoid = sess.run([AtoB_G_train_op, AtoB_GLoss, AtoB_Dgene],
-                                                                      feed_dict={lr: learning_rate})
-                        _, BtoA_D_Loss, BtoA_Dreal_simgoid = sess.run([BtoA_D_train_op, BtoA_DLoss, BtoA_Dreal],
                                                                       feed_dict={lr: learning_rate})
                         _, BtoA_G_Loss, BtoA_Dgene_simgoid = sess.run([BtoA_G_train_op, BtoA_GLoss, BtoA_Dgene],
                                                                       feed_dict={lr: learning_rate})
+
+                        # image_pool 변수 사용할 때(단 batch_size=1 일 경우만)
+                        if image_pool and batch_size==1:
+                            fake_AtoB_gene, fake_BtoA_gene = imagepool(images=sess.run([AtoB_gene, BtoA_gene]))
+                            # AtoB_gene, BtoA_gene 에 과거에 생성된 fake_AtoB_gene, fake_BtoA_gene를 넣어주자!!!
+                            _, AtoB_D_Loss, AtoB_Dreal_simgoid = sess.run([AtoB_D_train_op, AtoB_DLoss, AtoB_Dreal],
+                                                                          feed_dict={lr: learning_rate,
+                                                                                     AtoB_gene: fake_AtoB_gene})
+                            _, BtoA_D_Loss, BtoA_Dreal_simgoid = sess.run([BtoA_D_train_op, BtoA_DLoss, BtoA_Dreal],
+                                                                          feed_dict={lr: learning_rate,
+                                                                                     BtoA_gene: fake_BtoA_gene})
+                        # image_pool 변수를 사용하지 않을 때
+                        else:
+                            # Discriminator Update
+                            _, AtoB_D_Loss, AtoB_Dreal_simgoid = sess.run([AtoB_D_train_op, AtoB_DLoss, AtoB_Dreal],
+                                                                          feed_dict={lr: learning_rate})
+                            _, BtoA_D_Loss, BtoA_Dreal_simgoid = sess.run([BtoA_D_train_op, BtoA_DLoss, BtoA_Dreal],
+                                                                          feed_dict={lr: learning_rate})
 
                         AtoB_LossD += (AtoB_D_Loss / total_batch)
                         AtoB_LossG += (AtoB_G_Loss / total_batch)
@@ -446,7 +474,6 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 print("Optimization Finished!")
 
     else:
-
         tf.reset_default_graph()
         meta_path = glob.glob(os.path.join(model_name, 'Generator', '*.meta'))
         if len(meta_path) == 0:
@@ -512,6 +539,8 @@ if __name__ == "__main__":
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
           use_identity_mapping=True,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용했다고 함.
           norm_selection="instance_norm",  # "instance_norm" or nothing
+          image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
+          image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
           # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
           save_path="translated_image")

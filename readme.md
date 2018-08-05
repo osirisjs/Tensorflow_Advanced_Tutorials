@@ -6,9 +6,10 @@
 
     * 모든 코드는 main.py 에서 실행합니다.
         ```cmd
-        1. cmd(window) or Terminal(Ubuntu)에서는 python main.py 명령어로 실행합니다. # argparser를 사용하지 않습니다. 2번에서 실행하는 것을 추천 드립니다. 
+        # argparse는 사용하지 않습니다.
+        1. cmd(window) or Terminal(Ubuntu)에서 실행하는 경우 python main.py을 입력 후 실행합니다. 
 
-        2. IDE(pycharm, vscode and so on.) main.py를 실행합니다.  
+        2. IDE(pycharm, vscode and so on.)에서 실행하는 경우 main.py를 실행합니다.  
         ```
 
 
