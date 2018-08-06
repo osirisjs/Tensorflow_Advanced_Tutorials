@@ -1,12 +1,14 @@
 import glob
-import zipfile
 import os
+import random
 import urllib.request
+import zipfile
+
 import cv2
 import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
-import random
+
 '''
 데이터셋은 아래에서 받았다.
 https://people.eecs.berkeley.edu/~taesung_park/CycleGAN/datasets/horse2zebra.zip
@@ -48,9 +50,10 @@ https://people.eecs.berkeley.edu/~taesung_park/CycleGAN/datasets/horse2zebra.zip
     -> tf.read_file, tf.random_crop, tf.image.~ API를 사용하여 논문에서 설명한대로 이미지를 전처리하고 학습가능한 형태로 만든다.
 '''
 
+
 class Dataset(object):
 
-    def __init__(self, DB_name = "horse2zebra",
+    def __init__(self, DB_name="horse2zebra",
                  batch_size=1, use_TFRecord=False, use_TrainDataset=False):
 
         self.Dataset_Path = "Dataset"
@@ -89,7 +92,7 @@ class Dataset(object):
             # (1). tf.data.Dataset.from_tensor_slices
             self.file_path_Alist = glob.glob(os.path.join(self.dataset_folder, "trainA/*"))
             self.file_path_Blist = glob.glob(os.path.join(self.dataset_folder, "trainB/*"))
-            self.file_path_list =[self.file_path_Alist, self.file_path_Blist]
+            self.file_path_list = [self.file_path_Alist, self.file_path_Blist]
 
             # (2). TFRecord
             if self.use_TFRecord:
@@ -106,7 +109,7 @@ class Dataset(object):
             # (1). tf.data.Dataset.from_tensor_slices
             self.file_path_Alist = glob.glob(os.path.join(self.dataset_folder, "testA/*"))
             self.file_path_Blist = glob.glob(os.path.join(self.dataset_folder, "testB/*"))
-            self.file_path_list =[self.file_path_Alist, self.file_path_Blist]
+            self.file_path_list = [self.file_path_Alist, self.file_path_Blist]
 
             # (2). TFRecord
             if self.use_TFRecord:
@@ -189,7 +192,8 @@ class Dataset(object):
             img_decoded = tf.image.resize_images(tf.image.decode_jpeg(img, channels=3), size=(256, 256))  # jpeg 파일 읽기
 
         # 3. gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
-        input= tf.subtract(tf.divide(tf.cast(img_decoded, tf.float32), 127.5), 1)  # gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
+        input = tf.subtract(tf.divide(tf.cast(img_decoded, tf.float32), 127.5),
+                            1)  # gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
         return input
 
     # 1. tf.data.Dataset.from_tensor_slices 을 사용하는 방법 - 파일명 리스트에서 이미지를 불러와서 처리하기
@@ -239,8 +243,8 @@ class Dataset(object):
         return A_iterator, A_iterator.get_next(), B_iterator, B_iterator.get_next(), \
                A_length if A_length > B_length else B_length
 
-
         # TFRecord를 만들기위해 이미지를 불러올때 쓴다.
+
     def load_image(self, address):
         img = cv2.imread(address)
         img = cv2.resize(img, (256, 256), interpolation=cv2.INTER_AREA)
@@ -299,6 +303,7 @@ class Dataset(object):
         return A_iterator, A_iterator.get_next(), B_iterator, B_iterator.get_next(), \
                A_length if A_length > B_length else B_length
 
+
 ''' 
 to reduce model oscillation [14], we follow
 Shrivastava et al’s strategy [45] and update the discriminators
@@ -309,6 +314,8 @@ buffer that stores the 50 previously generated images.
 imagePool 클래스
 # https://github.com/xhujoy/CycleGAN-tensorflow/blob/master/utils.py 를 참고해서 변형했다.
 '''
+
+
 class ImagePool(object):
 
     def __init__(self, image_pool_size=50):
@@ -322,7 +329,7 @@ class ImagePool(object):
 
     def __call__(self, images=None):
 
-        #1. self.image_pool_size 사이즈가 0이거나 작으면, ImagePool을 사용하지 않는다.
+        # 1. self.image_pool_size 사이즈가 0이거나 작으면, ImagePool을 사용하지 않는다.
         if self.image_pool_size <= 0:
             return images
 
@@ -334,10 +341,9 @@ class ImagePool(object):
             self.image_count += 1
             return images
 
-
-        #copy에 대한 내용은 본 프로젝트의 copy_example.py를 참고!!!
-        #np.random.rand()는 0~1 사이의 무작위 값을 출력한다.
-        if np.random.rand() > 0.1:
+        # copy에 대한 내용은 본 프로젝트의 copy_example.py를 참고!!!
+        # np.random.rand()는 0~1 사이의 무작위 값을 출력한다.
+        if np.random.rand() > 0.5:
             index = np.random.randint(low=0, high=self.image_pool_size, size=None)
             past_image1 = self.images_appender[index][0]
             self.images_appender[index][0] = images[0]
@@ -347,6 +353,7 @@ class ImagePool(object):
             return past_image1, past_image2
         else:
             return images
+
 
 if __name__ == "__main__":
     '''

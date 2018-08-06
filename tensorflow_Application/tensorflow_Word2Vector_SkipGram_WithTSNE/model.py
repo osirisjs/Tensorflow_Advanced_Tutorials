@@ -11,15 +11,14 @@ from data_preprocessing import data_preprocessing
 
 
 def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="encoder",  # encoder or decoder
-         vocabulary_size=30000, tSNE_plot=500, similarity_number=8,
-         # similarity_number -> 비슷한 문자 출력 개수
-         # num_skip : 하나의 문장당 num_skips 개의 데이터를 생성
-         validation_number=30, embedding_size=192, batch_size=192, num_skips=8, window_size=4,
-         negative_sampling=64, optimizer_selection="SGD", learning_rate=0.1, training_epochs=100,
-         display_step=1, weight_sharing=False, *Arg, **kwargs):
-
+             vocabulary_size=30000, tSNE_plot=500, similarity_number=8,
+             # similarity_number -> 비슷한 문자 출력 개수
+             # num_skip : 하나의 문장당 num_skips 개의 데이터를 생성
+             validation_number=30, embedding_size=192, batch_size=192, num_skips=8, window_size=4,
+             negative_sampling=64, optimizer_selection="SGD", learning_rate=0.1, training_epochs=100,
+             display_step=1, weight_sharing=False, *Arg, **kwargs):
     if weight_sharing:
-        model_name="WeigthSharing_"+ model_name
+        model_name = "WeigthSharing_" + model_name
 
     dp = data_preprocessing(url='http://mattmahoney.net/dc/',
                             filename='text8.zip',
@@ -64,11 +63,11 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
         if weight_sharing:
             total_loss = tf.nn.nce_loss(weights=encoder_weight, biases=nce_b, labels=train_labels, inputs=embed, \
                                         num_sampled=num_sampled, num_classes=num_classes)
-            nce_w=encoder_weight
+            nce_w = encoder_weight
         else:
             with tf.variable_scope("nce", reuse=tf.AUTO_REUSE) as scope:
                 total_loss = tf.nn.nce_loss(weights=nce_w, biases=nce_b, labels=train_labels, inputs=embed, \
-                                                num_sampled=num_sampled, num_classes=num_classes)
+                                            num_sampled=num_sampled, num_classes=num_classes)
 
         return tf.reduce_mean(total_loss), nce_w
 
@@ -94,7 +93,6 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
             embed, e_matrix = embedding_layer(embedding_shape=(dp.vocabulary_size, embedding_size),
                                               train_inputs=train_inputs)
             # scope.reuse_variables()
-
 
         with tf.name_scope("nce_loss"):
             global_step = tf.Variable(0, name="global_step", trainable=False)
@@ -138,7 +136,7 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
     with tf.Session(graph=JG_Graph, config=config) as sess:
         print("initializing!!!")
         sess.run(tf.global_variables_initializer())
-        ckpt = tf.train.get_checkpoint_state(os.path.join('model',model_name))
+        ckpt = tf.train.get_checkpoint_state(os.path.join('model', model_name))
 
         if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
             print("Restore {} checkpoint!!!".format(os.path.basename(ckpt.model_checkpoint_path)))
@@ -162,7 +160,7 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
                 if epoch % display_step == 0:
                     summary_str = sess.run(summary_operation, feed_dict=feed_dict)
                     summary_writer.add_summary(summary_str, global_step=sess.run(global_step))
-                    save_path=os.path.join('model', model_name)
+                    save_path = os.path.join('model', model_name)
                     if not os.path.exists(save_path):
                         os.makedirs(save_path)
                     saver.save(sess, save_path + "/", global_step=sess.run(global_step),
@@ -183,7 +181,8 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
                 정렬한다. 즉, 가장 높은 확률을 가진 놈은 가장 오른쪽에 있다. 따라서 뒤에서부터 접근하여
                 큰 값들을 가져온다.
                 '''
-                neighbors = (similarity[i, :]).argsort()[-1:-1-similarity_number-1:-1]  # -1 ~ -similarity_number-1 까지의 값
+                neighbors = (similarity[i, :]).argsort()[
+                            -1:-1 - similarity_number - 1:-1]  # -1 ~ -similarity_number-1 까지의 값
                 # neighbors = (-similarity[i, :]).argsort()[0:similarity_number+1]  # -1 ~ -similarity_number-1 까지의 값
                 print_str = "< Nearest neighbor of {} / ".format(val_word)
 
@@ -220,11 +219,11 @@ if __name__ == "__main__":
     # weight_selection 은 encoder, decoder 임베디중 어떤것을 사용할 것인지 선택하는 변수
     # weight_sharing=True시 weight_selection="decoder"라고 설정해도 weight_selection="encoder"로 강제 설정된다.
     Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="encoder",  # encoder or decoder
-         vocabulary_size=30000, tSNE_plot=500, similarity_number=8,
-         # similarity_number -> 비슷한 문자 출력 개수
-         # num_skip : 하나의 문장당 num_skips 개의 데이터를 생성
-         validation_number=30, embedding_size=192, batch_size=192, num_skips=8, window_size=4,
-         negative_sampling=64, optimizer_selection="SGD", learning_rate=0.1, training_epochs=100,
-         display_step=1, weight_sharing=False)
+             vocabulary_size=30000, tSNE_plot=500, similarity_number=8,
+             # similarity_number -> 비슷한 문자 출력 개수
+             # num_skip : 하나의 문장당 num_skips 개의 데이터를 생성
+             validation_number=30, embedding_size=192, batch_size=192, num_skips=8, window_size=4,
+             negative_sampling=64, optimizer_selection="SGD", learning_rate=0.1, training_epochs=100,
+             display_step=1, weight_sharing=False)
 else:
     print("word2vec imported")

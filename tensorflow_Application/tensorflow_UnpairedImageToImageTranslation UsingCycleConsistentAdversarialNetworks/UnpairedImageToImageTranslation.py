@@ -1,5 +1,7 @@
 import shutil
+
 from Dataset import *
+
 
 def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=None):
     if not os.path.exists(save_path):
@@ -368,7 +370,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                                               collection_list=['A', 'B', "AtoB", "BtoA"])
 
             if image_pool and batch_size == 1:
-                imagepool=ImagePool(image_pool_size=image_pool_size)
+                imagepool = ImagePool(image_pool_size=image_pool_size)
 
             config = tf.ConfigProto(log_device_placement=False, allow_soft_placement=True)
             config.gpu_options.allow_growth = True
@@ -415,8 +417,8 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                         _, BtoA_G_Loss, BtoA_Dgene_simgoid = sess.run([BtoA_G_train_op, BtoA_GLoss, BtoA_Dgene],
                                                                       feed_dict={lr: learning_rate})
 
-                        # image_pool 변수 사용할 때(단 batch_size=1 일 경우만)
-                        if image_pool and batch_size==1:
+                        # image_pool 변수 사용할 때(단 batch_size=1 일 경우만), Discriminator Update
+                        if image_pool and batch_size == 1:
                             fake_AtoB_gene, fake_BtoA_gene = imagepool(images=sess.run([AtoB_gene, BtoA_gene]))
                             # AtoB_gene, BtoA_gene 에 과거에 생성된 fake_AtoB_gene, fake_BtoA_gene를 넣어주자!!!
                             _, AtoB_D_Loss, AtoB_Dreal_simgoid = sess.run([AtoB_D_train_op, AtoB_DLoss, AtoB_Dreal],
@@ -425,9 +427,8 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                             _, BtoA_D_Loss, BtoA_Dreal_simgoid = sess.run([BtoA_D_train_op, BtoA_DLoss, BtoA_Dreal],
                                                                           feed_dict={lr: learning_rate,
                                                                                      BtoA_gene: fake_BtoA_gene})
-                        # image_pool 변수를 사용하지 않을 때
+                        # image_pool 변수를 사용하지 않을 때, Discriminator Update
                         else:
-                            # Discriminator Update
                             _, AtoB_D_Loss, AtoB_Dreal_simgoid = sess.run([AtoB_D_train_op, AtoB_DLoss, AtoB_Dreal],
                                                                           feed_dict={lr: learning_rate})
                             _, BtoA_D_Loss, BtoA_Dreal_simgoid = sess.run([BtoA_D_train_op, BtoA_DLoss, BtoA_Dreal],
@@ -449,10 +450,10 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                         np.mean(AtoB_sigmoidD), np.mean(AtoB_sigmoidG)))
                     print("<<< BtoA Discriminator mean output : {} / BtoA Generator mean output : {} >>>".format(
                         np.mean(AtoB_sigmoidD), np.mean(AtoB_sigmoidG)))
-                    print("<<< AtoB Discriminator Loss : {} / AtoB Generator Loss  : {} >>>".format(AtoB_DLoss,
-                                                                                                    AtoB_GLoss))
-                    print("<<< BtoA Discriminator Loss : {} / BtoA Generator Loss  : {} >>>".format(BtoA_DLoss,
-                                                                                                    BtoA_GLoss))
+                    print("<<< AtoB Discriminator Loss : {} / AtoB Generator Loss  : {} >>>".format(AtoB_LossD,
+                                                                                                    AtoB_LossG))
+                    print("<<< BtoA Discriminator Loss : {} / BtoA Generator Loss  : {} >>>".format(BtoA_LossD,
+                                                                                                    BtoA_LossG))
 
                     if epoch % display_step == 0:
                         summary_str = sess.run(summary_operation)

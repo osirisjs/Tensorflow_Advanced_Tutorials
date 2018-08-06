@@ -61,6 +61,9 @@
                 * 2가지의 데이터 전처리 방법
                     1. 효율적인 데이터 전처리를 위해 tf.data.Dataset을 사용할 수 있습니다.
                     2. 더 효율적인 데이터 전처리를 위해 TFRecord 형식으로 데이터를 저장하고  tf.data.TFRecordDataset 를 사용할 수 있습니다.
+                * CycleGan에서 사용하는 ImagePool 함수도 추가했습니다.
+                    * to reduce model oscillation [14], we follow
+                    Shrivastava et al’s strategy [45] and update the discriminators using a history of generated images rather than the ones produced by the latest generative networks. We keep an image buffer that stores the 50 previously generated images.
             
             * [***Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_UnpairedImageToImageTranslation%20UsingCycleConsistentAdversarialNetworks)
                 * Image To Image Translation With Conditional Adversarial Newort을 학습 시키기 위해선 입력과 출력이 한쌍인 데이터가 필요했습니다. 그러나 이 논문에서 제시한 방법은 입력과 출력이 쌍일 필요가 없습니다.
@@ -85,8 +88,8 @@
     
 >## **코드 실행에 필요한 파이썬 모듈** 
 * Tensorflow-1.8.0 
-* numpy, collections, random
-* matplotlib, scikit-learn, opencv-python
+* numpy, collections, pandas
+* matplotlib, scikit-learn, opencv-python, scipy, copy
 * tqdm, os, glob, shutil, urllib, zipfile, tarfile
 
 >## **연락처** 

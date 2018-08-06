@@ -1,5 +1,7 @@
 import shutil
+
 from Dataset import *
+
 
 def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=None):
     if not os.path.exists(save_path):
@@ -12,13 +14,14 @@ def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=N
     print("{}_{}.png saved in {} folder".format(model_name, named_images[0], save_path))
 
 
-def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_loss="L1", distance_loss_weight=100,
+def model(TEST=False, AtoB=True, DB_name="maps", use_TFRecord=True, distance_loss="L1", distance_loss_weight=100,
           optimizer_selection="Adam",
           beta1=0.9, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
+          image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
+          image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
           learning_rate=0.001, training_epochs=100,
           batch_size=4, display_step=1, Dropout_rate=0.5, using_moving_variable=False, save_path="translated_image"):
-
     if distance_loss == "L1":
         print("target generative GAN with L1 loss")
         model_name = "Pix2PixConditionalGAN_WithL1loss"
@@ -39,10 +42,10 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
 
     if batch_size == 1:
         norm_selection = "instance_norm"
-        model_name = "instancenorm_"+model_name
+        model_name = "instancenorm_" + model_name
     else:
         norm_selection = "batch_norm"
-        model_name = "batchnorm_"+model_name
+        model_name = "batchnorm_" + model_name
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
@@ -231,7 +234,8 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
         with tf.variable_scope("Discriminator"):
             with tf.variable_scope("conv1"):
                 conv1 = tf.nn.leaky_relu(
-                    conv2d(conditional_input, weight_shape=(4, 4, conditional_input.get_shape()[-1], 64), bias_shape=(64),
+                    conv2d(conditional_input, weight_shape=(4, 4, conditional_input.get_shape()[-1], 64),
+                           bias_shape=(64),
                            strides=[1, 2, 2, 1], padding="SAME"), alpha=0.2)
                 # result shape = (batch_size, 128, 128, 64)
             with tf.variable_scope("conv2"):
@@ -351,6 +355,9 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
             with tf.name_scope("tensorboard"):
                 summary_operation = tf.summary.merge_all()
 
+    if image_pool and batch_size == 1:
+        imagepool = ImagePool(image_pool_size=image_pool_size)
+
     config = tf.ConfigProto(log_device_placement=False, allow_soft_placement=True)
     config.gpu_options.allow_growth = True
 
@@ -384,9 +391,17 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
 
                 total_batch = int(data_length / batch_size)
                 for i in range(total_batch):
-                    _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real])
                     _, Generator_Loss, Distance_Loss, D_gene_simgoid = sess.run(
                         [G_train_op, G_Loss, dis_loss, sigmoid_D_gene])
+
+                    # image_pool 변수 사용할 때(단 batch_size=1 일 경우만), Discriminator Update
+                    if image_pool and batch_size == 1:
+                        fake_G = imagepool(image=sess.run(G))
+                        # AtoB_gene, BtoA_gene 에 과거에 생성된 fake_AtoB_gene, fake_BtoA_gene를 넣어주자!!!
+                        _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real], feed_dict={G : fake_G})
+                    # image_pool 변수를 사용하지 않을 때, Discriminator Update
+                    else:
+                        _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real])
 
                     Loss_D += (Discriminator_Loss / total_batch)
                     Loss_G += (Generator_Loss / total_batch)
@@ -438,12 +453,14 @@ def model(TEST=False, AtoB= True, DB_name="maps", use_TFRecord=True, distance_lo
 if __name__ == "__main__":
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
     model(TEST=False, AtoB=True, DB_name="maps", use_TFRecord=True, distance_loss="L1",
-                  distance_loss_weight=100, optimizer_selection="Adam",
-                  beta1=0.5, beta2=0.999,  # for Adam optimizer
-                  decay=0.999, momentum=0.9,  # for RMSProp optimizer
-                  # batch_size는 1~10사이로 하자
-                  learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1, Dropout_rate=0.5,
-                  using_moving_variable=False,  # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수
-                  save_path="translated_image")  # 학습 완료 후 변환된 이미지가 저장될 폴더
+          distance_loss_weight=100, optimizer_selection="Adam",
+          beta1=0.5, beta2=0.999,  # for Adam optimizer
+          decay=0.999, momentum=0.9,  # for RMSProp optimizer
+          # batch_size는 1~10사이로 하자
+          image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
+          image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
+          learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1, Dropout_rate=0.5,
+          using_moving_variable=False,  # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수
+          save_path="translated_image")  # 학습 완료 후 변환된 이미지가 저장될 폴더
 else:
     print("model imported")

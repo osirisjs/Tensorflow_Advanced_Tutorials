@@ -1,10 +1,12 @@
+import glob
 import os
 import shutil
-import glob
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 from tqdm import tqdm
+
 
 def DataLoader(batch_size=None):
     # 1.데이터셋 읽기
@@ -20,9 +22,10 @@ def DataLoader(batch_size=None):
     직접 batch, shuffle등의 코드를 구현할 필요가 없습니다.!!! 
     '''
     dataset = tf.data.Dataset.from_tensor_slices((data.reshape((-1, 6)), label))  # 데이터셋 가져오기
-    dataset = dataset.shuffle(len(data)).repeat().batch(batch_size) # repeat() -> 계속 반복, batch() -> batchsize 지정
+    dataset = dataset.shuffle(len(data)).repeat().batch(batch_size)  # repeat() -> 계속 반복, batch() -> batchsize 지정
     iterator = dataset.make_one_shot_iterator()
     return iterator.get_next(), len(data) + 1
+
 
 def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training_epochs=10000, batch_size=50,
           display_step=1,
@@ -74,7 +77,7 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
         train_operation = optimizer.minimize(cost, global_step=global_step)
         return train_operation
 
-    if not TEST :
+    if not TEST:
         # print(tf.get_default_graph()) #기본그래프이다.
         JG = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
         with JG.as_default():  # as_default()는 JG_Graph를 기본그래프로 설정한다.
@@ -107,7 +110,7 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
             '''
             tf.add_to_collection('x', x)
             tf.add_to_collection('output', output)
-            #graph 구조를 파일에 쓴다.
+            # graph 구조를 파일에 쓴다.
             saver.export_meta_graph(os.path.join(model_name, "Lotto_Graph.meta"), collection_list=['x', 'output'])
 
         config = tf.ConfigProto(log_device_placement=False, allow_soft_placement=True)
@@ -141,8 +144,8 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
 
     else:
         tf.reset_default_graph()
-        meta_path=glob.glob(os.path.join(model_name,'*.meta'))
-        if len(meta_path)==0:
+        meta_path = glob.glob(os.path.join(model_name, '*.meta'))
+        if len(meta_path) == 0:
             print("<<< Lotto Graph가 존재 하지 않습니다. >>>")
             exit(0)
         else:
@@ -157,7 +160,7 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
             추가 접근을 제공하지 않기 때문에 아래와 같이 get_colltection으로 입,출력 변수들을 불러와서 다시 사용 해야 한다.
             '''
             saver = tf.train.import_meta_graph(meta_path[0], clear_devices=True)  # meta graph 읽어오기
-            if saver==None:
+            if saver == None:
                 print("<<< meta 파일을 읽을 수 없습니다. >>>")
                 exit(0)
 

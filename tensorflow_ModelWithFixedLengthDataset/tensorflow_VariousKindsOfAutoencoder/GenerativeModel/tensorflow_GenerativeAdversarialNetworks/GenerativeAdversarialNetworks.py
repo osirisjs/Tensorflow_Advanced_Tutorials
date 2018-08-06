@@ -89,7 +89,7 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
                 fully_2 = tf.nn.relu(layer(fully_1, [500, 100], [100]))
             with tf.variable_scope("output"):
                 output = layer(fully_2, [100, 1], [1])
-        return output , tf.nn.sigmoid(output)
+        return output, tf.nn.sigmoid(output)
 
     def training(cost, var_list, scope=None):
         if scope == None:
@@ -204,7 +204,7 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
                 Loss_D = 0.
                 Loss_G = 0
                 Loss_Distance = 0
-                #아래의 두 값이 각각 0.5 씩을 갖는게 가장 이상적이다.
+                # 아래의 두 값이 각각 0.5 씩을 갖는게 가장 이상적이다.
                 sigmoid_D = 0
                 sigmoid_G = 0
 
@@ -214,21 +214,25 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
                     noise = np.random.normal(loc=0.0, scale=1.0, size=(batch_size, noise_size))
                     feed_dict_all = {x: mbatch_x, target: mbatch_y, z: noise}
                     feed_dict_Generator = {x: mbatch_x, target: mbatch_y, z: noise}
-                    _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real], feed_dict=feed_dict_all)
-                    _, Generator_Loss, Distance_Loss, D_gene_simgoid = sess.run([G_train_op, G_Loss, dis_loss, sigmoid_D_gene],
-                                                                feed_dict=feed_dict_Generator)
+                    _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real],
+                                                                     feed_dict=feed_dict_all)
+                    _, Generator_Loss, Distance_Loss, D_gene_simgoid = sess.run(
+                        [G_train_op, G_Loss, dis_loss, sigmoid_D_gene],
+                        feed_dict=feed_dict_Generator)
                     Loss_D += (Discriminator_Loss / total_batch)
                     Loss_G += (Generator_Loss / total_batch)
                     Loss_Distance += (Distance_Loss / total_batch)
                     sigmoid_D += D_real_simgoid / total_batch
                     sigmoid_G += D_gene_simgoid / total_batch
 
-                print("Discriminator mean output : {} / Generator mean output : {}".format(np.mean(sigmoid_D), np.mean(sigmoid_G)))
+                print("Discriminator mean output : {} / Generator mean output : {}".format(np.mean(sigmoid_D),
+                                                                                           np.mean(sigmoid_G)))
 
-                if distance_loss == "L1" or distance_loss=="L2":
+                if distance_loss == "L1" or distance_loss == "L2":
                     print(
-                        "Discriminator Loss : {} / Generator Loss  : {} / {} loss : {}".format(Loss_D, Loss_G, distance_loss,
-                                                                                             Loss_Distance))
+                        "Discriminator Loss : {} / Generator Loss  : {} / {} loss : {}".format(Loss_D, Loss_G,
+                                                                                               distance_loss,
+                                                                                               Loss_Distance))
                 else:
                     print(
                         "Discriminator Loss : {} / Generator Loss  : {}".format(Loss_D, Loss_G, distance_loss))

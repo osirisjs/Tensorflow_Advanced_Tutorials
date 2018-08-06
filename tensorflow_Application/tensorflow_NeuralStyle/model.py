@@ -102,7 +102,7 @@ def neuralstyle(model_file_path="", epoch=None, show_period=None, optimizer_sele
     with JG_Graph.as_default():  # as_default()는 JG_Graph를 기본그래프로 설정한다.
         # 1. Data Preprocessing and noise data
         content_img, style_img, noise_image = dp.data_preprocessing(content_image=content_image, \
-                                                                        style_image=style_image, image_size=image_size)
+                                                                    style_image=style_image, image_size=image_size)
         # initializing noise image below values
         if initial_noise_image == "content_image":
             noise_image = content_img
@@ -112,9 +112,9 @@ def neuralstyle(model_file_path="", epoch=None, show_period=None, optimizer_sele
         # 1. variable definition
         with tf.variable_scope("noise_shared_variables") as scope:
             noise_variable = tf.get_variable("noise_image", initializer=noise_image.astype(np.float32),
-                                                 dtype=tf.float32)
+                                             dtype=tf.float32)
             # or scope.reuse_variables()
-            
+
         with tf.name_scope("content"):
             content_placeholder = tf.placeholder(tf.float32, shape=content_img.shape)
         with tf.name_scope("style"):

@@ -1,8 +1,9 @@
 import glob
 import os
+import random
 import tarfile
 import urllib.request
-import random
+
 import cv2
 import numpy as np
 import tensorflow as tf
@@ -49,6 +50,7 @@ https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz
 2. tf.data.Dataset API 및 여러가지 유용한 텐서플로우 API 를 사용하여 학습이 가능한 데이터 형태로 만든다. 
     -> tf.read_file, tf.random_crop, tf.image.~ API를 사용하여 논문에서 설명한대로 이미지를 전처리하고 학습가능한 형태로 만든다.
 '''
+
 
 class Dataset(object):
 
@@ -316,6 +318,50 @@ class Dataset(object):
         # tf.python_io.tf_record_iterator는 무엇인가 ? TFRecord 파일에서 레코드를 읽을 수 있는 iterator이다.
         return iterator, iterator.get_next(), sum(1 for _ in tf.python_io.tf_record_iterator(self.TFRecord_path))
 
+''' 
+to reduce model oscillation [14], we follow
+Shrivastava et al’s strategy [45] and update the discriminators
+using a history of generated images rather than the ones
+produced by the latest generative networks. We keep an image
+buffer that stores the 50 previously generated images.
+
+imagePool 클래스
+# https://github.com/xhujoy/CycleGAN-tensorflow/blob/master/utils.py 를 참고해서 변형했다.
+'''
+class ImagePool(object):
+
+    def __init__(self, image_pool_size=50):
+
+        self.image_pool_size = image_pool_size
+        self.image_count = 0
+        self.image_appender = []
+
+    def __repr__(self):
+        return "Image Pool class"
+
+    def __call__(self, image=None):
+
+        # 1. self.image_pool_size 사이즈가 0이거나 작으면, ImagePool을 사용하지 않는다.
+        if self.image_pool_size <= 0:
+            return image
+
+        '''2. self.num_img 이 self.image_pool_size 보다 작으면, self.image_count을 하나씩 늘려주면서
+        self.images_appender에 images를 추가해준다.
+        self.image_pool_size 개 self.images_appender에 이전 images를 저장한다.'''
+        if self.image_count < self.image_pool_size:
+            self.image_appender.append(image)
+            self.image_count += 1
+            return image
+
+        # copy에 대한 내용은 본 프로젝트의 copy_example.py를 참고!!!
+        # np.random.rand()는 0~1 사이의 무작위 값을 출력한다.
+        if np.random.rand() > 0.5:
+            index = np.random.randint(low=0, high=self.image_pool_size, size=None)
+            past_image = self.image_appender[index]
+            self.image_appender[index] = image
+            return past_image
+        else:
+            return image
 
 if __name__ == "__main__":
     '''

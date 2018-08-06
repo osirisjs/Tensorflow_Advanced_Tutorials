@@ -14,7 +14,8 @@ targeting = True 일 때 -> distamce_loss = None 일 경우 , 추가적인 loss 
 참고 : distance_loss를 사용하지 않고, batch_norm을 쓰면 생성이 잘 안된다. 네트워크 구조를 간단히 하기위해
 fully connected network를 사용해서 그런지 batch_norm이 generator가 숫자이미지를 생성하려는 것을 방해하는 것 같다.
 '''
-GenerativeAdversarialNetworks.model(TEST=True, noise_size=128, targeting=True, distance_loss="L2", distance_loss_weight=1, \
+GenerativeAdversarialNetworks.model(TEST=True, noise_size=128, targeting=True, distance_loss="L2",
+                                    distance_loss_weight=1, \
                                     optimizer_selection="Adam", learning_rate=0.0002, training_epochs=100,
                                     batch_size=128,
                                     display_step=1, batch_norm=False)

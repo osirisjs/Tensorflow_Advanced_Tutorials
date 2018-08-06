@@ -81,9 +81,9 @@ def model(TEST=True, targeting=True, latent_number=16, optimizer_selection="Adam
 
             if targeting:
                 latent_variable = tf.concat([latent_variable, tf.tile(tf.reshape(target, (-1, 1)),
-                                                                                    [1, latent_number])], axis=1)
+                                                                      [1, latent_number])], axis=1)
             else:
-                latent_number = (latent_number//2)
+                latent_number = (latent_number // 2)
 
         # 학습이 완료된 후에는 아래의 decoder의 가중치만 사용하면 된다.
         with tf.variable_scope("decoder"):

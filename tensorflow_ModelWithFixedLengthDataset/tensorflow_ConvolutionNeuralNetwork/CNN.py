@@ -19,7 +19,7 @@ def model(TEST=True, model_name="CNN", optimizer_selection="Adam", learning_rate
 
     # stride? -> [1, 2, 2, 1] = [one image, width, height, one channel]
     def conv2d(input, weight_shape='', bias_shape='', strides=[1, 1, 1, 1], padding="VALID"):
-        #weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
+        # weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
         weight_init = tf.truncated_normal_initializer(stddev=0.02)
         bias_init = tf.constant_initializer(value=0)
         if batch_norm:
@@ -65,7 +65,7 @@ def model(TEST=True, model_name="CNN", optimizer_selection="Adam", learning_rate
 
     def inference(x):
 
-        #ReceptiveField_inspection폴더의 rf.py에서 확인해보면, ReceptiveField사이즈가 28임을 알 수 있 습니다.
+        # ReceptiveField_inspection폴더의 rf.py에서 확인해보면, ReceptiveField사이즈가 28임을 알 수 있 습니다.
 
         x = tf.reshape(x, shape=[-1, 28, 28, 1])
         # in pooling, type = max or avg

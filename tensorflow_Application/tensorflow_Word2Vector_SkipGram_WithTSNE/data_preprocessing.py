@@ -12,6 +12,7 @@ https://github.com/tensorflow/tensorflow/blob/r1.8/tensorflow/examples/tutorials
 코드를 수정
 '''
 
+
 class data_preprocessing(object):
 
     def __init__(self, url='http://mattmahoney.net/dc/', filename='text8.zip',
