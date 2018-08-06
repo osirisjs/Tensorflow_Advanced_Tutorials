@@ -70,7 +70,6 @@
                     1. 효율적인 데이터 전처리를 위해 tf.data.Dataset을 사용할 수 있습니다.
                     2. 더 효율적인 데이터 전처리를 위해 TFRecord 형식으로 데이터를 저장하고  tf.data.TFRecordDataset 를 사용할 수 있습니다.
                 * tf.train.Saver().export_meta_graph API 와 tf.train.import_meta_graph API를 사용하여 Training, Test 코드를 각각 실행합니다.
-                * 거의 완성
             
     * ### **Sequence Model With Variable Length Dataset**
         * ASAP 

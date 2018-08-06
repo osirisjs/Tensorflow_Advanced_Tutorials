@@ -335,18 +335,16 @@ class ImagePool(object):
             return images
 
 
+        #copy에 대한 내용은 본 프로젝트의 copy_example.py를 참고!!!
         #np.random.rand()는 0~1 사이의 무작위 값을 출력한다.
         if np.random.rand() > 0.1:
             index = np.random.randint(low=0, high=self.image_pool_size, size=None)
-            #얕은 복사 정도면 충분하다
-            tmp1 = self.images_appender[index][0][:]
+            past_image1 = self.images_appender[index][0]
             self.images_appender[index][0] = images[0]
             index = np.random.randint(low=0, high=self.image_pool_size, size=None)
-            #얕은 복사 정도면 충분하다
-            tmp2 = self.images_appender[index][1][:]
+            past_image2 = self.images_appender[index][1]
             self.images_appender[index][1] = images[1]
-            return tmp1, tmp2
-
+            return past_image1, past_image2
         else:
             return images
 
