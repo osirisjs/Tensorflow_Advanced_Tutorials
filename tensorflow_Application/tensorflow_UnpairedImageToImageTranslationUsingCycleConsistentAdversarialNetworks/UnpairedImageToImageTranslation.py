@@ -245,7 +245,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
             # 데이터 전처리
             dataset = Dataset(DB_name=DB_name, batch_size=batch_size, use_TFRecord=use_TFRecord,
                               use_TrainDataset=not TEST)
-            A_iterator, A_next_batch, B_iterator, B_next_batch, data_length = dataset.iterator()
+            A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length = dataset.iterator()
 
             # 알고리즘
             A, B = A_next_batch, B_next_batch
@@ -388,6 +388,10 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 sess.run(A_iterator.initializer)
                 sess.run(B_iterator.initializer)
 
+                # A_length 와 B_length중 긴것을 택한다.
+                data_length = A_length if A_length > B_length else B_length
+                total_batch = int(data_length / batch_size)
+
                 for epoch in tqdm(range(1, training_epochs + 1)):
 
                     # 논문에서 100 epoch가 넘으면 선형적으로 학습률(learning rate)을 감소시킨다고 했다. 1 epoch마다 0.99 씩 줄여보자
@@ -406,8 +410,6 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                     # 아래의 두 변수가 각각 0.5 씩의 값을 갖는게 가장 이상적이다.
                     BtoA_sigmoidD = 0
                     BtoA_sigmoidG = 0
-
-                    total_batch = int(data_length / batch_size)
 
                     for i in range(total_batch):
 
@@ -487,12 +489,6 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
         JG = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
         with JG.as_default():  # as_default()는 JG를 기본그래프로 설정한다.
 
-            # Test Dataset 가져오기
-            dataset = Dataset(DB_name=DB_name, use_TFRecord=use_TFRecord,
-                              use_TrainDataset=not TEST)
-            A_iterator, A_next_batch, B_iterator, B_next_batch, data_length = dataset.iterator()
-            A_tensor, B_tensor = A_next_batch, B_next_batch
-
             '''
             WHY? 아래 3줄의 코드를 적어 주지 않으면 오류가 난다. 
             -> 단순히 그래프를 가져오고 가중치를 복원하는 것만으로는 안된다. 세션을 실행할때 인수로 사용할 변수에 대한 
@@ -508,10 +504,19 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
             AtoB_gene = tf.get_collection('AtoB')[0]
             BtoA_gene = tf.get_collection('BtoA')[0]
 
+            # Test Dataset 가져오기
+            dataset = Dataset(DB_name=DB_name, use_TFRecord=use_TFRecord,
+                              use_TrainDataset=not TEST)
+            A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length = dataset.iterator()
+            A_tensor, B_tensor = A_next_batch, B_next_batch
+            
+            # A_length 와 B_length 중 짧은 것을 택한다.
+            data_length = A_length if A_length < B_length else B_length
+
             with tf.Session(graph=JG) as sess:
+                sess.run(tf.global_variables_initializer())
                 sess.run(A_iterator.initializer)
                 sess.run(B_iterator.initializer)
-                sess.run(tf.global_variables_initializer())
                 ckpt = tf.train.get_checkpoint_state(os.path.join(model_name, 'Generator'))
                 if ckpt == None:
                     print("<<< checkpoint file does not exist>>>")
@@ -522,14 +527,13 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                     print("Restore {} checkpoint!!!".format(os.path.basename(ckpt.model_checkpoint_path)))
                     saver.restore(sess, ckpt.model_checkpoint_path)
 
+                # A_length 와 B_length 중 짧은 길이만큼만 생성
                 for i in range(data_length):
-                    A_numpy, B_numpy = sess.run(
-                        [A_tensor, B_tensor])  # 이런식으로 하는 것은 상당히 비효율적 -> tf.data.Dataset 에 더익숙해지고자!!!
-                    AtoB_translated_image, BtoA_translated_image = sess.run([AtoB_gene, BtoA_gene],
-                                                                            feed_dict={A: A_numpy, B: B_numpy})
-                    visualize(model_name="AtoB" + model_name, named_images=[i, A_numpy, AtoB_translated_image[0]],
+                    A_numpy, B_numpy = sess.run([A_tensor, B_tensor])  # 이런식으로 하는 것은 상당히 비효율적 -> tf.data.Dataset 에 더익숙해지고자!!!
+                    AtoB_translated_image, BtoA_translated_image = sess.run([AtoB_gene, BtoA_gene], feed_dict={A: A_numpy, B: B_numpy})
+                    visualize(model_name="AtoB" + model_name, named_images=[i, A_numpy[0], AtoB_translated_image[0]],
                               save_path="AtoB" + save_path)
-                    visualize(model_name="BtoA" + model_name, named_images=[i, B_numpy, BtoA_translated_image[0]],
+                    visualize(model_name="BtoA" + model_name, named_images=[i, B_numpy[0], BtoA_translated_image[0]],
                               save_path="BtoA" + save_path)
 
 

@@ -14,8 +14,8 @@ discriminator의 구조는 PatchGAN 70X70을 사용한다.
 -논문 내용과 거의 똑같이 구현했다. - image pool도 구현하기!!!
 '''
 
-# 현재 사용하고 있는 GPU 번호를 얻기 위한 코드 - 여러개의 GPU를 쓸 경우 정보확인을 위해!
-print("Terminal or CMD 창에서 지정해준 경우, 무조건 GPU : 1대, GPU 번호 : 0 라고 출력됨") 
+# 현재 사용하고 있는 GPU 번호를 얻기 위한 코드 - 여러개의 GPU를 쓸 경우 정보 확인을 위해!
+print("Terminal or CMD 창에서 지정해준 경우, 무조건 GPU : 1대, GPU 번호 : 0 라고 출력 됨")
 local_device_protos = device_lib.list_local_devices()
 GPU_List = [x.name for x in local_device_protos if x.device_type == 'GPU']
 # gpu_number_list = []
@@ -36,7 +36,7 @@ print(
 print("<<< CPU만 사용하고 싶다면? '현재 사용 가능한 GPU 번호' 에 없는 번호('-1'과 같은)를 적어 넣으면 됨 >>>\n")
 
 #특정 GPU로 학습 하고 싶을때, 아래의 2줄을 꼭 써주자.
-#os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID" 
+#os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 #os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 # DB_name = "horse2zebra" 만...
@@ -44,7 +44,7 @@ cycleGAN.model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consi
                cycle_consistency_loss_weight=10,
                optimizer_selection="Adam", beta1=0.9, beta2=0.999,  # for Adam optimizer
                decay=0.999, momentum=0.9,  # for RMSProp optimizer
-               use_identity_mapping=True,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용했다고 함.
+               use_identity_mapping=False,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용 - 우선은 False
                norm_selection="instance_norm",  # "instance_norm" or nothing
                image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
                image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지? 논문에선 50개 사용했다고 나옴.

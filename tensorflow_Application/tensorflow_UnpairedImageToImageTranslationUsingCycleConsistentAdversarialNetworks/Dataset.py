@@ -129,11 +129,11 @@ class Dataset(object):
     def iterator(self):
 
         if self.use_TFRecord:
-            A_iterator, A_next_batch, B_iterator, B_next_batch, data_length = self.Using_TFRecordDataset()
+            A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length = self.Using_TFRecordDataset()
         else:
-            A_iterator, A_next_batch, B_iterator, B_next_batch, data_length = self.Using_TFBasicDataset()
+            A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length = self.Using_TFBasicDataset()
 
-        return A_iterator, A_next_batch, B_iterator, B_next_batch, data_length
+        return A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length
 
     def Preparing_Learning_Dataset(self):
 
@@ -240,8 +240,7 @@ class Dataset(object):
         A_iterator = A_dataset.make_initializable_iterator()
         B_iterator = B_dataset.make_initializable_iterator()
 
-        return A_iterator, A_iterator.get_next(), B_iterator, B_iterator.get_next(), \
-               A_length if A_length > B_length else B_length
+        return A_iterator, A_iterator.get_next(), A_length, B_iterator, B_iterator.get_next(), B_length
 
         # TFRecord를 만들기위해 이미지를 불러올때 쓴다.
 
@@ -300,8 +299,7 @@ class Dataset(object):
         B_iterator = B_dataset.make_initializable_iterator()
         # tf.python_io.tf_record_iterator는 무엇인가 ? TFRecord 파일에서 레코드를 읽을 수 있는 iterator이다.
 
-        return A_iterator, A_iterator.get_next(), B_iterator, B_iterator.get_next(), \
-               A_length if A_length > B_length else B_length
+        return A_iterator, A_iterator.get_next(), A_length, B_iterator, B_iterator.get_next(), B_length
 
 
 ''' 
@@ -360,7 +358,7 @@ if __name__ == "__main__":
     Dataset "horse2zebra" 만..
     '''
     dataset = Dataset(DB_name="horse2zebra", batch_size=4, use_TFRecord=True, use_TrainDataset=False)
-    A_iterator, A_next_batch, B_iterator, B_next_batch, data_length = dataset.iterator()
+    A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length = dataset.iterator()
 
 else:
     print("Dataset imported")
