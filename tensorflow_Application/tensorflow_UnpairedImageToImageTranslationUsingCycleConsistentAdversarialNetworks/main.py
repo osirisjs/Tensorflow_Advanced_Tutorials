@@ -4,7 +4,7 @@ import UnpairedImageToImageTranslation as cycleGAN
 
 '''
 간단한 설명
-데이터셋 다운로드는 - https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/ 에서 <데이터셋> 을 내려 받자. 
+데이터셋 다운로드는 - https://people.eecs.berkeley.edu/~taesung_park/CycleGAN/datasets/horse2zebra.zip 에서 <데이터셋> 을 내려 받자. 
 논문에서 추천하는 batch size = 1, Adam Optimizer, lr=0.0002
 입력 크기 : <256x256x3>
 출력 크기 : <256x256x3>
@@ -14,8 +14,8 @@ discriminator의 구조는 PatchGAN 70X70을 사용한다.
 -논문 내용과 거의 똑같이 구현했다. - image pool도 구현하기!!!
 '''
 
-# 현재 사용하고 있는 GPU 번호를 얻기 위한 코드입니다. - 제가 여러개의 GPU를 써서..
-print("Terminal or CMD 창에서 지정해준 경우,   GPU : 1대, GPU 번호 : 0 이라고 출력됩니다.") 
+# 현재 사용하고 있는 GPU 번호를 얻기 위한 코드 - 여러개의 GPU를 쓸 경우 정보확인을 위해!
+print("Terminal or CMD 창에서 지정해준 경우, 무조건 GPU : 1대, GPU 번호 : 0 라고 출력됨") 
 local_device_protos = device_lib.list_local_devices()
 GPU_List = [x.name for x in local_device_protos if x.device_type == 'GPU']
 # gpu_number_list = []

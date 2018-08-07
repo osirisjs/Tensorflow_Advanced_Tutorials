@@ -65,7 +65,7 @@
                     * to reduce model oscillation [14], we follow
                     Shrivastava et al’s strategy [45] and update the discriminators using a history of generated images rather than the ones produced by the latest generative networks. We keep an image buffer that stores the 50 previously generated images.
             
-            * [***Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_UnpairedImageToImageTranslation%20UsingCycleConsistentAdversarialNetworks)
+            * [***Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks)
                 * Image To Image Translation With Conditional Adversarial Newort을 학습 시키기 위해선 입력과 출력이 한쌍인 데이터가 필요했습니다. 그러나 이 논문에서 제시한 방법은 입력과 출력이 쌍일 필요가 없습니다.
                 * CycleGan은 전혀 다른 도메인에 위치해 있는 두 종류의 데이터 집단을 자연스럽게 이어주는 연결고리를 찾아내는 과정이라고 생각합니다.(오직 저 만의 생각)
                 * 네트워크 구조 및 학습 방법은 논문에서 제시한 내용과 거의 같습니다.
