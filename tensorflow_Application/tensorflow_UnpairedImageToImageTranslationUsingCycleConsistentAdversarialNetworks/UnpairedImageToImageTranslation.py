@@ -3,15 +3,15 @@ import shutil
 from Dataset import *
 
 
-def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=None):
+def visualize(model_name="CycleGAN", named_images=None, save_path=None):
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     # 이미지 y축 방향으로 붙이기
     image = np.hstack(named_images[1:])
     # 이미지 스케일 바꾸기(~1 ~ 1 -> 0~ 255)
     image = ((image + 1) * 127.5).astype(np.uint8)
-    cv2.imwrite(os.path.join(save_path, '{}_{}.png'.format(model_name, named_images[0])), image)
-    print("{}_{}.png saved in {} folder".format(model_name, named_images[0], save_path))
+    cv2.imwrite(os.path.join(save_path, '{}_{}.jpeg'.format(model_name, named_images[0])), image)
+    print("{}_{}.jpg saved in {} folder".format(model_name, named_images[0], save_path))
 
 
 def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
@@ -19,7 +19,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
           optimizer_selection="Adam", beta1=0.9, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
           use_identity_mapping=True,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용했다고 함.
-          norm_selection="instance_norm",  # "instance_norm" or nothing
+          norm_selection="instancenorm",  # "instancenorm" or nothing
           image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
           image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
@@ -28,9 +28,17 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
           # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
           save_path="translated_image"):
     print("CycleGAN")
-    model_name = "Using" + DB_name + "DB_" + norm_selection + "_{}".format(cycle_consistency_loss + "cLoss")
+
+    model_name = DB_name
+
+    if norm_selection == "instancenorm":
+        model_name += "_ITN"
+
+    if cycle_consistency_loss == "L1":
+        model_name += "L1ccl"  # L1 cycle consistency loss
+
     if use_identity_mapping:
-        model_name += "_ILoss"
+        model_name += "iml"  # identity mapping loss
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
@@ -49,7 +57,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
         conv_out = tf.nn.conv2d(input, w, strides=strides, padding=padding)
 
-        if norm_selection == "instance_norm":
+        if norm_selection == "instancenorm":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
         else:
             return tf.nn.bias_add(conv_out, b)
@@ -67,7 +75,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
 
         conv_out = tf.nn.conv2d_transpose(input, w, output_shape=output_shape, strides=strides, padding=padding)
 
-        if norm_selection == "instance_norm":
+        if norm_selection == "instancenorm":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
         else:
             return tf.nn.bias_add(conv_out, b)
@@ -368,14 +376,15 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
             tf.add_to_collection('BtoA', BtoA_gene)
 
             # generator graph 구조를 파일에 쓴다.
-            saver_generator.export_meta_graph(os.path.join(model_name, 'Generator', 'Generator_Graph.meta'),
-                                              collection_list=['A', 'B', "AtoB", "BtoA"])
+            meta_save_file_path = os.path.join(model_name, 'Generator', 'Generator_Graph.meta')
+            saver_generator.export_meta_graph(meta_save_file_path, collection_list=['A', 'B', "AtoB", "BtoA"])
 
             if image_pool and batch_size == 1:
                 imagepool = ImagePool(image_pool_size=image_pool_size)
 
             config = tf.ConfigProto(log_device_placement=False, allow_soft_placement=True)
             config.gpu_options.allow_growth = True
+
             with tf.Session(graph=JG_Graph, config=config) as sess:
                 print("initializing!!!")
                 sess.run(tf.global_variables_initializer())
@@ -464,10 +473,13 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                         summary_writer.add_summary(summary_str, global_step=epoch)
 
                         save_all_model_path = os.path.join(model_name, 'All')
+                        # saver_generator.export_meta_graph 에서 경로가 생성되지만, 혹시모를 오류에 대비해서!!!
                         save_generator_model_path = os.path.join(model_name, 'Generator')
 
                         if not os.path.exists(save_all_model_path):
                             os.makedirs(save_all_model_path)
+
+                        #
                         if not os.path.exists(save_generator_model_path):
                             os.makedirs(save_generator_model_path)
 
@@ -542,12 +554,12 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
 
 
 if __name__ == "__main__":
-    model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
+    model(TEST=False, DB_name="horse2zebra", use_TFRecord=False, cycle_consistency_loss="L1",
           cycle_consistency_loss_weight=10,
           optimizer_selection="Adam", beta1=0.9, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
           use_identity_mapping=True,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용했다고 함.
-          norm_selection="instance_norm",  # "instance_norm" or nothing
+          norm_selection="instancenorm",  # "instancenorm" or nothing
           image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
           image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,

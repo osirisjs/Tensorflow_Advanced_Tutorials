@@ -1,6 +1,8 @@
+import os
+
 import ImageToImageTranslation as pix2pix
 from tensorflow.python.client import device_lib
-import os
+
 '''
 1. 설명
 데이터셋 다운로드는 - https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/ 에서 <데이터셋> 을 내려 받자. 
@@ -56,15 +58,40 @@ AtoB = True  -> image -> segmentation
 AtoB = False -> segmentation -> image
 '''
 
+'''
+텐서플로우의 GPU 메모리정책 - GPU가 여러개 있으면 기본으로 메모리 다 잡는다. -> 모든 GPU 메모리를 다 잡는다. - 원하는 GPU만 쓰고 싶은 해결책은 CUDA_VISIBLE_DEVICES 에 있다. - 83번째 라인을 읽어라!!!
+Allowing GPU memory growth
+By default, TensorFlow maps nearly all of the GPU memory of all GPUs (subject to CUDA_VISIBLE_DEVICES) visible to the process.
+This is done to more efficiently use the relatively precious GPU memory resources on the devices by reducing memory fragmentation.
+
+In some cases it is desirable for the process to only allocate a subset of the available memory, 
+or to only grow the memory usage as is needed by the process. TensorFlow provides two Config options on the Session to control this.
+
+The first is the allow_growth option, which attempts to allocate only as much GPU memory based on runtime allocations: 
+it starts out allocating very little memory, and as Sessions get run and more GPU memory is needed, we extend the GPU memory region needed by the TensorFlow process. 
+Note that we do not release memory, since that can lead to even worse memory fragmentation. To turn this option on, set the option in the ConfigProto by:
+
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+session = tf.Session(config=config, ...)
+The second method is the per_process_gpu_memory_fraction option, which determines the fraction of the overall amount of memory that each visible GPU should be allocated. 
+For example, you can tell TensorFlow to only allocate 40% of the total memory of each GPU by:
+
+config = tf.ConfigProto()
+config.gpu_options.per_process_gpu_memory_fraction = 0.4
+session = tf.Session(config=config, ...)
+'''
+
 print("* 한대의 컴퓨터에 여러대의 GPU 가 설치되어 있을 경우 참고할 사항")
-print("<<< 경우의 수 1 : GPU가 여러대 설치 / 통합개발 환경에서 실행 / GPU 번호 지정 원하는 경우 -> os.environ[\"CUDA_VISIBLE_DEVICES\"]=\"번호\"와 os.environ[\"CUDA_DEVICE_ORDER\"]=\"PCI_BUS_ID\"를 tf API를 하나라도 사용하기 전에 작성해 넣으면 됨 >>>")
+print(
+    "<<< 경우의 수 1 : GPU가 여러대 설치 / 통합개발 환경에서 실행 / GPU 번호 지정 원하는 경우 -> os.environ[\"CUDA_VISIBLE_DEVICES\"]=\"번호\"와 os.environ[\"CUDA_DEVICE_ORDER\"]=\"PCI_BUS_ID\"를 tf API를 하나라도 사용하기 전에 작성해 넣으면 됨 >>>")
 print(
     "<<< 경우의 수 2 : GPU가 여러대 설치 / 터미널 창에서 실행 / GPU 번호 지정 원하는 경우  -> CUDA_VISIBLE_DEVICES = 0(gpu 번호) python main,py 을 터미널 창에 적고 ENTER - Ubuntu에서만 동작 >>>")
 print("<<< CPU만 사용하고 싶다면? '현재 사용 가능한 GPU 번호' 에 없는 번호('-1'과 같은)를 적어 넣으면 됨 >>>\n")
 
-#특정 GPU로 학습 하고 싶을때, 아래의 2줄을 꼭 써주자.(Ubuntu , window 둘 다 가능) - 반드시 Tensorflow의 API를 하나라도 쓰기 전에 아래의 2줄을 입력하라!!!
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+# 특정 GPU로 학습 하고 싶을때, 아래의 2줄을 꼭 써주자.(Ubuntu , window 둘 다 가능) - 반드시 Tensorflow의 API를 하나라도 쓰기 전에 아래의 2줄을 입력하라!!!
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+# os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 # 현재 사용하고 있는 GPU 번호를 얻기 위한 코드 - 여러개의 GPU를 쓸 경우 정보 확인을 위해!
 print("Ubuntu Terminal 창에서 지정해준 경우, 무조건 GPU : 1대, GPU 번호 : 0 라고 출력 됨")
@@ -76,12 +103,12 @@ print("# 사용 가능한 GPU 번호 :", end="")
 for i, GL in enumerate(GPU_List):
     num = GL.split(":")[-1]
     # gpu_number_list.append(num)
-    if len(GPU_List)-1 == i:
-        print(" "+num)
+    if len(GPU_List) - 1 == i:
+        print(" " + num)
     else:
         print(" " + num + ",", end="")
 
-pix2pix.model(TEST=False, AtoB= True, DB_name="facades", use_TFRecord=True, distance_loss="L1",
+pix2pix.model(TEST=True, AtoB=True, DB_name="facades", use_TFRecord=True, distance_loss="L1",
               distance_loss_weight=100, optimizer_selection="Adam",
               beta1=0.5, beta2=0.999,  # for Adam optimizer
               decay=0.999, momentum=0.9,  # for RMSProp optimizer

@@ -273,7 +273,7 @@ class Dataset(object):
 
     # TFRecord를 만들기위해 이미지를 불러올때 쓴다.
     def load_image(self, address):
-        img = cv2.imread(address)
+        img = cv2.imread(address, cv2.IMREAD_COLOR)
         img = cv2.resize(img, (512, 256), interpolation=cv2.INTER_AREA)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.astype(np.float32)

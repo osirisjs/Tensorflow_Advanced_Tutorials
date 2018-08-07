@@ -1,4 +1,5 @@
 import shutil
+
 from Dataset import *
 
 
@@ -13,38 +14,40 @@ def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=N
     print("{}_{}.png saved in {} folder".format(model_name, named_images[0], save_path))
 
 
-def model(TEST=False, AtoB=True, DB_name="maps", use_TFRecord=True, distance_loss="L1", distance_loss_weight=100,
-          optimizer_selection="Adam",
-          beta1=0.9, beta2=0.999,  # for Adam optimizer
+def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_loss="L1",
+          distance_loss_weight=100, optimizer_selection="Adam",
+          beta1=0.5, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
+          # batch_size는 1~10사이로 하자
           image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
           image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
-          learning_rate=0.001, training_epochs=100,
-          batch_size=4, display_step=1, Dropout_rate=0.5, using_moving_variable=False, save_path="translated_image"):
+          learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1, Dropout_rate=0.5,
+          using_moving_variable=False,  # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수
+          save_path="translated_image"):  # 학습 완료 후 변환된 이미지가 저장될 폴더
     if distance_loss == "L1":
         print("target generative GAN with L1 loss")
-        model_name = "Pix2PixConditionalGAN_WithL1loss"
+        model_name = "Pix2PixL1loss"
     elif distance_loss == "L2":
         print("target generative GAN with L1 loss")
-        model_name = "Pix2PixConditionalGAN_WithL2loss"
+        model_name = "Pix2PixL2loss"
     else:
         print("target generative GAN")
-        model_name = "Pix2PixConditionalGAN"
+        model_name = "Pix2PixGAN"
 
     # DB 이름도 추가
     if AtoB:
-        model_name = "AtoB_" + model_name
+        model_name = "AtoB" + model_name
     else:
-        model_name = "BtoA_" + model_name
+        model_name = "BtoA" + model_name
 
-    model_name = DB_name + "_" + model_name
+    model_name = DB_name + model_name
 
     if batch_size == 1:
         norm_selection = "instance_norm"
-        model_name = "instancenorm_" + model_name
+        model_name = "in" + model_name
     else:
         norm_selection = "batch_norm"
-        model_name = "batchnorm_" + model_name
+        model_name = "bn_" + model_name
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
@@ -397,7 +400,8 @@ def model(TEST=False, AtoB=True, DB_name="maps", use_TFRecord=True, distance_los
                     if image_pool and batch_size == 1:
                         fake_G = imagepool(image=sess.run(G))
                         # AtoB_gene, BtoA_gene 에 과거에 생성된 fake_AtoB_gene, fake_BtoA_gene를 넣어주자!!!
-                        _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real], feed_dict={G : fake_G})
+                        _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real],
+                                                                         feed_dict={G: fake_G})
                     # image_pool 변수를 사용하지 않을 때, Discriminator Update
                     else:
                         _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real])
@@ -450,15 +454,15 @@ def model(TEST=False, AtoB=True, DB_name="maps", use_TFRecord=True, distance_los
 
 if __name__ == "__main__":
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-    model(TEST=False, AtoB=True, DB_name="maps", use_TFRecord=True, distance_loss="L1",
-          distance_loss_weight=100, optimizer_selection="Adam",
-          beta1=0.5, beta2=0.999,  # for Adam optimizer
-          decay=0.999, momentum=0.9,  # for RMSProp optimizer
-          # batch_size는 1~10사이로 하자
-          image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
-          image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
-          learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1, Dropout_rate=0.5,
-          using_moving_variable=False,  # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수
-          save_path="translated_image")  # 학습 완료 후 변환된 이미지가 저장될 폴더
+    model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_loss="L1",
+                  distance_loss_weight=100, optimizer_selection="Adam",
+                  beta1=0.5, beta2=0.999,  # for Adam optimizer
+                  decay=0.999, momentum=0.9,  # for RMSProp optimizer
+                  # batch_size는 1~10사이로 하자
+                  image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
+                  image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
+                  learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1, Dropout_rate=0.5,
+                  using_moving_variable=False,  # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수
+                  save_path="translated_image")  # 학습 완료 후 변환된 이미지가 저장될 폴더
 else:
     print("model imported")
