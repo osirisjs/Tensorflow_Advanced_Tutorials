@@ -16,18 +16,15 @@
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="4484">
               <caret line="245" selection-start-line="245" selection-end-line="245" />
-              <folding>
-                <element signature="e#0#11#0" expanded="true" />
-              </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="UnpairedImageToImageTranslation.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="UnpairedImageToImageTranslation.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/UnpairedImageToImageTranslation.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="165">
-              <caret line="500" lean-forward="true" selection-start-line="500" selection-end-line="500" />
+            <state relative-caret-position="7068">
+              <caret line="374" column="33" selection-start-line="374" selection-start-column="33" selection-end-line="374" selection-end-column="33" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -35,11 +32,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="main.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="main.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="507">
-              <caret line="40" selection-start-line="40" selection-end-line="40" />
+            <state relative-caret-position="321">
+              <caret line="25" lean-forward="true" selection-start-line="25" selection-end-line="25" />
               <folding>
                 <element signature="e#0#47#0" expanded="true" />
               </folding>
@@ -104,11 +101,11 @@
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds">
-    <option name="x" value="-186" />
-    <option name="y" value="495" />
-    <option name="width" value="1940" />
-    <option name="height" value="1050" />
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="1912" />
+    <option name="y" value="-8" />
+    <option name="width" value="1936" />
+    <option name="height" value="1056" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
@@ -130,7 +127,7 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../tensorflow_AutoencoderLottoNet" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -246,15 +243,14 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-186" y="495" width="1940" height="1050" extended-state="0" />
-    <editor active="true" />
+    <frame x="1912" y="-8" width="1936" height="1056" extended-state="6" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.498708" visible="true" weight="0.113038905" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.498708" visible="true" weight="0.11302083" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Event Log" order="10" sideWeight="0.3258427" side_tool="true" type="SLIDING" weight="0.5740741" />
       <window_info anchor="bottom" id="Version Control" order="9" show_stripe_button="false" />
       <window_info anchor="bottom" id="Python Console" order="7" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.6741573" weight="0.3760965" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.6741573" weight="0.33262485" />
       <window_info id="Structure" order="1" sideWeight="0.502809" side_tool="true" weight="0.08856577" />
       <window_info anchor="bottom" id="Terminal" order="8" />
       <window_info id="Favorites" order="2" sideWeight="0.501292" side_tool="true" weight="0.08856577" />
@@ -270,21 +266,21 @@
     <layout-to-restore>
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
-      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info content_ui="combo" id="Project" order="0" sideWeight="0.498708" visible="true" weight="0.11368143" />
       <window_info id="Structure" order="1" sideWeight="0.502809" side_tool="true" weight="0.08856577" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Version Control" order="9" show_stripe_button="false" />
       <window_info anchor="bottom" id="Run" order="2" sideWeight="0.6741573" weight="0.0997151" />
-      <window_info anchor="bottom" id="Find" order="1" weight="0.3267974" />
-      <window_info anchor="bottom" id="Python Console" order="7" />
+      <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.39173788" />
       <window_info anchor="bottom" id="Terminal" order="8" />
       <window_info anchor="bottom" id="Event Log" order="10" sideWeight="0.3258427" side_tool="true" type="SLIDING" weight="0.5740741" />
-      <window_info anchor="bottom" id="Version Control" order="9" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info id="Favorites" order="2" sideWeight="0.501292" side_tool="true" weight="0.08856577" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.3267974" />
+      <window_info anchor="bottom" id="Python Console" order="7" />
     </layout-to-restore>
   </component>
   <component name="VcsContentAnnotationSettings">
@@ -303,13 +299,6 @@
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/core/example/feature_pb2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="187">
-          <caret line="383" column="77" selection-start-line="383" selection-start-column="77" selection-end-line="383" selection-end-column="77" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/google/protobuf/message.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="205">
@@ -587,28 +576,32 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="4484">
           <caret line="245" selection-start-line="245" selection-end-line="245" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/core/protobuf/config_pb2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="217">
+          <caret line="949" selection-start-line="949" selection-end-line="949" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/UnpairedImageToImageTranslation.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="7068">
+          <caret line="374" column="33" selection-start-line="374" selection-start-column="33" selection-end-line="374" selection-end-column="33" />
           <folding>
-            <element signature="e#0#11#0" expanded="true" />
+            <element signature="e#0#13#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="507">
-          <caret line="40" selection-start-line="40" selection-end-line="40" />
+        <state relative-caret-position="321">
+          <caret line="25" lean-forward="true" selection-start-line="25" selection-end-line="25" />
           <folding>
             <element signature="e#0#47#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/UnpairedImageToImageTranslation.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="500" lean-forward="true" selection-start-line="500" selection-end-line="500" />
-          <folding>
-            <element signature="e#0#13#0" expanded="true" />
           </folding>
         </state>
       </provider>
