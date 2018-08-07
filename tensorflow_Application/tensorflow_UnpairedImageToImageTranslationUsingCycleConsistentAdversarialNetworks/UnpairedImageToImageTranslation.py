@@ -23,6 +23,8 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
           image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
           image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
+          weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
+          learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
           # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
           save_path="translated_image"):
     print("CycleGAN")
@@ -395,8 +397,8 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 for epoch in tqdm(range(1, training_epochs + 1)):
 
                     # 논문에서 100 epoch가 넘으면 선형적으로 학습률(learning rate)을 감소시킨다고 했다. 1 epoch마다 0.99 씩 줄여보자
-                    if epoch > 100:
-                        learning_rate *= 0.99
+                    if epoch > weight_decay_epoch:
+                        learning_rate *= learning_rate_decay
 
                     AtoB_LossD = 0
                     AtoB_LossG = 0
@@ -461,17 +463,17 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                         summary_str = sess.run(summary_operation)
                         summary_writer.add_summary(summary_str, global_step=epoch)
 
-                        save_all_model_path = os.path.join(model_name, 'All/')
-                        save_generator_model_path = os.path.join(model_name, 'Generator/')
+                        save_all_model_path = os.path.join(model_name, 'All')
+                        save_generator_model_path = os.path.join(model_name, 'Generator')
 
                         if not os.path.exists(save_all_model_path):
                             os.makedirs(save_all_model_path)
                         if not os.path.exists(save_generator_model_path):
                             os.makedirs(save_generator_model_path)
 
-                        saver_all.save(sess, save_all_model_path, global_step=epoch,
+                        saver_all.save(sess, save_all_model_path + "/", global_step=epoch,
                                        write_meta_graph=False)
-                        saver_generator.save(sess, save_generator_model_path,
+                        saver_generator.save(sess, save_generator_model_path + "/",
                                              global_step=epoch,
                                              write_meta_graph=False)
                 print("Optimization Finished!")
@@ -509,7 +511,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                               use_TrainDataset=not TEST)
             A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length = dataset.iterator()
             A_tensor, B_tensor = A_next_batch, B_next_batch
-            
+
             # A_length 와 B_length 중 짧은 것을 택한다.
             data_length = A_length if A_length < B_length else B_length
 
@@ -529,8 +531,10 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
 
                 # A_length 와 B_length 중 짧은 길이만큼만 생성
                 for i in range(data_length):
-                    A_numpy, B_numpy = sess.run([A_tensor, B_tensor])  # 이런식으로 하는 것은 상당히 비효율적 -> tf.data.Dataset 에 더익숙해지고자!!!
-                    AtoB_translated_image, BtoA_translated_image = sess.run([AtoB_gene, BtoA_gene], feed_dict={A: A_numpy, B: B_numpy})
+                    A_numpy, B_numpy = sess.run(
+                        [A_tensor, B_tensor])  # 이런식으로 하는 것은 상당히 비효율적 -> tf.data.Dataset 에 더익숙해지고자!!!
+                    AtoB_translated_image, BtoA_translated_image = sess.run([AtoB_gene, BtoA_gene],
+                                                                            feed_dict={A: A_numpy, B: B_numpy})
                     visualize(model_name="AtoB" + model_name, named_images=[i, A_numpy[0], AtoB_translated_image[0]],
                               save_path="AtoB" + save_path)
                     visualize(model_name="BtoA" + model_name, named_images=[i, B_numpy[0], BtoA_translated_image[0]],
@@ -547,6 +551,8 @@ if __name__ == "__main__":
           image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
           image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
+          weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
+          learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
           # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
           save_path="translated_image")
     print("model imported")

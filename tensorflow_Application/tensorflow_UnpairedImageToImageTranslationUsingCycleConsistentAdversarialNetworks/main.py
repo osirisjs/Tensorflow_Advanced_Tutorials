@@ -49,5 +49,7 @@ cycleGAN.model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consi
                image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
                image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지? 논문에선 50개 사용했다고 나옴.
                learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
+               weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
+               learning_rate_decay=0.99, # learning_rate를 얼마나 줄일지
                # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
                save_path="translated_image")

@@ -1,5 +1,4 @@
 import shutil
-
 from Dataset import *
 
 
@@ -426,18 +425,17 @@ def model(TEST=False, AtoB=True, DB_name="maps", use_TFRecord=True, distance_los
                     summary_str = sess.run(summary_operation)
                     summary_writer.add_summary(summary_str, global_step=epoch)
 
-                    save_all_model_path = os.path.join(model_name, 'All/')
-                    save_generator_model_path = os.path.join(model_name, 'Generator/')
+                    save_all_model_path = os.path.join(model_name, 'All')
+                    save_generator_model_path = os.path.join(model_name, 'Generator')
 
                     if not os.path.exists(save_all_model_path):
                         os.makedirs(save_all_model_path)
                     if not os.path.exists(save_generator_model_path):
                         os.makedirs(save_generator_model_path)
 
-                    saver_all.save(sess, save_all_model_path, global_step=epoch,
+                    saver_all.save(sess, save_all_model_path + "/", global_step=epoch,
                                    write_meta_graph=False)
-                    saver_generator.save(sess, save_generator_model_path,
-                                         global_step=epoch,
+                    saver_generator.save(sess, save_generator_model_path + "/", global_step=epoch,
                                          write_meta_graph=False)
 
             print("Optimization Finished!")
