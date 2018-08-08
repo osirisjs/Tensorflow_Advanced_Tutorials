@@ -55,11 +55,31 @@ https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz
 class Dataset(object):
 
     def __init__(self, DB_name="maps", AtoB=False,
-                 batch_size=1, use_TFRecord=False, use_TrainDataset=False):
+                 batch_size=1, use_TFRecord=False, use_TrainDataset=False, training_size=None, inference_size=None):
 
         self.Dataset_Path = "Dataset"
         self.DB_name = DB_name
         self.AtoB = AtoB
+        self.inference_size = inference_size
+        self.training_size = training_size
+
+        # training_size의 최소 크기를 (256 ,256)로 지정
+        if use_TrainDataset:
+            if self.training_size[0] < 256 and self.training_size[1] < 256 and self.training_size[0]%2 != 0 and self.training_size[1]%2 != 0:
+                print("training size는 2의 배수이면서 (128,128)보다 커야 합니다.")
+                exit(0)
+            else:
+                self.height_size = inference_size[0]
+                self.width_size = inference_size[1]
+
+        # infernece_size의 최소 크기를 (128 128)로 지정
+        else:
+            if self.inference_size[0] <= 128 and self.inference_size[1] <= 128 and self.inference_size[0]%2 != 0 and self.inference_size[1]%2 != 0 :
+                print("inference size는 2의 배수이면서 (128,128)보다 커야 합니다.")
+                exit(0)
+            else:
+                self.height_size = inference_size[0]
+                self.width_size = inference_size[1]
 
         # "{self.DB_name}.tar.gz"의 파일의 크기는 미리 구해놓음. (미리 확인이 필요함.)
         if DB_name == "cityscapes":
@@ -176,8 +196,9 @@ class Dataset(object):
             feature = {'image': tf.FixedLenFeature([], tf.string)}
             features = tf.parse_single_example(image, features=feature)
             img_decoded_raw = tf.decode_raw(features['image'], tf.float32)
+
             # 2. 이미지 사이즈를 256 x 512 x 3으로 reshape 한다.
-            img_decoded = tf.reshape(img_decoded_raw, [256, 512, 3])
+            img_decoded = tf.reshape(img_decoded_raw, [self.height_size, self.width_size*2, 3])
         else:
             # 1. 이미지를 읽는다
             img = tf.read_file(image)
@@ -189,7 +210,7 @@ class Dataset(object):
             # 이미지가 다른 포맷일 경우, tf.image.decode_bmp, tf.image.decode_png 등을 사용.
             print("### The image must have the 'jpg' format. ###")
             # 2. 이미지 사이즈를 256 x 512으로 조정한다.
-            img_decoded = tf.image.resize_images(tf.image.decode_jpeg(img, channels=3), size=(256, 512))  # jpeg 파일 읽기
+            img_decoded = tf.image.resize_images(tf.image.decode_jpeg(img, channels=3), size=(self.height_size, self.width_size*2))  # jpeg 파일 읽기
         '''
         논문에서...
         Random jitter was applied by resizing the 256 x 256 input images to 286 x 286
@@ -205,10 +226,10 @@ class Dataset(object):
         '''
 
         # 3. 256x512 이미지를 256x256, 256x256 2개로 나눈다.
-        Ip = tf.image.crop_to_bounding_box(img_decoded, offset_height=0, offset_width=0, target_height=256,
-                                           target_width=256)
-        lb = tf.image.crop_to_bounding_box(img_decoded, offset_height=0, offset_width=256, target_height=256,
-                                           target_width=256)
+        Ip = tf.image.crop_to_bounding_box(img_decoded, offset_height=0, offset_width=0, target_height=self.height_size,
+                                           target_width=self.width_size)
+        lb = tf.image.crop_to_bounding_box(img_decoded, offset_height=0, offset_width=self.width_size, target_height=self.height_size,
+                                           target_width=self.width_size)
 
         # 4. gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
         Ip_scaled = tf.subtract(tf.divide(tf.cast(Ip, tf.float32), 127.5), 1)  # gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
@@ -219,16 +240,17 @@ class Dataset(object):
 
         # Train Dataset 에서만 동작하게 하기 위함
         if self.use_TrainDataset:
-            # 5. 286x286으로 키운다.
-            Ip_resized = tf.image.resize_images(images=Ip_scaled, size=(286, 286))
-            lb_resized = tf.image.resize_images(images=lb_scaled, size=(286, 286))
+            if self.width_size == 256 and self.height_size == 256:
+                # 5. 286x286으로 키운다.
+                Ip_resized = tf.image.resize_images(images=Ip_scaled, size=(286, 286))
+                lb_resized = tf.image.resize_images(images=lb_scaled, size=(286, 286))
 
-            # 6. 이미지를 256x256으로 랜덤으로 자른다.
-            Ip_random_crop = tf.random_crop(Ip_resized, size=(256, 256, 3))
-            lb_random_crop = tf.random_crop(lb_resized, size=(256, 256, 3))
+                # 6. 이미지를 256x256으로 랜덤으로 자른다.
+                Ip_random_crop = tf.random_crop(Ip_resized, size=(256, 256, 3))
+                lb_random_crop = tf.random_crop(lb_resized, size=(256, 256, 3))
 
-            input = Ip_random_crop
-            label = lb_random_crop
+                input = Ip_random_crop
+                label = lb_random_crop
 
         if self.AtoB:
             return input, label
@@ -274,7 +296,7 @@ class Dataset(object):
     # TFRecord를 만들기위해 이미지를 불러올때 쓴다.
     def load_image(self, address):
         img = cv2.imread(address, cv2.IMREAD_COLOR)
-        img = cv2.resize(img, (512, 256), interpolation=cv2.INTER_AREA)
+        img = cv2.resize(img, (self.width_size*2, self.height_size), interpolation=cv2.INTER_AREA)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.astype(np.float32)
         return img
@@ -318,6 +340,7 @@ class Dataset(object):
         # tf.python_io.tf_record_iterator는 무엇인가 ? TFRecord 파일에서 레코드를 읽을 수 있는 iterator이다.
         return iterator, iterator.get_next(), sum(1 for _ in tf.python_io.tf_record_iterator(self.TFRecord_path))
 
+
 ''' 
 to reduce model oscillation [14], we follow
 Shrivastava et al’s strategy [45] and update the discriminators
@@ -328,6 +351,8 @@ buffer that stores the 50 previously generated images.
 imagePool 클래스
 # https://github.com/xhujoy/CycleGAN-tensorflow/blob/master/utils.py 를 참고해서 변형했다.
 '''
+
+
 class ImagePool(object):
 
     def __init__(self, image_pool_size=50):
@@ -362,6 +387,7 @@ class ImagePool(object):
             return past_image
         else:
             return image
+
 
 if __name__ == "__main__":
     '''
