@@ -305,7 +305,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
             # 데이터 전처리
             with tf.name_scope("Dataset"):
                 dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TFRecord=use_TFRecord,
-                                  use_TrainDataset=not TEST, training_size=training_size, inference_size=inference_size)
+                                  use_TrainDataset=not TEST, training_size=training_size)
                 iterator, next_batch, data_length = dataset.iterator()
 
                 # 알고리즘
@@ -498,7 +498,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
 
             # Test Dataset 가져오기
             dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TFRecord=use_TFRecord,
-                              use_TrainDataset=not TEST, training_size=training_size, inference_size=inference_size)
+                              use_TrainDataset=not TEST, inference_size=inference_size)
             iterator, next_batch, data_length = dataset.iterator()
 
             with tf.Session(graph=JG) as sess:
