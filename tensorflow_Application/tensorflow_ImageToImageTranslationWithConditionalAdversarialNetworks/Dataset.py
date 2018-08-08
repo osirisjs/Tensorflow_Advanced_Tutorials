@@ -208,8 +208,8 @@ class Dataset(object):
             이게 gif, jpeg, png, bmp를 다 처리하려다 보니 생긴 문제점 같은데, 추후에 해결될 것이라고 믿는다...
             '''
             # 이미지가 다른 포맷일 경우, tf.image.decode_bmp, tf.image.decode_png 등을 사용.
-            print("### The image must have the 'jpg' format. ###")
             # 2. 이미지 사이즈를 self.height_size x self.width_size*2으로 조정한다. / RGB 순서로 읽는다.
+            print("### The image must have the 'jpg' format. ###")
             img_decoded = tf.image.resize_images(tf.image.decode_jpeg(img, channels=3), size=(self.height_size, self.width_size*2), method=2)  # jpeg 파일 읽기 , method ->   BICUBIC = 2
         '''
         논문에서...
