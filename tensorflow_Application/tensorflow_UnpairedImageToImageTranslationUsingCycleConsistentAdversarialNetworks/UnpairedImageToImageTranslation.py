@@ -10,6 +10,8 @@ def visualize(model_name="CycleGAN", named_images=None, save_path=None):
     image = np.hstack(named_images[1:])
     # 이미지 스케일 바꾸기(~1 ~ 1 -> 0~ 255)
     image = ((image + 1) * 127.5).astype(np.uint8)
+    # RGB로 바꾸기
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     cv2.imwrite(os.path.join(save_path, '{}_{}.png'.format(model_name, named_images[0])), image)
     print("{}_{}.png saved in {} folder".format(model_name, named_images[0], save_path))
 
@@ -255,7 +257,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
 
             # 데이터 전처리
             dataset = Dataset(DB_name=DB_name, batch_size=batch_size, use_TFRecord=use_TFRecord,
-                              use_TrainDataset=not TEST, training_size=training_size, inference_size=inference_size)
+                              use_TrainDataset=not TEST, training_size=training_size)
             A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length = dataset.iterator()
 
             # 알고리즘
@@ -514,14 +516,17 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 print("<<< meta 파일을 읽을 수 없습니다. >>>")
                 exit(0)
 
+
+            #A, B는 placeholder 이므로, (batch_size, x, y, 3)  즉 shape만 같으면 됨.(x, y는 내가 알아서!!!)
             A = tf.get_collection('A')[0]
             B = tf.get_collection('B')[0]
             AtoB_gene = tf.get_collection('AtoB')[0]
             BtoA_gene = tf.get_collection('BtoA')[0]
 
+
             # Test Dataset 가져오기
             dataset = Dataset(DB_name=DB_name, use_TFRecord=use_TFRecord,
-                              use_TrainDataset=not TEST)
+                              use_TrainDataset=not TEST, inference_size=inference_size)
             A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length = dataset.iterator()
             A_tensor, B_tensor = A_next_batch, B_next_batch
 

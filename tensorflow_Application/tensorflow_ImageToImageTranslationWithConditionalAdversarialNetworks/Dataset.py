@@ -209,7 +209,7 @@ class Dataset(object):
             '''
             # 이미지가 다른 포맷일 경우, tf.image.decode_bmp, tf.image.decode_png 등을 사용.
             print("### The image must have the 'jpg' format. ###")
-            # 2. 이미지 사이즈를 self.height_size x self.width_size*2으로 조정한다.
+            # 2. 이미지 사이즈를 self.height_size x self.width_size*2으로 조정한다. / RGB 순서로 읽는다.
             img_decoded = tf.image.resize_images(tf.image.decode_jpeg(img, channels=3), size=(self.height_size, self.width_size*2), method=2)  # jpeg 파일 읽기 , method ->   BICUBIC = 2
         '''
         논문에서...
@@ -232,8 +232,8 @@ class Dataset(object):
                                            target_width=self.width_size)
 
         # 4. gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
-        Ip_scaled = tf.subtract(tf.divide(tf.cast(Ip, tf.float32), 127.5), 1)  # gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
-        lb_scaled = tf.subtract(tf.divide(tf.cast(lb, tf.float32), 127.5), 1)  # gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
+        Ip_scaled = tf.subtract(tf.divide(tf.cast(Ip, tf.float32), 127.5), 1.0)  # gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
+        lb_scaled = tf.subtract(tf.divide(tf.cast(lb, tf.float32), 127.5), 1.0)  # gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
 
         input = Ip_scaled
         label = lb_scaled
@@ -297,6 +297,7 @@ class Dataset(object):
     def load_image(self, address):
         img = cv2.imread(address, cv2.IMREAD_COLOR)
         img = cv2.resize(img, (self.width_size*2, self.height_size), interpolation=cv2.INTER_CUBIC)
+        #RGB로 바꾸기
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.astype(np.float32)
         return img

@@ -10,6 +10,8 @@ def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=N
     image = np.hstack(named_images[1:])
     # 이미지 스케일 바꾸기(~1 ~ 1 -> 0~ 255)
     image = ((image + 1) * 127.5).astype(np.uint8)
+    # RGB로 바꾸기
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     cv2.imwrite(os.path.join(save_path, '{}_{}.png'.format(model_name, named_images[0])), image)
     print("{}_{}.png saved in {} folder".format(model_name, named_images[0], save_path))
 

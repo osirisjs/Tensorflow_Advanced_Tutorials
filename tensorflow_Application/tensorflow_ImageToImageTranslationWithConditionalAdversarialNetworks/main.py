@@ -108,7 +108,7 @@ for i, GL in enumerate(GPU_List):
     else:
         print(" " + num + ",", end="")
 
-pix2pix.model(TEST=False, AtoB=True, DB_name="maps", use_TFRecord=True, distance_loss="L1",
+pix2pix.model(TEST=True, AtoB=True, DB_name="maps", use_TFRecord=True, distance_loss="L1",
               distance_loss_weight=100, optimizer_selection="Adam",
               beta1=0.5, beta2=0.999,  # for Adam optimizer
               decay=0.999, momentum=0.9,  # for RMSProp optimizer
