@@ -63,7 +63,7 @@ class Dataset(object):
         self.inference_size = inference_size
         self.training_size = training_size
 
-        # training_size의 최소 크기를 (256 ,256)로 지정
+        # training_size의 최소 크기를 (256, 256)로 지정
         if use_TrainDataset:
             if self.training_size[0] < 256 and self.training_size[1] < 256 and self.training_size[0]%2 != 0 and self.training_size[1]%2 != 0:
                 print("training size는 2의 배수이면서 (256,256)보다 커야 합니다.")
@@ -72,7 +72,7 @@ class Dataset(object):
                 self.height_size = inference_size[0]
                 self.width_size = inference_size[1]
 
-        # infernece_size의 최소 크기를 (128 128)로 지정
+        # infernece_size의 최소 크기를 (256, 256)로 지정
         else:
             if self.inference_size[0] < 256 and self.inference_size[1] < 256 and self.inference_size[0]%2 != 0 and self.inference_size[1]%2 != 0 :
                 print("inference size는 2의 배수이면서 (256,256)보다 커야 합니다.")
@@ -124,9 +124,9 @@ class Dataset(object):
                 if not os.path.exists(self.TFRecord_train_path):
                     os.makedirs(self.TFRecord_train_path)
                 if self.AtoB:
-                    self.TFRecord_path = os.path.join(self.TFRecord_train_path, 'AtoB_train.tfrecords')
+                    self.TFRecord_path = os.path.join(self.TFRecord_train_path, 'AtoBtrain{}x{}.tfrecords'.format(self.height_size,self.width_size))
                 else:
-                    self.TFRecord_path = os.path.join(self.TFRecord_train_path, 'BtoA_train.tfrecords')
+                    self.TFRecord_path = os.path.join(self.TFRecord_train_path, 'BtoAtrain{}x{}.tfrecords'.format(self.height_size,self.width_size))
                 # TFRecord 파일로 쓰기.
                 self.TFRecordWriter()
         else:
@@ -138,9 +138,9 @@ class Dataset(object):
                 if not os.path.exists(self.TFRecord_val_path):
                     os.makedirs(self.TFRecord_val_path)
                 if self.AtoB:
-                    self.TFRecord_path = os.path.join(self.TFRecord_val_path, 'AtoB_val.tfrecords')
+                    self.TFRecord_path = os.path.join(self.TFRecord_val_path, 'AtoBval{}x{}.tfrecords'.format(self.height_size,self.width_size))
                 else:
-                    self.TFRecord_path = os.path.join(self.TFRecord_val_path, 'BtoA_val.tfrecords')
+                    self.TFRecord_path = os.path.join(self.TFRecord_val_path, 'BtoAval{}x{}.tfrecords'.format(self.height_size,self.width_size))
                 # TFRecord 파일로 쓰기.
                 self.TFRecordWriter()
 

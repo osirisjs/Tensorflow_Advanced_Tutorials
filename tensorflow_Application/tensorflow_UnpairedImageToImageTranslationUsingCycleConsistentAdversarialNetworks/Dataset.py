@@ -122,8 +122,8 @@ class Dataset(object):
                 self.TFRecord_train_path = os.path.join(self.dataset_folder, "TFRecord_train")
                 if not os.path.exists(self.TFRecord_train_path):
                     os.makedirs(self.TFRecord_train_path)
-                self.TFRecord_Apath = os.path.join(self.TFRecord_train_path, 'trainA.tfrecords')
-                self.TFRecord_Bpath = os.path.join(self.TFRecord_train_path, 'trainB.tfrecords')
+                self.TFRecord_Apath = os.path.join(self.TFRecord_train_path, 'trainA_{}x{}.tfrecords'.format(self.training_size[0],self.training_size[0]))
+                self.TFRecord_Bpath = os.path.join(self.TFRecord_train_path, 'trainB_{}x{}.tfrecords'.format(self.training_size[0],self.training_size[0]))
                 self.TFRecord_path = [self.TFRecord_Apath, self.TFRecord_Bpath]
                 # TFRecord 파일로 쓰기.
                 self.TFRecordWriter()
@@ -139,8 +139,8 @@ class Dataset(object):
                 self.TFRecord_val_path = os.path.join(self.dataset_folder, "TFRecord_test")
                 if not os.path.exists(self.TFRecord_val_path):
                     os.makedirs(self.TFRecord_val_path)
-                self.TFRecord_Apath = os.path.join(self.TFRecord_val_path, 'testA.tfrecords')
-                self.TFRecord_Bpath = os.path.join(self.TFRecord_val_path, 'testB.tfrecords')
+                self.TFRecord_Apath = os.path.join(self.TFRecord_val_path, 'testA_{}x{}.tfrecords'.format(inference_size[0], inference_size[1]))
+                self.TFRecord_Bpath = os.path.join(self.TFRecord_val_path, 'testB_{}x{}.tfrecords'.format(inference_size[0], inference_size[1]))
                 self.TFRecord_path = [self.TFRecord_Apath, self.TFRecord_Bpath]
                 # TFRecord 파일로 쓰기.
                 self.TFRecordWriter()
