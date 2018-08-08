@@ -65,7 +65,7 @@ for i, GL in enumerate(GPU_List):
         print(" " + num + ",", end="")
 
 # DB_name = "horse2zebra" 만...
-cycleGAN.model(TEST=True, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
+cycleGAN.model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
                cycle_consistency_loss_weight=10,
                optimizer_selection="Adam", beta1=0.5, beta2=0.999,  # for Adam optimizer
                decay=0.999, momentum=0.9,  # for RMSProp optimizer
@@ -73,12 +73,12 @@ cycleGAN.model(TEST=True, DB_name="horse2zebra", use_TFRecord=True, cycle_consis
                norm_selection="instancenorm",  # "instancenorm" or nothing
                image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
                image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지? 논문에선 50개 사용했다고 나옴.
-               learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1,
+               learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
                weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
                learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
                # 콘볼루션은 weight를 학습 하는것이기 때문에, 입력크기의 비율만 맞고, 네트워크가 안잘리게 잘 설계 됬으면, 아래와 같이 256,256으로 학습하고 512, 512로 추론하는게 가능하다.
                # 또한 다른 사이즈의 입력을 동시에 학습하는것도 가능하다.
                training_size=(256, 256),  # 학습할 때 입력의 크기
-               inference_size=(784, 784),  # 테스트 시 inference 해 볼 크기
+               inference_size=(512, 512),  # 테스트 시 inference 해 볼 크기
                # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
                save_path="translated_image")

@@ -63,9 +63,8 @@ class Dataset(object):
 
         # training_size의 최소 크기를 (256, 256)로 지정
         if use_TrainDataset:
-            if self.training_size == None and self.training_size[0] < 256 and self.training_size[1] < 256 and \
-                    self.training_size[0] % 2 != 0 and self.training_size[1] % 2 != 0:
-                print("training size는 2의 배수이면서 (256,256)보다 커야 합니다.")
+            if self.training_size == None and self.training_size[0] < 256 and self.training_size[1] < 256:
+                print("training size는 (256,256)보다는 커야 합니다.")
                 exit(0)
             else:
                 self.height_size = training_size[0]
@@ -73,9 +72,8 @@ class Dataset(object):
 
         # infernece_size의 최소 크기를 (256, 256)로 지정
         else:
-            if self.inference_size == None and self.inference_size[0] < 256 and self.inference_size[1] < 256 and \
-                    self.inference_size[0] % 2 != 0 and self.inference_size[1] % 2 != 0:
-                print("inference size는 2의 배수이면서 (256,256)보다 커야 합니다.")
+            if self.inference_size == None and self.inference_size[0] < 256 and self.inference_size[1] < 256:
+                print("inference size는 (256,256)보다는 커야 합니다.")
                 exit(0)
             else:
                 self.height_size = inference_size[0]

@@ -65,9 +65,8 @@ class Dataset(object):
 
         # training_size의 최소 크기를 (256, 256)로 지정
         if use_TrainDataset:
-            if self.training_size == None and self.training_size[0] < 256 and self.training_size[1] < 256 and \
-                    self.training_size[0] % 2 != 0 and self.training_size[1] % 2 != 0:
-                print("training size는 2의 배수이면서 (256,256)보다 커야 합니다.")
+            if self.training_size == None and self.training_size[0] < 256 and self.training_size[1] < 256:
+                print("training size는 (256,256) 보다는 커야 합니다.")
                 exit(0)
             else:
                 self.height_size = training_size[0]
@@ -75,9 +74,8 @@ class Dataset(object):
 
         # infernece_size의 최소 크기를 (256, 256)로 지정
         else:
-            if self.inference_size == None and self.inference_size[0] < 256 and self.inference_size[1] < 256 and \
-                    self.inference_size[0] % 2 != 0 and self.inference_size[1] % 2 != 0:
-                print("inference size는 2의 배수이면서 (256,256)보다 커야 합니다.")
+            if self.inference_size == None and self.inference_size[0] < 256 and self.inference_size[1] < 256:
+                print("inference size는 (256,256)보다는 커야 합니다.")
                 exit(0)
             else:
                 self.height_size = inference_size[0]
@@ -126,9 +124,13 @@ class Dataset(object):
                 if not os.path.exists(self.TFRecord_train_path):
                     os.makedirs(self.TFRecord_train_path)
                 if self.AtoB:
-                    self.TFRecord_path = os.path.join(self.TFRecord_train_path, 'AtoBtrain{}x{}.tfrecords'.format(self.height_size,self.width_size))
+                    self.TFRecord_path = os.path.join(self.TFRecord_train_path,
+                                                      'AtoBtrain{}x{}.tfrecords'.format(self.height_size,
+                                                                                        self.width_size))
                 else:
-                    self.TFRecord_path = os.path.join(self.TFRecord_train_path, 'BtoAtrain{}x{}.tfrecords'.format(self.height_size,self.width_size))
+                    self.TFRecord_path = os.path.join(self.TFRecord_train_path,
+                                                      'BtoAtrain{}x{}.tfrecords'.format(self.height_size,
+                                                                                        self.width_size))
                 # TFRecord 파일로 쓰기.
                 self.TFRecordWriter()
         else:
@@ -140,9 +142,13 @@ class Dataset(object):
                 if not os.path.exists(self.TFRecord_val_path):
                     os.makedirs(self.TFRecord_val_path)
                 if self.AtoB:
-                    self.TFRecord_path = os.path.join(self.TFRecord_val_path, 'AtoBval{}x{}.tfrecords'.format(self.height_size,self.width_size))
+                    self.TFRecord_path = os.path.join(self.TFRecord_val_path,
+                                                      'AtoBval{}x{}.tfrecords'.format(self.height_size,
+                                                                                      self.width_size))
                 else:
-                    self.TFRecord_path = os.path.join(self.TFRecord_val_path, 'BtoAval{}x{}.tfrecords'.format(self.height_size,self.width_size))
+                    self.TFRecord_path = os.path.join(self.TFRecord_val_path,
+                                                      'BtoAval{}x{}.tfrecords'.format(self.height_size,
+                                                                                      self.width_size))
                 # TFRecord 파일로 쓰기.
                 self.TFRecordWriter()
 
@@ -200,7 +206,7 @@ class Dataset(object):
             img_decoded_raw = tf.decode_raw(features['image'], tf.float32)
 
             # 2. 이미지 사이즈를 self.height_size x self.width_size*2으로 조정한다.
-            img_decoded = tf.reshape(img_decoded_raw, [self.height_size, self.width_size*2, 3])
+            img_decoded = tf.reshape(img_decoded_raw, [self.height_size, self.width_size * 2, 3])
         else:
             # 1. 이미지를 읽는다
             img = tf.read_file(image)
@@ -212,7 +218,9 @@ class Dataset(object):
             # 이미지가 다른 포맷일 경우, tf.image.decode_bmp, tf.image.decode_png 등을 사용.
             # 2. 이미지 사이즈를 self.height_size x self.width_size*2으로 조정한다. / RGB 순서로 읽는다.
             print("### The image must have the 'jpg' format. ###")
-            img_decoded = tf.image.resize_images(tf.image.decode_jpeg(img, channels=3), size=(self.height_size, self.width_size*2), method=2)  # jpeg 파일 읽기 , method ->   BICUBIC = 2
+            img_decoded = tf.image.resize_images(tf.image.decode_jpeg(img, channels=3),
+                                                 size=(self.height_size, self.width_size * 2),
+                                                 method=2)  # jpeg 파일 읽기 , method ->   BICUBIC = 2
         '''
         논문에서...
         Random jitter was applied by resizing the 256 x 256 input images to 286 x 286
@@ -230,7 +238,8 @@ class Dataset(object):
         # 3. self.height_size x self.width_size*2 이미지를 self.height_size x self.width_size, self.height_size x self.width_size 2개로 나눈다.
         Ip = tf.image.crop_to_bounding_box(img_decoded, offset_height=0, offset_width=0, target_height=self.height_size,
                                            target_width=self.width_size)
-        lb = tf.image.crop_to_bounding_box(img_decoded, offset_height=0, offset_width=self.width_size, target_height=self.height_size,
+        lb = tf.image.crop_to_bounding_box(img_decoded, offset_height=0, offset_width=self.width_size,
+                                           target_height=self.height_size,
                                            target_width=self.width_size)
 
         # 4. gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
@@ -298,8 +307,8 @@ class Dataset(object):
     # TFRecord를 만들기위해 이미지를 불러올때 쓴다.
     def load_image(self, address):
         img = cv2.imread(address, cv2.IMREAD_COLOR)
-        img = cv2.resize(img, (self.width_size*2, self.height_size), interpolation=cv2.INTER_CUBIC)
-        #RGB로 바꾸기
+        img = cv2.resize(img, (self.width_size * 2, self.height_size), interpolation=cv2.INTER_CUBIC)
+        # RGB로 바꾸기
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.astype(np.float32)
         return img
