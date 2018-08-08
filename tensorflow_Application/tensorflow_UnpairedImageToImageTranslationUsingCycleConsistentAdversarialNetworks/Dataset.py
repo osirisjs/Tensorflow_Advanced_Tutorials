@@ -54,10 +54,32 @@ https://people.eecs.berkeley.edu/~taesung_park/CycleGAN/datasets/horse2zebra.zip
 class Dataset(object):
 
     def __init__(self, DB_name="horse2zebra",
-                 batch_size=1, use_TFRecord=False, use_TrainDataset=False):
+                 batch_size=1, use_TFRecord=False, use_TrainDataset=False, training_size=None, inference_size=None):
 
         self.Dataset_Path = "Dataset"
         self.DB_name = DB_name
+        self.inference_size = inference_size
+        self.training_size = training_size
+
+        # training_size의 최소 크기를 (256, 256)로 지정
+        if use_TrainDataset:
+            if self.training_size[0] < 256 and self.training_size[1] < 256 and self.training_size[0] % 2 != 0 and \
+                    self.training_size[1] % 2 != 0:
+                print("training size는 2의 배수이면서 (256,256)보다 커야 합니다.")
+                exit(0)
+            else:
+                self.height_size = inference_size[0]
+                self.width_size = inference_size[1]
+
+        # infernece_size의 최소 크기를 (256, 256)로 지정
+        else:
+            if self.inference_size[0] < 256 and self.inference_size[1] < 256 and self.inference_size[0] % 2 != 0 and \
+                    self.inference_size[1] % 2 != 0:
+                print("inference size는 2의 배수이면서 (256,256)보다 커야 합니다.")
+                exit(0)
+            else:
+                self.height_size = inference_size[0]
+                self.width_size = inference_size[1]
 
         # "{self.DB_name}.zip"의 파일의 크기는 미리 구해놓음. (미리 확인이 필요함.)
         if DB_name == "horse2zebra":
@@ -176,8 +198,8 @@ class Dataset(object):
             feature = {'image': tf.FixedLenFeature([], tf.string)}
             features = tf.parse_single_example(image, features=feature)
             img_decoded_raw = tf.decode_raw(features['image'], tf.float32)
-            # 2. 이미지 사이즈를 256 x 256 x 3으로 reshape 한다.
-            img_decoded = tf.reshape(img_decoded_raw, [256, 256, 3])
+            # 2. 이미지 사이즈를 self.height_size x self.width_size으로 조정한다.
+            img_decoded = tf.reshape(img_decoded_raw, [self.height_size, self.width_size, 3])
         else:
             # 1. 이미지를 읽는다
             img = tf.read_file(image)
@@ -188,8 +210,9 @@ class Dataset(object):
             '''
             # 이미지가 다른 포맷일 경우, tf.image.decode_bmp, tf.image.decode_png 등을 사용.
             print("### The image must have the 'jpg' format. ###")
-            # 2. 이미지 사이즈를 256 x 256으로 조정한다.
-            img_decoded = tf.image.resize_images(tf.image.decode_jpeg(img, channels=3), size=(256, 256))  # jpeg 파일 읽기
+            # 2. 이미지 사이즈를 self.height_size x self.width_size 으로 조정한다.
+            img_decoded = tf.image.resize_images(tf.image.decode_jpeg(img, channels=3),
+                                                 size=(self.height_size, self.width_size), method=2)  # jpeg 파일 읽기 , method ->   BICUBIC = 2
 
         # 3. gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
         input = tf.subtract(tf.divide(tf.cast(img_decoded, tf.float32), 127.5),
@@ -246,7 +269,7 @@ class Dataset(object):
 
     def load_image(self, address):
         img = cv2.imread(address)
-        img = cv2.resize(img, (256, 256), interpolation=cv2.INTER_AREA)
+        img = cv2.resize(img, (self.width_size, self.height_size), interpolation=cv2.INTER_CUBIC)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.astype(np.float32)
         return img
@@ -352,12 +375,11 @@ class ImagePool(object):
         else:
             return images
 
-
 if __name__ == "__main__":
     '''
     Dataset "horse2zebra" 만..
     '''
-    dataset = Dataset(DB_name="horse2zebra", batch_size=4, use_TFRecord=True, use_TrainDataset=False)
+    dataset = Dataset(DB_name="horse2zebra", batch_size=4, use_TFRecord=True, use_TrainDataset=False, training_size=(256, 256), inference_size=(256, 256))
     A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length = dataset.iterator()
 
 else:

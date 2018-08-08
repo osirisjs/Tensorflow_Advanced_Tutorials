@@ -10,8 +10,8 @@ def visualize(model_name="CycleGAN", named_images=None, save_path=None):
     image = np.hstack(named_images[1:])
     # 이미지 스케일 바꾸기(~1 ~ 1 -> 0~ 255)
     image = ((image + 1) * 127.5).astype(np.uint8)
-    cv2.imwrite(os.path.join(save_path, '{}_{}.jpeg'.format(model_name, named_images[0])), image)
-    print("{}_{}.jpg saved in {} folder".format(model_name, named_images[0], save_path))
+    cv2.imwrite(os.path.join(save_path, '{}_{}.png'.format(model_name, named_images[0])), image)
+    print("{}_{}.png saved in {} folder".format(model_name, named_images[0], save_path))
 
 
 def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
@@ -25,6 +25,8 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
           weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
           learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
+          training_size=(256, 256),  # 학습할 때 입력의 크기
+          inference_size=(512, 512),  # 테스트 시 inference 해 볼 크기
           # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
           save_path="translated_image"):
     print("CycleGAN")
@@ -94,7 +96,6 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
 
     # Residual Net
     def generator(images=None, name=None):
-
         '''
         논문에서
         256x256 입력일 때 9 block!!!
@@ -254,7 +255,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
 
             # 데이터 전처리
             dataset = Dataset(DB_name=DB_name, batch_size=batch_size, use_TFRecord=use_TFRecord,
-                              use_TrainDataset=not TEST)
+                              use_TrainDataset=not TEST, training_size=training_size, inference_size=inference_size)
             A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length = dataset.iterator()
 
             # 알고리즘

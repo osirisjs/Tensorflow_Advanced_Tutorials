@@ -65,7 +65,7 @@ for i, GL in enumerate(GPU_List):
         print(" " + num + ",", end="")
 
 # DB_name = "horse2zebra" 만...
-cycleGAN.model(TEST=True, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
+cycleGAN.model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
                cycle_consistency_loss_weight=10,
                optimizer_selection="Adam", beta1=0.9, beta2=0.999,  # for Adam optimizer
                decay=0.999, momentum=0.9,  # for RMSProp optimizer
@@ -76,5 +76,7 @@ cycleGAN.model(TEST=True, DB_name="horse2zebra", use_TFRecord=True, cycle_consis
                learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
                weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
                learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
+               training_size=(256, 256),  # 학습할 때 입력의 크기
+               inference_size=(512, 512),  # 테스트 시 inference 해 볼 크기
                # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
                save_path="translated_image")

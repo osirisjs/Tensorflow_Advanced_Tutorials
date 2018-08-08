@@ -66,7 +66,7 @@ class Dataset(object):
         # training_size의 최소 크기를 (256 ,256)로 지정
         if use_TrainDataset:
             if self.training_size[0] < 256 and self.training_size[1] < 256 and self.training_size[0]%2 != 0 and self.training_size[1]%2 != 0:
-                print("training size는 2의 배수이면서 (128,128)보다 커야 합니다.")
+                print("training size는 2의 배수이면서 (256,256)보다 커야 합니다.")
                 exit(0)
             else:
                 self.height_size = inference_size[0]
@@ -74,8 +74,8 @@ class Dataset(object):
 
         # infernece_size의 최소 크기를 (128 128)로 지정
         else:
-            if self.inference_size[0] <= 128 and self.inference_size[1] <= 128 and self.inference_size[0]%2 != 0 and self.inference_size[1]%2 != 0 :
-                print("inference size는 2의 배수이면서 (128,128)보다 커야 합니다.")
+            if self.inference_size[0] < 256 and self.inference_size[1] < 256 and self.inference_size[0]%2 != 0 and self.inference_size[1]%2 != 0 :
+                print("inference size는 2의 배수이면서 (256,256)보다 커야 합니다.")
                 exit(0)
             else:
                 self.height_size = inference_size[0]
@@ -197,7 +197,7 @@ class Dataset(object):
             features = tf.parse_single_example(image, features=feature)
             img_decoded_raw = tf.decode_raw(features['image'], tf.float32)
 
-            # 2. 이미지 사이즈를 256 x 512 x 3으로 reshape 한다.
+            # 2. 이미지 사이즈를 self.height_size x self.width_size*2으로 조정한다.
             img_decoded = tf.reshape(img_decoded_raw, [self.height_size, self.width_size*2, 3])
         else:
             # 1. 이미지를 읽는다
@@ -209,8 +209,8 @@ class Dataset(object):
             '''
             # 이미지가 다른 포맷일 경우, tf.image.decode_bmp, tf.image.decode_png 등을 사용.
             print("### The image must have the 'jpg' format. ###")
-            # 2. 이미지 사이즈를 256 x 512으로 조정한다.
-            img_decoded = tf.image.resize_images(tf.image.decode_jpeg(img, channels=3), size=(self.height_size, self.width_size*2))  # jpeg 파일 읽기
+            # 2. 이미지 사이즈를 self.height_size x self.width_size*2으로 조정한다.
+            img_decoded = tf.image.resize_images(tf.image.decode_jpeg(img, channels=3), size=(self.height_size, self.width_size*2), method=2)  # jpeg 파일 읽기 , method ->   BICUBIC = 2
         '''
         논문에서...
         Random jitter was applied by resizing the 256 x 256 input images to 286 x 286
@@ -225,7 +225,7 @@ class Dataset(object):
         target_width: Width of the result.
         '''
 
-        # 3. 256x512 이미지를 256x256, 256x256 2개로 나눈다.
+        # 3. self.height_size x self.width_size*2 이미지를 self.height_size x self.width_size, self.height_size x self.width_size 2개로 나눈다.
         Ip = tf.image.crop_to_bounding_box(img_decoded, offset_height=0, offset_width=0, target_height=self.height_size,
                                            target_width=self.width_size)
         lb = tf.image.crop_to_bounding_box(img_decoded, offset_height=0, offset_width=self.width_size, target_height=self.height_size,
@@ -296,7 +296,7 @@ class Dataset(object):
     # TFRecord를 만들기위해 이미지를 불러올때 쓴다.
     def load_image(self, address):
         img = cv2.imread(address, cv2.IMREAD_COLOR)
-        img = cv2.resize(img, (self.width_size*2, self.height_size), interpolation=cv2.INTER_AREA)
+        img = cv2.resize(img, (self.width_size*2, self.height_size), interpolation=cv2.INTER_CUBIC)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.astype(np.float32)
         return img
