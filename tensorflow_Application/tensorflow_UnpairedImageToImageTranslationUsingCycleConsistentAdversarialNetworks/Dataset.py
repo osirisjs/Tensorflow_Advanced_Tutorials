@@ -68,8 +68,8 @@ class Dataset(object):
                 print("training size는 2의 배수이면서 (256,256)보다 커야 합니다.")
                 exit(0)
             else:
-                self.height_size = inference_size[0]
-                self.width_size = inference_size[1]
+                self.height_size = training_size[0]
+                self.width_size = training_size[1]
 
         # infernece_size의 최소 크기를 (256, 256)로 지정
         else:

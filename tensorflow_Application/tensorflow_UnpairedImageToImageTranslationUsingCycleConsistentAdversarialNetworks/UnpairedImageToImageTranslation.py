@@ -257,7 +257,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
 
             # 데이터 전처리
             dataset = Dataset(DB_name=DB_name, batch_size=batch_size, use_TFRecord=use_TFRecord,
-                              use_TrainDataset=not TEST, training_size=training_size)
+                              use_TrainDataset = True, training_size=training_size)
             A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length = dataset.iterator()
 
             # 알고리즘
@@ -516,17 +516,15 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 print("<<< meta 파일을 읽을 수 없습니다. >>>")
                 exit(0)
 
-
             #A, B는 placeholder 이므로, (batch_size, x, y, 3)  즉 shape만 같으면 됨.(x, y는 내가 알아서!!!)
             A = tf.get_collection('A')[0]
             B = tf.get_collection('B')[0]
             AtoB_gene = tf.get_collection('AtoB')[0]
             BtoA_gene = tf.get_collection('BtoA')[0]
 
-
             # Test Dataset 가져오기
             dataset = Dataset(DB_name=DB_name, use_TFRecord=use_TFRecord,
-                              use_TrainDataset=not TEST, inference_size=inference_size)
+                              use_TrainDataset= not TEST, inference_size=inference_size)
             A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length = dataset.iterator()
             A_tensor, B_tensor = A_next_batch, B_next_batch
 
@@ -571,6 +569,8 @@ if __name__ == "__main__":
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
           weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
           learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
+          training_size=(256, 256),  # 학습할 때 입력의 크기
+          inference_size=(512, 512),  # 테스트 시 inference 해 볼 크기
           # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
           save_path="translated_image")
     print("model imported")
