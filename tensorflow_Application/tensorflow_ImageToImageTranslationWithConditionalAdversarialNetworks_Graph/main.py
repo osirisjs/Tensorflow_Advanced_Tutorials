@@ -114,12 +114,12 @@ pix2pix.model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, dista
               # batch_size는 1~10사이로 하자
               image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
               image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
-              learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1, Dropout_rate=0.5,
+              learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1, Dropout_rate=0.5,
               # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수 - 논문에서는 Test = Training
               using_moving_variable=False,
-              # 콘볼루션은 weight를 학습 하는것이기 때문에, 입력크기의 비율만 맞고, 네트워크가 안잘리게 잘 설계 됬으면, 아래와 같이 256,256으로 학습하고 512, 512로 추론하는게 가능하다.
+              # 콘볼루션은 weight를 학습 하는 것 -> 입력이 콘볼루션을 진행하면서 잘리거나 0이 되지 않게 설계 됐다면, (256,256) 으로 학습하고 (512, 512)로 추론하는 것이 가능하다.
               # 또한 다른 사이즈의 입력을 동시에 학습하는것도 가능하다.
               training_size=(256, 256),  # 학습할 때 입력의 크기
-              inference_size=(1024, 1024),  # 테스트 시 inference 해 볼 크기
+              inference_size=(256, 256),  # 테스트 시 inference 해 볼 크기
               only_draw_graph=False, # 그래프만 그리고 종료할지 말지
               save_path="translated_image")  # 학습 완료 후 변환된 이미지가 저장될 폴더

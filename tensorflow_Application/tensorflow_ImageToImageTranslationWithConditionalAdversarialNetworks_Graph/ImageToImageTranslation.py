@@ -312,6 +312,9 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
                 x = tf.placeholder(tf.float32, shape=None)
                 target = tf.placeholder(tf.float32, shape=None)
 
+            with tf.name_scope("Origin_image"):
+                tf.summary.image("Origin_image", x, max_outputs=3)
+
             with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
                 with tf.name_scope("Generator"):
                     G = generator(images=x)
@@ -319,6 +322,9 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
                     D_real, sigmoid_D_real = discriminator(images=target, condition=x)
                     # scope.reuse_variables()
                     D_gene, sigmoid_D_gene = discriminator(images=G, condition=x)
+
+            with tf.name_scope("Generated_image"):
+                tf.summary.image("Generated_image", G, max_outputs=3)
 
             var_D = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
                                       scope='shared_variables/Discriminator')
@@ -516,6 +522,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
                     print("Restore {} checkpoint!!!".format(os.path.basename(ckpt.model_checkpoint_path)))
                     saver.restore(sess, ckpt.model_checkpoint_path)
 
+                # image 보여주기
                 for i in range(data_length):
                     x_numpy, target_numpy = sess.run(next_batch)  # 이런식으로 하는 것은 상당히 비효율적 -> tf.data.Dataset 에 더익숙해지고자!!!
                     translated_image = sess.run(G, feed_dict={x: x_numpy, t: target_numpy})

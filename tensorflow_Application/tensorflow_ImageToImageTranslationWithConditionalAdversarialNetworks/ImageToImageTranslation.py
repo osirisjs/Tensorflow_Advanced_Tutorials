@@ -308,13 +308,21 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
 
             # 알고리즘
             x, target = next_batch
+
+        with tf.name_scope("Origin_image"):
+            tf.summary.image("Origin_image", x, max_outputs=3)
+
         with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
             with tf.name_scope("Generator"):
                 G = generator(images=x)
+                tf.summary.image("generated_image", G, max_outputs=3)
             with tf.name_scope("Discriminator"):
                 D_real, sigmoid_D_real = discriminator(images=target, condition=x)
                 # scope.reuse_variables()
                 D_gene, sigmoid_D_gene = discriminator(images=G, condition=x)
+
+        with tf.name_scope("Generated_image"):
+            tf.summary.image("Generated_image", G, max_outputs=3)
 
         var_D = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
                                   scope='shared_variables/Discriminator')

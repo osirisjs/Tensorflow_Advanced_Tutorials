@@ -266,6 +266,12 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 A = tf.placeholder(tf.float32, shape=None)
                 B = tf.placeholder(tf.float32, shape=None)
 
+            with tf.name_scope("Origin_A_image"):
+                tf.summary.image("Origin_A_image", A, max_outputs=3)
+
+            with tf.name_scope("Origin_B_image"):
+                tf.summary.image("Origin_B_image", B, max_outputs=3)
+
             with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
 
                 with tf.name_scope("AtoB_Generator"):
@@ -296,6 +302,12 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                     with tf.name_scope("identity_generator"):
                         im_AtoB_GeneratorWithB = generator(images=B, name="AtoB_generator")
                         im_BtoA_GeneratorWithA = generator(images=A, name="BtoA_generator")
+
+            with tf.name_scope("AtoB_image"):
+                tf.summary.image("AtoB_image", AtoB_gene, max_outputs=3)
+
+            with tf.name_scope("BtoA_image"):
+                tf.summary.image("BtoA_image", BtoA_gene, max_outputs=3)
 
             AtoB_varD = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/AtoB_Discriminator')
             # set으로 중복 제거 하고, 다시 list로 바꾼다.
@@ -356,7 +368,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 with tf.name_scope("{}_loss".format("Identity_mapping_Loss")):
                     Identity_mapping_Loss = tf.losses.absolute_difference(im_AtoB_GeneratorWithB, B) + \
                                             tf.losses.absolute_difference(im_BtoA_GeneratorWithA, A)
-                    tf.summary.scalar("{} Loss".format(cycle_consistency_loss), Identity_mapping_Loss)
+                    tf.summary.scalar("Identity_mapping_Loss", Identity_mapping_Loss)
                     AtoB_GLoss += tf.multiply(Identity_mapping_Loss, 0.5 * cycle_consistency_loss_weight)
                     BtoA_GLoss += tf.multiply(Identity_mapping_Loss, 0.5 * cycle_consistency_loss_weight)
 
