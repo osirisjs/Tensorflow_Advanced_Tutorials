@@ -8,11 +8,11 @@
 
     *   Image -> Ground Truth -> Generated Image
 
-        <img src="result_image/instancenorm_cityscapes_AtoB_Pix2PixConditionalGAN_WithL1loss_487.png" height = "128px" width="384px"/> 
-        <img src="result_image/instancenorm_cityscapes_AtoB_Pix2PixConditionalGAN_WithL1loss_489.png" height = "128px" width="384px"/> 
+        <img src="result_image/incityscapesAtoBPix2PixL1loss_32.png" height = "128px" width="384px"/> 
+        <img src="result_image/incityscapesAtoBPix2PixL1loss_33.png" height = "128px" width="384px"/> 
 
         <br>
 
-        <img src="result_image/instancenorm_cityscapes_AtoB_Pix2PixConditionalGAN_WithL1loss_491.png" height = "128px" width="384px"/> 
-        <img src="result_image/instancenorm_cityscapes_AtoB_Pix2PixConditionalGAN_WithL1loss_493.png" height = "128px" width="384px"/> 
+        <img src="result_image/incityscapesAtoBPix2PixL1loss_90.png" height = "128px" width="384px"/> 
+        <img src="result_image/incityscapesAtoBPix2PixL1loss_91.png" height = "128px" width="384px"/> 
 
