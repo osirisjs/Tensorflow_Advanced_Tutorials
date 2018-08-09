@@ -65,7 +65,7 @@ for i, GL in enumerate(GPU_List):
         print(" " + num + ",", end="")
 
 # DB_name = "horse2zebra" 만...
-cycleGAN.model(TEST=True, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
+cycleGAN.model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
                cycle_consistency_loss_weight=10,
                optimizer_selection="Adam", beta1=0.5, beta2=0.999,  # for Adam optimizer
                decay=0.999, momentum=0.9,  # for RMSProp optimizer
@@ -73,7 +73,7 @@ cycleGAN.model(TEST=True, DB_name="horse2zebra", use_TFRecord=True, cycle_consis
                norm_selection="instancenorm",  # "instancenorm" or nothing
                image_pool=False,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
                image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지? 논문에선 50개 사용했다고 나옴.
-               learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
+               learning_rate=0.0002, training_epochs=30, batch_size=1, display_step=1,
                weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
                learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
                training_size=(256, 256),  # 학습할 때 입력의 크기
