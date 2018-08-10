@@ -107,6 +107,7 @@ for i, GL in enumerate(GPU_List):
     else:
         print(" " + num + ",", end="")
 
+# optimizers_ selection = "Adam" or "RMSP" or "SGD"
 pix2pix.model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_loss="L1",
               distance_loss_weight=100, optimizer_selection="Adam",
               beta1=0.5, beta2=0.999,  # for Adam optimizer
@@ -119,7 +120,7 @@ pix2pix.model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, dista
               using_moving_variable=False,
               # 콘볼루션은 weight를 학습 하는 것 -> 입력이 콘볼루션을 진행하면서 잘리거나 0이 되지 않게 설계 됐다면, (256,256) 으로 학습하고 (512, 512)로 추론하는 것이 가능하다.
               # 또한 다른 사이즈의 입력을 동시에 학습하는것도 가능하다.
-              training_size=(256, 256),  # 학습할 때 입력의 크기
-              inference_size=(256, 256),  # 테스트 시 inference 해 볼 크기
-              only_draw_graph=False, # 그래프만 그리고 종료할지 말지
-              save_path="translated_image")  # 학습 완료 후 변환된 이미지가 저장될 폴더
+              training_size=(256, 256),  # TEST=False 때 입력의 크기
+              inference_size=(256, 256),  # TEST=True 일 때 inference 해 볼 크기
+              only_draw_graph=False, # TEST=False 일 떄, 그래프만 그리고 종료할지 말지
+              save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더

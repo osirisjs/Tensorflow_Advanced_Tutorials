@@ -19,18 +19,18 @@ def visualize(model_name="CycleGAN", named_images=None, save_path=None):
 # 2. tf.data.Dataset를 오로지 데이터셋 전처리하는 용도로만 사용한다.
 def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
           cycle_consistency_loss_weight=10,
-          optimizer_selection="Adam", beta1=0.9, beta2=0.999,  # for Adam optimizer
-          decay=0.999, momentum=0.9,  # for RMSProp optimizer
-          use_identity_mapping=True,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용했다고 함.
-          norm_selection="instancenorm",  # "instancenorm" or nothing
-          image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
-          image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
+          optimizer_selection="Adam", beta1=0.9, beta2=0.999,
+          decay=0.999, momentum=0.9,
+          use_identity_mapping=True,
+          norm_selection="instancenorm",
+          image_pool=True,
+          image_pool_size=50,
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
-          weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
-          learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
-          training_size=(256, 256),  # 학습할 때 입력의 크기
-          inference_size=(512, 512),  # 테스트 시 inference 해 볼 크기
-          # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
+          weight_decay_epoch=100,
+          learning_rate_decay=0.99,
+          training_size=(256, 256),
+          inference_size=(512, 512),
+          only_draw_graph=False,
           save_path="translated_image"):
     print("CycleGAN")
 
@@ -385,18 +385,28 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 summary_operation = tf.summary.merge_all()
 
             '''
-            WHY? 아래 6줄의 코드를 적어 주지 않고, 학습을 하게되면, TEST부분에서 tf.train.import_meta_graph를 사용할 때 오류가 난다. 
+            WHY? 아래 2줄의 코드를 적어 주지 않고, 학습을 하게되면, TEST부분에서 tf.train.import_meta_graph를 사용할 때 오류가 난다. 
             -> 단순히 그래프를 가져오고 가중치를 복원하는 것만으로는 안된다. 세션을 실행할때 인수로 사용할 변수에 대한 
-            추가 접근을 제공하지 않기 때문에 아래와 같이 저장을 해놓은 뒤 TEST 시에 불러와서 다시 사용 해야한다.
+            추가 접근을 제공하지 않기 때문에 아래와 같이 저장을 해놓은 뒤 TEST 시에 불러와서 다시 사용 해야한다. - 그렇지 않으면, JG.get_operations() 함수를
+            사용해 출력된 모든 연산의 리스트에서 하나하나 찾아야 한다.
+            필요한 변수가 있을 시 아래와 같이 추가해서 그래프를 새로 만들어 주면 된다.
             '''
-            tf.add_to_collection('A', A)
-            tf.add_to_collection('B', B)
-            tf.add_to_collection('AtoB', AtoB_gene)
-            tf.add_to_collection('BtoA', BtoA_gene)
+            for op in (A, B, AtoB_gene, BtoA_gene):
+                tf.add_to_collection("way", op)
+
+            #아래와 같은 코드도 가능.
+            # tf.add_to_collection('A', A)
+            # tf.add_to_collection('B', B)
+            # tf.add_to_collection('AtoB', AtoB_gene)
+            # tf.add_to_collection('BtoA', BtoA_gene)
 
             # generator graph 구조를 파일에 쓴다.
             meta_save_file_path = os.path.join(model_name, 'Generator', 'Generator_Graph.meta')
-            saver_generator.export_meta_graph(meta_save_file_path, collection_list=['A', 'B', "AtoB", "BtoA"])
+            saver_generator.export_meta_graph(meta_save_file_path, collection_list=['way'])
+
+            if only_draw_graph:
+                print('Generator_Graph.meta 파일만 저장하고 종료합니다.')
+                exit(0)
 
             if image_pool and batch_size == 1:
                 imagepool = ImagePool(image_pool_size=image_pool_size)
@@ -542,11 +552,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 print("<<< meta 파일을 읽을 수 없습니다. >>>")
                 exit(0)
 
-            # A, B는 placeholder 이므로, (batch_size, x, y, 3)  즉 shape만 같으면 됨.(x, y는 내가 알아서!!!)
-            A = tf.get_collection('A')[0]
-            B = tf.get_collection('B')[0]
-            AtoB_gene = tf.get_collection('AtoB')[0]
-            BtoA_gene = tf.get_collection('BtoA')[0]
+            A, B, AtoB_gene, BtoA_gene = tf.get_collection('way')
 
             # Test Dataset 가져오기
             dataset = Dataset(DB_name=DB_name, use_TFRecord=use_TFRecord,
@@ -558,7 +564,6 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
             data_length = A_length if A_length < B_length else B_length
 
             with tf.Session(graph=JG) as sess:
-                sess.run(tf.global_variables_initializer())
                 sess.run(A_iterator.initializer)
                 sess.run(B_iterator.initializer)
                 ckpt = tf.train.get_checkpoint_state(os.path.join(model_name, 'Generator'))
@@ -584,19 +589,21 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
 
 
 if __name__ == "__main__":
-    model(TEST=False, DB_name="horse2zebra", use_TFRecord=False, cycle_consistency_loss="L1",
+    model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
           cycle_consistency_loss_weight=10,
-          optimizer_selection="Adam", beta1=0.9, beta2=0.999,  # for Adam optimizer
+          optimizer_selection="Adam", beta1=0.5, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
-          use_identity_mapping=True,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용했다고 함.
+          use_identity_mapping=False,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용 - 우선은 False
           norm_selection="instancenorm",  # "instancenorm" or nothing
-          image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
-          image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
-          learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
+          image_pool=False,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
+          image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지? 논문에선 50개 사용했다고 나옴.
+          learning_rate=0.0002, training_epochs=30, batch_size=1, display_step=1,
           weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
           learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
-          training_size=(256, 256),  # 학습할 때 입력의 크기
-          inference_size=(512, 512),  # 테스트 시 inference 해 볼 크기
-          # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
-          save_path="translated_image")
+          # 콘볼루션은 weight를 학습 하는 것 -> 입력이 콘볼루션을 진행하면서 잘리거나 0이 되지 않게 설계 됐다면, (256,256) 으로 학습하고 (512, 512)로 추론하는 것이 가능하다.
+          # 또한 다른 사이즈의 입력을 동시에 학습하는것도 가능하다.
+          training_size=(256, 256),  # TEST=False 때 입력의 크기
+          inference_size=(256, 256),  # TEST=True 일 때 inference 해 볼 크기
+          only_draw_graph=False,  # TEST=False 일 떄, 그래프만 그리고 종료할지 말지
+          save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더
     print("model imported")

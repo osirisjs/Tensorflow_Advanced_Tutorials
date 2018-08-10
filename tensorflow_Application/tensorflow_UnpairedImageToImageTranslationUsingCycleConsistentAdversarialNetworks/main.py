@@ -78,7 +78,7 @@ cycleGAN.model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consi
                learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
                # 콘볼루션은 weight를 학습 하는것이기 때문에, 입력크기의 비율만 맞고, 네트워크가 안잘리게 잘 설계 됬으면, 아래와 같이 256,256으로 학습하고 512, 512로 추론하는게 가능하다.
                # 또한 다른 사이즈의 입력을 동시에 학습하는것도 가능하다.
-               training_size=(256, 256),  # 학습할 때 입력의 크기
-               inference_size=(512, 512),  # 테스트 시 inference 해 볼 크기
-               # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
-               save_path="translated_image")
+               training_size=(256, 256),  # TEST=False 때 입력의 크기
+               inference_size=(256, 256),  # TEST=True 일 때 inference 해 볼 크기
+               # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다.(폴더 2개 이름 -> AtoB_translated_image , BtoA_translated_image )
+               save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더

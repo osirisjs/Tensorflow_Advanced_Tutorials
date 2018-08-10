@@ -18,18 +18,17 @@ def visualize(model_name="CycleGAN", named_images=None, save_path=None):
 # 1. tf.data.Dataset의 이점을 이용하지만, 그래프를 저장하지 않는다.
 def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
           cycle_consistency_loss_weight=10,
-          optimizer_selection="Adam", beta1=0.9, beta2=0.999,  # for Adam optimizer
-          decay=0.999, momentum=0.9,  # for RMSProp optimizer
-          use_identity_mapping=True,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용했다고 함.
-          norm_selection="instancenorm",  # "instancenorm" or nothing
-          image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
-          image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
+          optimizer_selection="Adam", beta1=0.9, beta2=0.999,
+          decay=0.999, momentum=0.9,
+          use_identity_mapping=True,
+          norm_selection="instancenorm",
+          image_pool=True,
+          image_pool_size=50,
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
-          weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
-          learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
-          training_size=(256, 256),  # 학습할 때 입력의 크기
-          inference_size=(512, 512),  # 테스트 시 inference 해 볼 크기
-          # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
+          weight_decay_epoch=100,
+          learning_rate_decay=0.99,
+          training_size=(256, 256),
+          inference_size=(512, 512),
           save_path="translated_image"):
     print("CycleGAN")
 
@@ -312,17 +311,17 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
         # set으로 중복 제거 하고, 다시 list로 바꾼다.
 
         AtoB_varG = list(set(np.concatenate(
-        (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/AtoB_generator'),
-         tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/AtoB_generator')),
-        axis=0)))
+            (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/AtoB_generator'),
+             tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/AtoB_generator')),
+            axis=0)))
 
         BtoA_varD = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/BtoA_Discriminator')
 
         # set으로 중복 제거 하고, 다시 list로 바꾼다.
         BtoA_varG = list(set(np.concatenate(
-        (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/BtoA_generator'),
-         tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/BtoA_generator')),
-        axis=0)))
+            (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/BtoA_generator'),
+             tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/BtoA_generator')),
+            axis=0)))
 
         # Adam optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
         with tf.name_scope("saver"):
@@ -516,19 +515,21 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
 
 
 if __name__ == "__main__":
-    model(TEST=False, DB_name="horse2zebra", use_TFRecord=False, cycle_consistency_loss="L1",
+    model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
           cycle_consistency_loss_weight=10,
-          optimizer_selection="Adam", beta1=0.9, beta2=0.999,  # for Adam optimizer
+          optimizer_selection="Adam", beta1=0.5, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
-          use_identity_mapping=True,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용했다고 함.
+          use_identity_mapping=False,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용 - 우선은 False
           norm_selection="instancenorm",  # "instancenorm" or nothing
           image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
-          image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
+          image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지? 논문에선 50개 사용했다고 나옴.
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
           weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
           learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
-          training_size=(256, 256),  # 학습할 때 입력의 크기
-          inference_size=(512, 512),  # 테스트 시 inference 해 볼 크기
-          # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
-          save_path="translated_image")
+          # 콘볼루션은 weight를 학습 하는것이기 때문에, 입력크기의 비율만 맞고, 네트워크가 안잘리게 잘 설계 됬으면, 아래와 같이 256,256으로 학습하고 512, 512로 추론하는게 가능하다.
+          # 또한 다른 사이즈의 입력을 동시에 학습하는것도 가능하다.
+          training_size=(256, 256),  # TEST=False 때 입력의 크기
+          inference_size=(256, 256),  # TEST=True 일 때 inference 해 볼 크기
+          # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다.(폴더 2개 이름 -> AtoB_translated_image , BtoA_translated_image )
+          save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더
     print("model imported")

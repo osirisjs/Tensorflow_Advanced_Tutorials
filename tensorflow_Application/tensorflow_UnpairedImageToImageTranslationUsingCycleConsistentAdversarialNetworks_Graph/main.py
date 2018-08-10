@@ -65,7 +65,7 @@ for i, GL in enumerate(GPU_List):
         print(" " + num + ",", end="")
 
 # DB_name = "horse2zebra" 만...
-cycleGAN.model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
+cycleGAN.model(TEST=True, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
                cycle_consistency_loss_weight=10,
                optimizer_selection="Adam", beta1=0.5, beta2=0.999,  # for Adam optimizer
                decay=0.999, momentum=0.9,  # for RMSProp optimizer
@@ -76,7 +76,10 @@ cycleGAN.model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consi
                learning_rate=0.0002, training_epochs=30, batch_size=1, display_step=1,
                weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
                learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
-               training_size=(256, 256),  # 학습할 때 입력의 크기
-               inference_size=(256, 256),  # 테스트 시 inference 해 볼 크기
-               # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다. AtoB_translated_image , BtoA_translated_image 가 붙는다.
-               save_path="translated_image")
+               # 콘볼루션은 weight를 학습 하는 것 -> 입력이 콘볼루션을 진행하면서 잘리거나 0이 되지 않게 설계 됐다면, (256,256) 으로 학습하고 (512, 512)로 추론하는 것이 가능하다.
+               # 또한 다른 사이즈의 입력을 동시에 학습하는것도 가능하다.
+               training_size=(256, 256),  # TEST=False 때 입력의 크기
+               inference_size=(256, 256),  # TEST=True 일 때 inference 해 볼 크기
+               only_draw_graph=False,  # TEST=False 일 떄, 그래프만 그리고 종료할지 말지
+               # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다.(폴더 2개 이름 -> AtoB_translated_image , BtoA_translated_image )
+               save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더

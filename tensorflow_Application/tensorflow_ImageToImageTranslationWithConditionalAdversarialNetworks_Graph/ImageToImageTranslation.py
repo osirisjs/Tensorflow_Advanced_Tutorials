@@ -19,17 +19,16 @@ def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=N
 # 2. tf.data.Dataset를 오로지 데이터셋 전처리하는 용도로만 사용한다.
 def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_loss="L1",
           distance_loss_weight=100, optimizer_selection="Adam",
-          beta1=0.5, beta2=0.999,  # for Adam optimizer
-          decay=0.999, momentum=0.9,  # for RMSProp optimizer
-          # batch_size는 1~10사이로 하자
-          image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
-          image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
+          beta1=0.5, beta2=0.999,
+          decay=0.999, momentum=0.9,
+          image_pool=True,
+          image_pool_size=50,
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1, Dropout_rate=0.5,
-          using_moving_variable=False,  # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수
-          training_size=(256, 256),  # 학습할 때 입력의 크기
-          inference_size=(512, 512),  # 테스트 시 inference 해 볼 크기
-          only_draw_graph=False,  # 그래프만 그리고 종료할지 말지
-          save_path="translated_image"):  # 학습 완료 후 변환된 이미지가 저장될 폴더
+          using_moving_variable=False,
+          training_size=(256, 256),
+          inference_size=(512, 512),
+          only_draw_graph=False,
+          save_path="translated_image"):
     if distance_loss == "L1":
         print("target generative GAN with L1 loss")
         model_name = "Pix2PixL1loss"
@@ -372,18 +371,23 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
                 summary_operation = tf.summary.merge_all()
 
             '''
-            WHY? 아래 4줄의 코드를 적어 주지 않고, 학습을 하게되면, TEST부분에서 tf.train.import_meta_graph를 사용할 때 오류가 난다. 
+            WHY? 아래 2줄의 코드를 적어 주지 않고, 학습을 하게되면, TEST부분에서 tf.train.import_meta_graph를 사용할 때 오류가 난다. 
             -> 단순히 그래프를 가져오고 가중치를 복원하는 것만으로는 안된다. 세션을 실행할때 인수로 사용할 변수에 대한 
-            추가 접근을 제공하지 않기 때문에 아래와 같이 저장을 해놓은 뒤 TEST 시에 불러와서 다시 사용 해야한다.
+            추가 접근을 제공하지 않기 때문에 아래와 같이 저장을 해놓은 뒤 TEST 시에 불러와서 다시 사용 해야한다. - 그렇지 않으면, JG.get_operations() 함수를
+            사용해 출력된 모든 연산의 리스트에서 하나하나 찾아야한다.
             필요한 변수가 있을 시 아래와 같이 추가해서 그래프를 새로 만들어 주면 된다.
             '''
-            tf.add_to_collection('x', x)
-            tf.add_to_collection('G', G)
-            tf.add_to_collection('t', target)
+            for op in (x, G, target):
+                tf.add_to_collection("way", op)
+
+            #아래와 같은 코드도 가능.
+            # tf.add_to_collection('x', x)
+            # tf.add_to_collection('G', G)
+            # tf.add_to_collection('t', target)
 
             # generator graph 구조를 파일에 쓴다.
             meta_save_file_path = os.path.join(model_name, 'Generator', 'Generator_Graph.meta')
-            saver_generator.export_meta_graph(meta_save_file_path, collection_list=['x', 'G', 't'])
+            saver_generator.export_meta_graph(meta_save_file_path, collection_list=["way"])
 
             if only_draw_graph:
                 print('Generator_Graph.meta 파일만 저장하고 종료합니다.')
@@ -498,9 +502,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
                 print("<<< meta 파일을 읽을 수 없습니다. >>>")
                 exit(0)
 
-            x = tf.get_collection('x')[0]
-            G = tf.get_collection('G')[0]
-            t = tf.get_collection('t')[0]
+            x, G, t = tf.get_collection('way')
 
             # Test Dataset 가져오기
             dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TFRecord=use_TFRecord,
@@ -508,7 +510,6 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
             iterator, next_batch, data_length = dataset.iterator()
 
             with tf.Session(graph=JG) as sess:
-                sess.run(tf.global_variables_initializer())
                 sess.run(iterator.initializer)
                 ckpt = tf.train.get_checkpoint_state(os.path.join(model_name, 'Generator'))
 
@@ -532,7 +533,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
 
 if __name__ == "__main__":
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-    model(TEST=True, AtoB=True, DB_name="facades", use_TFRecord=True, distance_loss="L1",
+    model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_loss="L1",
           distance_loss_weight=100, optimizer_selection="Adam",
           beta1=0.5, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
@@ -542,11 +543,11 @@ if __name__ == "__main__":
           learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1, Dropout_rate=0.5,
           # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수 - 논문에서는 Test = Training
           using_moving_variable=False,
-          # 콘볼루션은 weight를 학습 하는것이기 때문에, 입력크기의 비율만 맞고, 네트워크가 안잘리게 잘 설계 됬으면, 아래와 같이 256,256으로 학습하고 512, 512로 추론하는게 가능하다.
+          # 콘볼루션은 weight를 학습 하는 것 -> 입력이 콘볼루션을 진행하면서 잘리거나 0이 되지 않게 설계 됐다면, (256,256) 으로 학습하고 (512, 512)로 추론하는 것이 가능하다.
           # 또한 다른 사이즈의 입력을 동시에 학습하는것도 가능하다.
-          training_size=(256, 256),  # 학습할 때 입력의 크기
-          inference_size=(512, 512),  # 테스트 시 inference 해 볼 크기
-          only_draw_graph=False,  # 그래프만 그리고 종료할지 말지
-          save_path="translated_image")  # 학습 완료 후 변환된 이미지가 저장될 폴더
+          training_size=(256, 256),  # TEST=False 때 입력의 크기
+          inference_size=(256, 256),  # TEST=True 일 때 inference 해 볼 크기
+          only_draw_graph=False,  # TEST=False 일 떄, 그래프만 그리고 종료할지 말지
+          save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더
 else:
     print("model imported")

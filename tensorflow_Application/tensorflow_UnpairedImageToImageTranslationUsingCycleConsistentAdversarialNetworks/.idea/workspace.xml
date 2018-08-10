@@ -2,24 +2,19 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="948e679b-593d-44ef-832a-d4ac08a6fd70" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/../tensorflow_NeuralStyle/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../tensorflow_AutoencoderLottoNet/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_AutoencoderLottoNet/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/ImageToImageTranslation.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/ImageToImageTranslation.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/ImageToImageTranslation.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/ImageToImageTranslation.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_NeuralStyle/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_NeuralStyle/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_NeuralStyle/article/artistic_Image_100.png" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_NeuralStyle/article/artistic_Image_100.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_NeuralStyle/article/artistic_Image_200.png" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_NeuralStyle/article/artistic_Image_200.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_NeuralStyle/article/artistic_Image_300.png" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_NeuralStyle/article/artistic_Image_300.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_NeuralStyle/article/artistic_Image_400.png" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_NeuralStyle/article/artistic_Image_400.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_NeuralStyle/article/artistic_Image_500.png" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_NeuralStyle/article/artistic_Image_500.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_NeuralStyle/article/artistic_Image_final.png" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_NeuralStyle/article/artistic_Image_final.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_NeuralStyle/model.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_NeuralStyle/model.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/UnpairedImageToImageTranslation.py" beforeDir="false" afterPath="$PROJECT_DIR$/UnpairedImageToImageTranslation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/UnpairedImageToImageTranslation.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/UnpairedImageToImageTranslation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/main.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -31,11 +26,11 @@
     <session id="534505859">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="11" />
-          <entry key="project.open.time.0" value="5" />
+          <entry key="project.closed" value="14" />
+          <entry key="project.open.time.0" value="8" />
           <entry key="project.open.time.3" value="4" />
           <entry key="project.open.time.4" value="2" />
-          <entry key="project.opened" value="11" />
+          <entry key="project.opened" value="14" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
@@ -62,11 +57,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="282">
-              <caret line="65" selection-start-line="65" selection-end-line="65" />
+            <state relative-caret-position="79">
+              <caret line="54" column="52" selection-start-line="54" selection-start-column="52" selection-end-line="54" selection-end-column="52" />
               <folding>
                 <element signature="e#0#47#0" expanded="true" />
               </folding>
@@ -77,7 +72,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Dataset.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="646">
+            <state relative-caret-position="1292">
               <caret line="77" column="17" selection-start-line="77" selection-start-column="17" selection-end-line="77" selection-end-column="17" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
@@ -86,11 +81,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/UnpairedImageToImageTranslation.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="230">
-              <caret line="268" column="22" selection-start-line="268" selection-start-column="12" selection-end-line="268" selection-end-column="22" />
+            <state relative-caret-position="-9123">
+              <caret line="15" column="54" selection-start-line="15" selection-start-column="54" selection-end-line="15" selection-end-column="54" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -120,17 +115,17 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/Dataset.py" />
-        <option value="$PROJECT_DIR$/main.py" />
         <option value="$PROJECT_DIR$/Dataset.py" />
+        <option value="$PROJECT_DIR$/main.py" />
         <option value="$PROJECT_DIR$/UnpairedImageToImageTranslation.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="552" />
-    <option name="y" value="121" />
+    <option name="x" value="516" />
+    <option name="y" value="64" />
     <option name="width" value="1045" />
-    <option name="height" value="1100" />
+    <option name="height" value="1047" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -153,7 +148,7 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -210,6 +205,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.013171759" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -299,8 +295,12 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/main.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state>
+        <state relative-caret-position="79">
+          <caret line="54" column="52" selection-start-line="54" selection-start-column="52" selection-end-line="54" selection-end-column="52" />
           <folding>
             <element signature="e#0#47#0" expanded="true" />
           </folding>
@@ -309,7 +309,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Dataset.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="646">
+        <state relative-caret-position="1292">
           <caret line="77" column="17" selection-start-line="77" selection-start-column="17" selection-end-line="77" selection-end-column="17" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
@@ -319,20 +319,10 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/UnpairedImageToImageTranslation.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="230">
-          <caret line="268" column="22" selection-start-line="268" selection-start-column="12" selection-end-line="268" selection-end-column="22" />
+        <state relative-caret-position="-9123">
+          <caret line="15" column="54" selection-start-line="15" selection-start-column="54" selection-end-line="15" selection-end-column="54" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/main.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="282">
-          <caret line="65" selection-start-line="65" selection-end-line="65" />
-          <folding>
-            <element signature="e#0#47#0" expanded="true" />
           </folding>
         </state>
       </provider>
