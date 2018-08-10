@@ -28,7 +28,9 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
           training_size=(256, 256),
           inference_size=(512, 512),
           only_draw_graph=False,
+          weights_to_numpy=False,
           save_path="translated_image"):
+
     if distance_loss == "L1":
         print("target generative GAN with L1 loss")
         model_name = "Pix2PixL1loss"
@@ -529,6 +531,41 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
                     translated_image = sess.run(G, feed_dict={x: x_numpy, t: target_numpy})
                     visualize(model_name=model_name, named_images=[i, x_numpy[0], target_numpy[0], translated_image[0]],
                               save_path=save_path)
+
+                # 가중치 저장 - 약간 생소한 API이다.
+                if weights_to_numpy:
+                    numpy_weight_save_path="NumpyWeightOfModel"
+                    if not os.path.exists(numpy_weight_save_path):
+                        os.makedirs(numpy_weight_save_path)
+                    #1, checkpoint 읽어오는 것
+                    reader = tf.train.NewCheckpointReader(ckpt.model_checkpoint_path)
+                    ''' 2. tf.train.NewCheckpointReader에도
+                    reader.get_variable_to_dtype_map() -> 이름 , dype 반환 or reader.get_variable_to_shape_map() 이름 , 형태 반환 
+                    하는데 사전형이라 순서가 중구난방이다.
+                    요 아래의 것은 리스트 형태로 name, shape이 순서대로 나온다.
+                    '''
+                    dtype = list(reader.get_variable_to_dtype_map().values())[0]
+                    #앞의 shared_variables / Gerator 빼버리기
+                    name_shape = tf.contrib.framework.list_variables(ckpt.model_checkpoint_path)
+                    with open(os.path.join(numpy_weight_save_path, "name_shape_info.txt"),mode='w') as f:
+                        f.write("                      < weight 정보 >\n\n")
+                        f.write("파일 개수 : {}개\n\n".format(len(name_shape)))
+                        f.write("------------------- 1. data type ---------------------\n\n")
+                        f.write("{} \n\n".format(str(dtype).strip("<>").replace(":"," :")))
+                        print("------------------------------------------------------")
+                        print("총 파일 개수 : {}".format(len(name_shape)))
+
+                        # 앞의 shared_variables / Gerator 빼버리기
+                        f.write("-------------- 2. weight name, shape ----------------\n\n")
+                        for name, shape in name_shape:
+                            seperated=name.split("/")[2:]
+                            joined="_".join(seperated)
+                            shape = str(shape).strip('[]')
+                            print("##################################################")
+                            print("weight : {}.npy".format(joined))
+                            print("shape : ({})".format(shape))
+                            f.write("{}.npy \nshape : ({}) \n\n".format(joined, shape))
+                            np.save(os.path.join(numpy_weight_save_path, joined), reader.get_tensor(name))
 
 
 if __name__ == "__main__":
