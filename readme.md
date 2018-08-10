@@ -55,7 +55,7 @@
                 * 내 사진을 예술 작품으로 바꿔주는 유명한 논문인 "A Neural Algorithm of Artistic Style" 의 구현 입니다.
             * [***Word2Vector SkipGram With TSNE***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_Word2Vector_SkipGram_WithTSNE)
                 * 아무런 관계가 없는 것처럼 표현(one-hot encoding)된 단어들을 낮은 차원의 벡터로 표현함과 동시에 단어간의 관계를 표현하는 방법입니다. Word2Vector에는 CBOW모델과 Skip-Gram 모델이 있습니다. 여기서는 Skip-Gram 모델을 구현합니다.
-            * [***Image To Image Translation With Conditional Adversarial Networks Using edges2shoes Dataset***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks)
+            * [***Image To Image Translation With Conditional Adversarial Networks Using edges2shoes Dataset***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph))
                 * 위 링크는 [Code 1](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph) 으로 연결됩니다.
                 * 어떤 도메인의 이미지의 다른 도메인의 이미지로의 변환이라는 거룩한 목적을 위해 고안된 네트워크입니다. ConditionalGAN 과 UNET을 사용하여 네트워크 구성 합니다.
                 * 네트워크 구조 및 학습 방법은 논문에서 제시한 내용과 거의 같습니다.(Discriminator 구조인 PatchGAN 의 크기는 70X70 입니다. - [ReceptiveField 계산법](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/blob/master/tensorflow_ModelWithFixedLengthDataset/tensorflow_ConvolutionNeuralNetwork/ReceptiveField_inspection/rf.py)
@@ -69,8 +69,8 @@
                     * 주의할 점 : tf.data.Dataset에서 처리된 Tensor 데이터를 네트워크의 입력으로 넣은 후, 그래프를 출력하면, 입, 출력 크기가 고정되어 Test시 입력 크기를 바꿀 방법이 마땅치 않습니다.
                     그래서, tf.data.Dataset를 오로지 데이터셋 전처리 용도로만 사용하는 [Code 1](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph) 과 tf.data.Dataset로 처리된 데이터를 그래프 구조 안에 포함하지만, 따로 그래프를 저장하지 않는 [Code 2](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks) 를 작성했습니다.( 관련 내용 : [Image To Image Translation With Conditional Adversarial Networks Using edges2shoes Dataset 논문의 7p 참고](https://arxiv.org/pdf/1611.07004.pdf))
             
-            * [***Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks)  
-                - 위 링크는 [Code 1](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks) 으로 연결됩니다.
+            * [***Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph))
+                - 위 링크는 [Code 1](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph)) 으로 연결됩니다.
                 * Image To Image Translation With Conditional Adversarial Newort을 학습시키기 위해선 입력과 출력이 한 쌍인 데이터가 필요했습니다. 그러나 이 논문에서 제시한 방법은 입력과 출력이 쌍일 필요가 없습니다.
                 * CycleGan은 전혀 다른 도메인에 있는 두 종류의 데이터 집단을 자연스럽게 이어주는 연결고리를 찾아내는 과정이라고 생각합니다.(오직 저만의 생각)
                 * ImagePool 함수는 batch size가 1일 때만 동작합니다.

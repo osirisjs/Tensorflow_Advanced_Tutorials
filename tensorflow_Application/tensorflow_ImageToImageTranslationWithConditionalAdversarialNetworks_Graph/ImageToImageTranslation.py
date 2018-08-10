@@ -53,7 +53,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
         model_name = "in" + model_name
     else:
         norm_selection = "batch_norm"
-        model_name = "bn_" + model_name
+        model_name = "bn" + model_name
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):

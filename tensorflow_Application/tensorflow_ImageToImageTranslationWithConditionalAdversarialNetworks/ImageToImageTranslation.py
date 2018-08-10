@@ -52,7 +52,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
         model_name = "in" + model_name
     else:
         norm_selection = "batch_norm"
-        model_name = "bn_" + model_name
+        model_name = "bn" + model_name
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
@@ -327,7 +327,8 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
         var_D = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
                                   scope='shared_variables/Discriminator')
 
-        # set으로 중복 제거 하고, 다시 list로 바꾼다.
+        # set으로 중복 제거 하고, 다시 list로 바꾼다. -  처음엔 tf.GraphKeys.TRAINABLE_VARIABLES만 사용하려 했는데, batchnorm관련 moving_average, variance가 저장되지 않는 문제가 있음
+        # 아래의 코드는 사실  tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/Generator') 만 써도 되는 코드임. - 아래와 같이도 할수 있다는 것을 보여주기 위해 작성.
         var_G = list(set(np.concatenate(
             (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/Generator'),
              tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/Generator')),
