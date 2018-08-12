@@ -312,6 +312,9 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
             with tf.name_scope("Origin_image"):
                 tf.summary.image("Origin_image", x, max_outputs=3)
 
+            with tf.name_scope("target"):
+                tf.summary.image("target", target, max_outputs=3)
+
             with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
                 with tf.name_scope("Generator"):
                     G = generator(images=x)

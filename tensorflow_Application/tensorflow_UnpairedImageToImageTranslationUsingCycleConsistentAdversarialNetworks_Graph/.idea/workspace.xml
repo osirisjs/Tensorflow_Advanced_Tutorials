@@ -2,14 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="948e679b-593d-44ef-832a-d4ac08a6fd70" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/../../readme.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../readme.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/Dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/Dataset.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/ImageToImageTranslation.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/ImageToImageTranslation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnpairedImageToImageTranslation.py" beforeDir="false" afterPath="$PROJECT_DIR$/UnpairedImageToImageTranslation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -50,11 +44,11 @@
     <session id="964970029">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="21" />
-          <entry key="project.open.time.0" value="15" />
+          <entry key="project.closed" value="22" />
+          <entry key="project.open.time.0" value="16" />
           <entry key="project.open.time.3" value="3" />
           <entry key="project.open.time.4" value="3" />
-          <entry key="project.opened" value="21" />
+          <entry key="project.opened" value="22" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
@@ -84,8 +78,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="443">
-              <caret line="71" column="12" lean-forward="true" selection-start-line="71" selection-start-column="12" selection-end-line="71" selection-end-column="12" />
+            <state relative-caret-position="1311">
+              <caret line="71" column="12" selection-start-line="71" selection-start-column="12" selection-end-line="71" selection-end-column="12" />
               <folding>
                 <element signature="e#0#47#0" expanded="true" />
               </folding>
@@ -96,7 +90,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Dataset.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="5658">
+            <state relative-caret-position="5491">
               <caret line="298" column="32" selection-start-line="298" selection-start-column="32" selection-end-line="298" selection-end-column="32" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
@@ -108,8 +102,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/UnpairedImageToImageTranslation.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="283">
-              <caret line="554" column="73" lean-forward="true" selection-start-line="554" selection-start-column="73" selection-end-line="554" selection-end-column="73" />
+            <state relative-caret-position="1079">
+              <caret line="306" column="45" lean-forward="true" selection-start-line="306" selection-start-column="45" selection-end-line="306" selection-end-column="45" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -132,6 +126,7 @@
       <find>use_TrainDataset</find>
       <find>The image must have the 'jpg' format</find>
       <find>feed_dict</find>
+      <find>tf.summary.image</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -158,7 +153,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -170,6 +164,7 @@
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -256,6 +251,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.0036880928" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -432,16 +428,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Dataset.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="5658">
-          <caret line="298" column="32" selection-start-line="298" selection-start-column="32" selection-end-line="298" selection-end-column="32" />
-          <folding>
-            <element signature="e#0#11#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/main.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-1903">
@@ -453,18 +439,28 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="443">
-          <caret line="71" column="12" lean-forward="true" selection-start-line="71" selection-start-column="12" selection-end-line="71" selection-end-column="12" />
+        <state relative-caret-position="1311">
+          <caret line="71" column="12" selection-start-line="71" selection-start-column="12" selection-end-line="71" selection-end-column="12" />
           <folding>
             <element signature="e#0#47#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/Dataset.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="5491">
+          <caret line="298" column="32" selection-start-line="298" selection-start-column="32" selection-end-line="298" selection-end-column="32" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/UnpairedImageToImageTranslation.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="283">
-          <caret line="554" column="73" lean-forward="true" selection-start-line="554" selection-start-column="73" selection-end-line="554" selection-end-column="73" />
+        <state relative-caret-position="1079">
+          <caret line="306" column="45" lean-forward="true" selection-start-line="306" selection-start-column="45" selection-end-line="306" selection-end-column="45" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
           </folding>
