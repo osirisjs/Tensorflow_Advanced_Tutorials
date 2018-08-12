@@ -227,10 +227,11 @@ class Dataset(object):
     def load_image(self, address):
         img = cv2.imread(address)
 
-        # RGB로 바꾸기
+        # TEST = True 일 때
         if not self.use_TrainDataset:
             img = cv2.resize(img, (self.width_size, self.height_size), interpolation=cv2.INTER_CUBIC)
 
+        # RGB로 바꾸기
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.astype(np.float32)
 
