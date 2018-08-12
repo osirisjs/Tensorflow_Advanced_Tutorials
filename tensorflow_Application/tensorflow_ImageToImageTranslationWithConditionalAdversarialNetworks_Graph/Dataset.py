@@ -54,26 +54,17 @@ https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz
 
 class Dataset(object):
 
-    def __init__(self, DB_name="maps", AtoB=False,
-                 batch_size=1, use_TFRecord=False, use_TrainDataset=False, training_size=None, inference_size=None):
+    def __init__(self, DB_name="facades", AtoB=False, batch_size=1, use_TrainDataset=True, inference_size=None):
 
         self.Dataset_Path = "Dataset"
         self.DB_name = DB_name
         self.AtoB = AtoB
         self.inference_size = inference_size
-        self.training_size = training_size
-
-        # training_size의 최소 크기를 (256, 256)로 지정
-        if use_TrainDataset:
-            if self.training_size == None and self.training_size[0] < 256 and self.training_size[1] < 256:
-                print("training size는 (256,256) 보다는 커야 합니다.")
-                exit(0)
-            else:
-                self.height_size = training_size[0]
-                self.width_size = training_size[1]
+        # 학습용 데이터인지 테스트용 데이터인지 알려주는 변수
+        self.use_TrainDataset = use_TrainDataset
 
         # infernece_size의 최소 크기를 (256, 256)로 지정
-        else:
+        if not self.use_TrainDataset:
             if self.inference_size == None and self.inference_size[0] < 256 and self.inference_size[1] < 256:
                 print("inference size는 (256,256)보다는 커야 합니다.")
                 exit(0)
@@ -93,16 +84,12 @@ class Dataset(object):
             print("The program is forcibly terminated.")
             exit(0)
 
-        self.use_TFRecord = use_TFRecord
         if not os.path.exists(self.Dataset_Path):
             os.makedirs(self.Dataset_Path)
 
         self.url = "https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz".format(self.DB_name)
         self.dataset_folder = os.path.join(self.Dataset_Path, self.DB_name)
         self.dataset_targz = self.dataset_folder + ".tar.gz"
-
-        # 학습용 데이터인지 테스트용 데이터인지 알려주는 변수
-        self.use_TrainDataset = use_TrainDataset
 
         # Test Dataset은 무조건 하나씩 처리하자.
         if self.use_TrainDataset == False:
@@ -113,54 +100,46 @@ class Dataset(object):
         # 데이터셋 다운로드 한다.
         self.Preparing_Learning_Dataset()
 
-        # TFRecord를 쓰기 위한 변수, use_TFRecord 가 True 이면 TFRecord 파일로 쓴다.
         if self.use_TrainDataset:
-            # (1). tf.data.Dataset.from_tensor_slices
-            self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "train/*"))
 
-            # (2). TFRecord
-            if self.use_TFRecord:
-                self.TFRecord_train_path = os.path.join(self.dataset_folder, "TFRecord_train")
-                if not os.path.exists(self.TFRecord_train_path):
-                    os.makedirs(self.TFRecord_train_path)
-                if self.AtoB:
-                    self.TFRecord_path = os.path.join(self.TFRecord_train_path,
-                                                      'AtoBtrain{}x{}.tfrecords'.format(self.height_size,
-                                                                                        self.width_size))
-                else:
-                    self.TFRecord_path = os.path.join(self.TFRecord_train_path,
-                                                      'BtoAtrain{}x{}.tfrecords'.format(self.height_size,
-                                                                                        self.width_size))
-                # TFRecord 파일로 쓰기.
-                self.TFRecordWriter()
+            # TFRecord
+            self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "train/*"))
+            self.TFRecord_train_path = os.path.join(self.dataset_folder, "TFRecord_train")
+
+            if not os.path.exists(self.TFRecord_train_path):
+                os.makedirs(self.TFRecord_train_path)
+
+            if self.AtoB:
+                self.TFRecord_path = os.path.join(self.TFRecord_train_path,
+                                                  'AtoBtrain.tfrecords')
+                self.TFRecord_path = os.path.join(self.TFRecord_train_path,
+                                                  'BtoAtrain.tfrecords')
+            # TFRecord 파일로 쓰기.
+            self.TFRecordWriter()
+
         else:
-            # (1). tf.data.Dataset.from_tensor_slices
             self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "val/*"))
-            # (2). TFRecord
-            if self.use_TFRecord:
-                self.TFRecord_val_path = os.path.join(self.dataset_folder, "TFRecord_val")
-                if not os.path.exists(self.TFRecord_val_path):
-                    os.makedirs(self.TFRecord_val_path)
-                if self.AtoB:
-                    self.TFRecord_path = os.path.join(self.TFRecord_val_path,
-                                                      'AtoBval{}x{}.tfrecords'.format(self.height_size,
-                                                                                      self.width_size))
-                else:
-                    self.TFRecord_path = os.path.join(self.TFRecord_val_path,
-                                                      'BtoAval{}x{}.tfrecords'.format(self.height_size,
-                                                                                      self.width_size))
-                # TFRecord 파일로 쓰기.
-                self.TFRecordWriter()
+            self.TFRecord_val_path = os.path.join(self.dataset_folder, "TFRecord_val")
+
+            if not os.path.exists(self.TFRecord_val_path):
+                os.makedirs(self.TFRecord_val_path)
+
+            if self.AtoB:
+                self.TFRecord_path = os.path.join(self.TFRecord_val_path,
+                                                  'AtoBval{}x{}.tfrecords'.format(self.height_size, self.width_size))
+            else:
+                self.TFRecord_path = os.path.join(self.TFRecord_val_path,
+                                                  'BtoAval{}x{}.tfrecords'.format(self.height_size,
+                                                                                  self.width_size))
+            # TFRecord 파일로 쓰기.
+            self.TFRecordWriter()
 
     def __repr__(self):
         return "Dataset Loader"
 
     def iterator(self):
 
-        if self.use_TFRecord:
-            iterator, next_batch, db_length = self.Using_TFRecordDataset()
-        else:
-            iterator, next_batch, db_length = self.Using_TFBasicDataset()
+        iterator, next_batch, db_length = self.Using_TFRecordDataset()
 
         return iterator, next_batch, db_length
 
@@ -199,119 +178,66 @@ class Dataset(object):
 
     def _image_preprocessing(self, image):
 
-        if self.use_TFRecord:
-            # 1. 이미지를 읽는다.
-            feature = {'image': tf.FixedLenFeature([], tf.string)}
-            features = tf.parse_single_example(image, features=feature)
-            img_decoded_raw = tf.decode_raw(features['image'], tf.float32)
+        # 1. 이미지를 읽는다.
+        feature = {'image_left': tf.FixedLenFeature([], tf.string),
+                   'image_right': tf.FixedLenFeature([], tf.string),
+                   'height': tf.FixedLenFeature([], tf.int64),
+                   'width': tf.FixedLenFeature([], tf.int64)}
 
-            # 2. 이미지 사이즈를 self.height_size x self.width_size*2으로 조정한다.
-            img_decoded = tf.reshape(img_decoded_raw, [self.height_size, self.width_size * 2, 3])
-        else:
-            # 1. 이미지를 읽는다
-            img = tf.read_file(image)
-            '''
-            img_decoded = tf.image.decode_image(img, channels=3) 
-            왜 위의 tf.image.decode_image 을 안쓰는가? tf.image.decode_image 는 shape 정보를 반환하지 못한다.
-            이게 gif, jpeg, png, bmp를 다 처리하려다 보니 생긴 문제점 같은데, 추후에 해결될 것이라고 믿는다...
-            '''
-            # 이미지가 다른 포맷일 경우, tf.image.decode_bmp, tf.image.decode_png 등을 사용.
-            print("### The image must have the 'jpg' format. ###")
-            # 2. 이미지 사이즈를 self.height_size x self.width_size*2으로 조정한다. / RGB 순서로 읽는다.
-            img_decoded = tf.image.resize_images(tf.image.decode_jpeg(img, channels=3),
-                                                 size=(self.height_size, self.width_size * 2),
-                                                 method=2)  # jpeg 파일 읽기 , method ->   BICUBIC = 2
+        parser = tf.parse_single_example(image, features=feature)
+        img_decoded_raw_left = tf.decode_raw(parser['image_left'], tf.float32)
+        img_decoded_raw_right = tf.decode_raw(parser['image_right'], tf.float32)
+        height = tf.cast(parser['height'], tf.int32)
+        width = tf.cast(parser['width'], tf.int32)
+
+        iL = tf.reshape(img_decoded_raw_left, (height, width, 3))
+        iR = tf.reshape(img_decoded_raw_right, (height, width, 3))
+
+        # 4. gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
+        iL_scaled = tf.subtract(tf.divide(iL, 127.5), 1.0)  # gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
+        iR_scaled = tf.subtract(tf.divide(iR, 127.5), 1.0)  # gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
+
+        input = iL_scaled
+        label = iR_scaled
+
         '''
         논문에서...
         Random jitter was applied by resizing the 256 x 256 input images to 286 x 286
         and then randomly cropping back to size 256 x 256
-
-        This op cuts a rectangular part out of image. The top-left corner of the returned image is at offset_height, 
-        offset_width in image, and its lower-right corner is at offset_height + target_height, offset_width + target_width.
-
-        offset_height: Vertical coordinate of the top-left corner of the result in the input.
-        offset_width: Horizontal coordinate of the top-left corner of the result in the input.
-        target_height: Height of the result.
-        target_width: Width of the result.
         '''
-
-        # 3. self.height_size x self.width_size*2 이미지를 self.height_size x self.width_size, self.height_size x self.width_size 2개로 나눈다.
-        Ip = tf.image.crop_to_bounding_box(img_decoded, offset_height=0, offset_width=0, target_height=self.height_size,
-                                           target_width=self.width_size)
-        lb = tf.image.crop_to_bounding_box(img_decoded, offset_height=0, offset_width=self.width_size,
-                                           target_height=self.height_size,
-                                           target_width=self.width_size)
-
-        # 4. gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
-        Ip_scaled = tf.subtract(tf.divide(tf.cast(Ip, tf.float32), 127.5), 1.0)  # gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
-        lb_scaled = tf.subtract(tf.divide(tf.cast(lb, tf.float32), 127.5), 1.0)  # gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
-
-        input = Ip_scaled
-        label = lb_scaled
-
         # Train Dataset 에서만 동작하게 하기 위함
         if self.use_TrainDataset:
-            if self.width_size == 256 and self.height_size == 256:
-                # 5. 286x286으로 키운다.
-                Ip_resized = tf.image.resize_images(images=Ip_scaled, size=(286, 286))
-                lb_resized = tf.image.resize_images(images=lb_scaled, size=(286, 286))
+            # 5. 286x286으로 키운다. - 30씩 더한다
+            iL_resized = tf.image.resize_images(images=iL_scaled, size=(tf.shape(iL_scaled)[0]+30, tf.shape(iL_scaled)[1]+30))
+            iR_resized = tf.image.resize_images(images=iR_scaled, size=(tf.shape(iR_scaled)[0]+30, tf.shape(iR_scaled)[1]+30))
 
-                # 6. 이미지를 256x256으로 랜덤으로 자른다.
-                Ip_random_crop = tf.random_crop(Ip_resized, size=(256, 256, 3))
-                lb_random_crop = tf.random_crop(lb_resized, size=(256, 256, 3))
+            # 6. 이미지를 256x256으로 랜덤으로 자른다. - 30
+            iL_random_crop = tf.random_crop(iL_resized, size=(tf.shape(iL_resized)[0],tf.shape(iL_resized)[1],tf.shape(iL_resized)[2]))
+            iR_random_crop = tf.random_crop(iR_resized, size=(tf.shape(iR_resized)[0],tf.shape(iR_resized)[1],tf.shape(iR_resized)[2]))
 
-                input = Ip_random_crop
-                label = lb_random_crop
+            input = iL_random_crop
+            label = iR_random_crop
 
         if self.AtoB:
             return input, label
         else:
             return label, input
 
-    # 1. tf.data.Dataset.from_tensor_slices 을 사용하는 방법 - 파일명 리스트에서 이미지를 불러와서 처리하기
-    def Using_TFBasicDataset(self):
-
-        random_file_path_list_Tensor = tf.random_shuffle(tf.constant(self.file_path_list))  # tensor에 데이터셋 리스트를 담기
-        dataset = tf.data.Dataset.from_tensor_slices(random_file_path_list_Tensor)
-        dataset = dataset.map(self._image_preprocessing)
-        '''
-        buffer_size: A `tf.int64` scalar `tf.Tensor`, representing the
-        number of elements from this dataset from which the new
-        dataset will sample.
-
-        dataset.buffer_size란 정확히 무엇인가? shuffling 할 때 몇개를 미리 뽑아서 랜덤하게 바꾸는건데 이상적으로 봤을 때 buffer_size가
-        파일 개수 만큼이면 좋겠지만, 이미지 자체의 순서를 바꾸는 것이기 때문에 메모리를 상당히 많이 먹는다. (메모리가 16기가인 컴퓨터에서
-        buffer_size = 5000 만되도 컴퓨터가 강제 종료 된다.)
-        따라서 dataset.shuffle 의 매개 변수인 buffer_size를  1000정도로 로 설정(buffer_size가 1이라는 의미는 사용 안한다는 의미)
-
-        더 좋은 방법? -> 파일명이 들어있는 리스트가  tf.data.Dataset.from_tensor_slices의 인자로 들어가기 전에 미리 섞는다.(tf.random_shuffle 을 사용)
-        문제점1 -> tf.random_shuffle을 사용하려면 dataset.make_one_shot_iterator()을 사용하면 안된다. tf.random_shuffle을 사용하지 않고
-        파일리스트를 램던함게 섞으려면 random 모듈의 shuffle을 사용해서 미리 self.file_path_list을 섞는다.
-        문제점2 -> 한번 섞고 말아버린다. -> buffer_size를 자기 컴퓨터의 메모리에 맞게 최대한으로 써보자.
-        '''
-        # dataset = dataset.shuffle(buffer_size=1).repeat().batch(self.batch_size)
-        dataset = dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
-
-        '''
-        위에서 tf.random_shuffle을 쓰고 아래의 make_one_shot_iterator()을 쓰면 오류가 발생한다. - stateful 관련 오류가 뜨는데, 추 후 해결 되겠지...
-        이유가 궁금하다면 아래의 웹사이트를 참고하자.
-        https://stackoverflow.com/questions/44374083/tensorflow-cannot-capture-a-stateful-node-by-value-in-tf-contrib-data-api
-        '''
-        # iterator = dataset.make_one_shot_iterator()
-
-        # tf.random_shuffle을 쓰려면 아래와 같이 make_initializable_iterator을 써야한다. - stack overflow 에서 찾음
-        iterator = dataset.make_initializable_iterator()
-
-        return iterator, iterator.get_next(), len(self.file_path_list)
-
     # TFRecord를 만들기위해 이미지를 불러올때 쓴다.
     def load_image(self, address):
-        img = cv2.imread(address, cv2.IMREAD_COLOR)
-        img = cv2.resize(img, (self.width_size * 2, self.height_size), interpolation=cv2.INTER_CUBIC)
+        img = cv2.imread(address)
+
         # RGB로 바꾸기
+        if not self.use_TrainDataset:
+            img = cv2.resize(img, (self.width_size, self.height_size), interpolation=cv2.INTER_CUBIC)
+
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.astype(np.float32)
-        return img
+
+        middle_point = int(img.shape[1] / 2)
+        img_left = img[:, :middle_point, :]
+        img_right = img[:, middle_point:, :]
+        return img_left, img_right
 
     def TFRecordWriter(self):
 
@@ -326,13 +252,22 @@ class Dataset(object):
             with tf.python_io.TFRecordWriter(self.TFRecord_path) as writer:  # TFRecord로 쓰자
                 random.shuffle(self.file_path_list)
                 for image_address in tqdm(self.file_path_list):
-                    img = self.load_image(image_address)
+                    img_left, img_right = self.load_image(image_address)
+
                     '''넘파이 배열의 값을 바이트 스트링으로 변환한다.
                     tf.train.BytesList, tf.train.Int64List, tf.train.FloatList 을 지원한다.
                     '''
                     feature = \
-                        {'image': tf.train.Feature(
-                            bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(img.tostring())]))}
+                        {
+                            'image_left': tf.train.Feature(
+                                bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(img_left.tostring())])),
+                            'image_right': tf.train.Feature(
+                                bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(img_right.tostring())])),
+                            'height': tf.train.Feature(
+                                int64_list=tf.train.Int64List(value=[img_left.shape[0]])),
+                            'width': tf.train.Feature(
+                                int64_list=tf.train.Int64List(value=[img_left.shape[1]])),
+                        }
                     example = tf.train.Example(features=tf.train.Features(feature=feature))
                     # 파일로 쓰자.
                     writer.write(example.SerializeToString())
@@ -340,14 +275,14 @@ class Dataset(object):
         else:  # TFRecord가 존재할 경우
             print("<<< {} already exists >>>".format(os.path.basename(self.TFRecord_path)))
 
-    # 2. tf.data.TFRecordDataset를 사용하는 방법 - TRRecord(이진 파일, 직렬화된 입력 데이터)라는 텐서플로우 표준 파일형식으로 저장된 파일을 불러와서 처리하기
+    # tf.data.TFRecordDataset를 사용하는 방법 - TRRecord(이진 파일, 직렬화된 입력 데이터)라는 텐서플로우 표준 파일형식으로 저장된 파일을 불러와서 처리하기
     def Using_TFRecordDataset(self):
 
-        # 4. TFRecordDataset()사용해서 읽어오기
+        # TFRecordDataset()사용해서 읽어오기
         dataset = tf.data.TFRecordDataset(self.TFRecord_path)
         dataset = dataset.map(self._image_preprocessing)
         dataset = dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
-        # Using_TFBasicDataset와 형태를 맞추기 위함이다. -> 사실 여기선 dataset.make_one_shot_iterator()을 사용해도 된다.
+        # 사실 여기서 dataset.make_one_shot_iterator()을 사용해도 된다.
         iterator = dataset.make_initializable_iterator()
         # tf.python_io.tf_record_iterator는 무엇인가 ? TFRecord 파일에서 레코드를 읽을 수 있는 iterator이다.
         return iterator, iterator.get_next(), sum(1 for _ in tf.python_io.tf_record_iterator(self.TFRecord_path))
@@ -408,8 +343,8 @@ if __name__ == "__main__":
     "facades"
     "maps"
     '''
-    dataset = Dataset(DB_name="cityscapes", AtoB=True, batch_size=4, use_TFRecord=True, use_TrainDataset=True)
-    # iterator, next_batch, data_length = dataset.iterator()
+    dataset = Dataset(DB_name="facades", AtoB=True, batch_size=1, use_TrainDataset=True, inference_size=(256, 256))
+    iterator, next_batch, data_length = dataset.iterator()
 
 else:
     print("Dataset imported")

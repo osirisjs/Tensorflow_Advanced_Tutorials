@@ -15,9 +15,7 @@ def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=N
     cv2.imwrite(os.path.join(save_path, '{}_{}.png'.format(model_name, named_images[0])), image)
     print("{}_{}.png saved in {} folder".format(model_name, named_images[0], save_path))
 
-
-# 2. tf.data.Dataset를 오로지 데이터셋 전처리하는 용도로만 사용한다.
-def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_loss="L1",
+def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
           distance_loss_weight=100, optimizer_selection="Adam",
           beta1=0.5, beta2=0.999,
           decay=0.999, momentum=0.9,
@@ -25,7 +23,6 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
           image_pool_size=50,
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1, Dropout_rate=0.5,
           using_moving_variable=False,
-          training_size=(256, 256),
           inference_size=(512, 512),
           only_draw_graph=False,
           weights_to_numpy=False,
@@ -305,13 +302,12 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
 
             # 데이터 전처리
             with tf.name_scope("Dataset"):
-                dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TFRecord=use_TFRecord,
-                                  use_TrainDataset=not TEST, training_size=training_size)
+                dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TrainDataset=not TEST)
                 iterator, next_batch, data_length = dataset.iterator()
 
                 # 알고리즘
-                x = tf.placeholder(tf.float32, shape=None)
-                target = tf.placeholder(tf.float32, shape=None)
+                x = next_batch[0]
+                target = next_batch[1]
 
             with tf.name_scope("Origin_image"):
                 tf.summary.image("Origin_image", x, max_outputs=3)
@@ -426,23 +422,26 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
 
                     total_batch = int(data_length / batch_size)
                     for i in range(total_batch):
-                        x_numpy, target_numpy = sess.run(next_batch)
+                        # 입력 이미지가 256 x 256 이하이면, exit()
+                        temp = sess.run(x)
+                        if temp.shape[1] < 256 or temp.shape[2] < 256:
+                            print("입력된 이미지 크기는 {}x{} 입니다.".format(temp.shape[1], temp.shape[2]))
+                            print("입력되는 이미지 크기는 256x256 보다 크거나 같아야 합니다.")
+                            print("강제 종료 합니다.")
+                            exit(0)
+
                         _, Generator_Loss, Distance_Loss, D_gene_simgoid = sess.run(
-                            [G_train_op, G_Loss, dis_loss, sigmoid_D_gene],
-                            feed_dict={x: x_numpy, target: target_numpy})
+                            [G_train_op, G_Loss, dis_loss, sigmoid_D_gene])
 
                         # image_pool 변수 사용할 때(단 batch_size=1 일 경우만), Discriminator Update
                         if image_pool and batch_size == 1:
-                            fake_G = imagepool(image=sess.run(G, feed_dict={x: x_numpy, target: target_numpy}))
+                            fake_G = imagepool(image=sess.run(G))
                             # G 에 과거에 생성된 fake_G를 넣어주자!!!
                             _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real],
-                                                                             feed_dict={G: fake_G, x: x_numpy,
-                                                                                        target: target_numpy})
+                                                                             feed_dict={G: fake_G})
                         # image_pool 변수를 사용하지 않을 때, Discriminator Update
                         else:
-                            _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real],
-                                                                             feed_dict={x: x_numpy,
-                                                                                        target: target_numpy})
+                            _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real])
 
                         Loss_D += (Discriminator_Loss / total_batch)
                         Loss_G += (Generator_Loss / total_batch)
@@ -464,7 +463,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
                             "Discriminator Loss : {} / Generator Loss  : {}".format(Loss_D, Loss_G))
 
                     if epoch % display_step == 0:
-                        summary_str = sess.run(summary_operation, feed_dict={x: x_numpy, target: target_numpy})
+                        summary_str = sess.run(summary_operation)
                         summary_writer.add_summary(summary_str, global_step=epoch)
 
                         save_all_model_path = os.path.join(model_name, 'All')
@@ -507,8 +506,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
             x, G, t = tf.get_collection('way')
 
             # Test Dataset 가져오기
-            dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TFRecord=use_TFRecord,
-                              use_TrainDataset=not TEST, inference_size=inference_size)
+            dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TrainDataset=not TEST, inference_size=inference_size)
             iterator, next_batch, data_length = dataset.iterator()
 
             with tf.Session(graph=JG) as sess:
@@ -569,8 +567,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_
 
 
 if __name__ == "__main__":
-    # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-    model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_loss="L1",
+    model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
           distance_loss_weight=100, optimizer_selection="Adam",
           beta1=0.5, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
@@ -580,9 +577,6 @@ if __name__ == "__main__":
           learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1, Dropout_rate=0.5,
           # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수 - 논문에서는 Test = Training
           using_moving_variable=False,
-          # 콘볼루션은 weight를 학습 하는 것 -> 입력이 콘볼루션을 진행하면서 잘리거나 0이 되지 않게 설계 됐다면, (256,256) 으로 학습하고 (512, 512)로 추론하는 것이 가능하다.
-          # 또한 다른 사이즈의 입력을 동시에 학습하는것도 가능하다.
-          training_size=(256, 256),  # TEST=False 때 입력의 크기
           inference_size=(256, 256),  # TEST=True 일 때 inference 해 볼 크기
           only_draw_graph=False,  # TEST=False 일 떄, 그래프만 그리고 종료할지 말지
           save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더

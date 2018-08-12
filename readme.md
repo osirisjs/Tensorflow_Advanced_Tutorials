@@ -55,39 +55,33 @@
                 * 내 사진을 예술 작품으로 바꿔주는 유명한 논문인 "A Neural Algorithm of Artistic Style" 의 구현 입니다.
             * [***Word2Vector SkipGram With TSNE***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_Word2Vector_SkipGram_WithTSNE)
                 * 아무런 관계가 없는 것처럼 표현(one-hot encoding)된 단어들을 낮은 차원의 벡터로 표현함과 동시에 단어간의 관계를 표현하는 방법입니다. Word2Vector에는 CBOW모델과 Skip-Gram 모델이 있습니다. 여기서는 Skip-Gram 모델을 구현합니다.
+
             * [***Image To Image Translation With Conditional Adversarial Networks***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph)
-                * 위 링크는 [Code 1](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph) 으로 연결됩니다.
                 * 어떤 도메인의 이미지의 다른 도메인의 이미지로의 변환이라는 거룩한 목적을 위해 고안된 네트워크입니다. ConditionalGAN 과 UNET을 사용하여 네트워크 구성 합니다.
                 * 네트워크 구조 및 학습 방법은 논문에서 제시한 내용과 거의 같습니다.(Discriminator 구조인 PatchGAN 의 크기는 70X70 입니다. - [ReceptiveField 계산법](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/blob/master/tensorflow_ModelWithFixedLengthDataset/tensorflow_ConvolutionNeuralNetwork/ReceptiveField_inspection/rf.py)
-                * 2가지의 데이터 전처리 방법
-                    1. 효율적인 데이터 전처리를 위해 tf.data.Dataset을 사용할 수 있습니다.
-                    2. 더 효율적인 데이터 전처리를 위해 TFRecord 형식으로 데이터를 저장하고  tf.data.TFRecordDataset 를 사용할 수 있습니다.
+                * 데이터 전처리 방법
+                    * 데이터 전처리를 위해 TFRecord 형식으로 데이터를 저장하고  tf.data.TFRecordDataset 를 사용했습니다.
+                        * 왜 TFRecord 방식으로만 데이터 전처리를 한 이유가 궁금하시다면, [main.py]()의 주석을 읽어보시길 바랍니다.
+                * tf.train.Saver().export_meta_graph API 와 tf.train.import_meta_graph API를 사용하여 Training, Test 코드를 각각 실행합니다.(그래프파일인 meta파일을 저장하여 Test시 불러옵니다.)
+                * 256x256 크기 이상의 서로 다른 크기의 이미지들을 동시에 학습 할 수 있습니다.
+                    * 256x256 크기의 이미지로 학습한 생성 네트워크에 512x512 크기의 이미지를 입력으로 넣어 성능을 평가하기 위한 기능입니다. 다양한 크기의 이미지를 동시에 학습하는 것도 가능합니다. ( 관련 내용 : [Image To Image Translation With Conditional Adversarial Networks Using edges2shoes Dataset 논문의 7p 참고](https://arxiv.org/pdf/1611.07004.pdf))
                 * CycleGan에서 사용하는 ImagePool 함수(batch size가 1일 때만 동작)도 추가했습니다.
                     * to reduce model oscillation [14], we follow
                     Shrivastava et al’s strategy [45] and update the discriminators using a history of generated images rather than the ones produced by the latest generative networks. We keep an image buffer that stores the 50 previously generated images.
-                * tf.train.Saver().export_meta_graph API 와 tf.train.import_meta_graph API를 사용하여 Training, Test 코드를 각각 실행합니다.
-                    * 주의할 점 : tf.data.Dataset에서 처리된 Tensor 데이터를 네트워크의 입력으로 넣은 후, 그래프를 출력하면, 입, 출력 크기가 고정되어 Test시 입력 크기를 바꿀 방법이 마땅치 않습니다.
-                    그래서, tf.data.Dataset를 오로지 데이터셋 전처리 용도로만 사용하는 [Code 1](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph) 과 tf.data.Dataset로 처리된 데이터를 그래프 구조 안에 포함하지만, 따로 그래프를 저장하지 않는 [Code 2](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks) 를 작성했습니다.( 관련 내용 : [Image To Image Translation With Conditional Adversarial Networks Using edges2shoes Dataset 논문의 7p 참고](https://arxiv.org/pdf/1611.07004.pdf))
             
             * [***Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph)
-                - 위 링크는 [Code 1](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph) 으로 연결됩니다.
                 * Image To Image Translation With Conditional Adversarial Newort을 학습시키기 위해선 입력과 출력이 한 쌍인 데이터가 필요했습니다. 그러나 이 논문에서 제시한 방법은 입력과 출력이 쌍일 필요가 없습니다.
-                * CycleGan은 전혀 다른 도메인에 있는 두 종류의 데이터 집단을 자연스럽게 이어주는 연결고리를 찾아내는 과정이라고 생각합니다.(오직 저만의 생각)
+                * CycleGan은 전혀 다른 도메인에 있는 두 종류의 데이터 집단을 자연스럽게 이어주는 연결고리를 찾아내는 과정이라고 생각합니다.
                 * ImagePool 함수는 batch size가 1일 때만 동작합니다.
                 * 네트워크 구조 및 학습 방법은 논문에서 제시한 내용과 거의 같습니다.
                 * 2가지의 데이터 전처리 방법  
-                    1. 효율적인 데이터 전처리를 위해 tf.data.Dataset을 사용할 수 있습니다.
+                    1. 효율적인 데이터 전처리를 위해 tf.data.Dataset을 사용할 수 있습니다.(tf.data.Dataset로 처리된 데이터를 그래프 구조 안에 포함시킵니다.)
                     2. 더 효율적인 데이터 전처리를 위해 TFRecord 형식으로 데이터를 저장하고  tf.data.TFRecordDataset 를 사용할 수 있습니다.
-                * tf.train.Saver().export_meta_graph API 와 tf.train.import_meta_graph API를 사용하여 Training, Test 코드를 각각 실행합니다.
-                    * 주의할 점 : tf.data.Dataset에서 처리된 Tensor 데이터를 네트워크의 입력으로 넣은 후, 그래프를 출력하면, 입, 출력 크기가 고정되어 Test시 입력 크기를 바꿀 방법이 마땅치 않습니다.
-                    그래서, tf.data.Dataset를 오로지 데이터셋 전처리 용도로만 사용하는 [Code 1](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph) 과 tf.data.Dataset로 처리된 데이터를 그래프 구조 안에 포함하지만, 따로 그래프를 저장하지 않는 [Code 2](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks) 를 작성하게 됐습니다. - 이 코드들의 구현은 256x256 크기의 이미지로 학습한 생성 네트워크에 512x512 크기의 이미지를 입력으로 넣어 성능을 평가하기 위해 작성했습니다.( 관련 내용 : [Image To Image Translation With Conditional Adversarial Networks Using edges2shoes Dataset 논문의 7p 참고](https://arxiv.org/pdf/1611.07004.pdf))
-            
-                * [tf.data.Dataset API 에 대한 생각](https://www.tensorflow.org/guide/datasets)
-                    * tf.data.Dataset 은 매우 좋은 API 이지만, 기존에 placeholder의 역할을 하는 변수들을 그래프에 입력함으로써, 입력 크기가 고정되는 문제가 생깁니다. 따라서 유연한 학습( ex) 256x256 이미지와 512x512 이미지를 같이 학습 등)이 어렵습니다.
-                    저 같은 경우는 네트워크 학습 시 파일 입출력 속도 개선을 위해 tf.data.Dataset에서 TFRecord를 사용하지만, 그만큼 유연성이 떨어지기 때문에 데이터셋 전처리 용도(batch, shuffle 등등))로만 사용하기도 합니다. - 학습 시 [Code 2](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks) 에 비해 [Code 1](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph) 이 조금 느리긴 하지만, 유연한 접근이 가능하기 때문에 추천합니다.
-                    
+                * tf.train.Saver().export_meta_graph API 와 tf.train.import_meta_graph API를 사용하여 Training, Test 코드를 각각 실행합니다.(그래프파일인 meta파일을 저장하여 Test시 불러옵니다.)
+                * 256x256 크기 이상의 서로 다른 크기의 이미지들을 동시에 학습 할 수 있습니다.
+                    * 256x256 크기의 이미지로 학습한 생성 네트워크에 512x512 크기의 이미지를 입력으로 넣어 성능을 평가하기 위한 기능입니다. 다양한 크기의 이미지를 동시에 학습하는 것도 가능합니다. ( 관련 내용 : [Image To Image Translation With Conditional Adversarial Networks Using edges2shoes Dataset 논문의 7p 참고](https://arxiv.org/pdf/1611.07004.pdf))
 
-            
+       
     * ### **Sequence Model With Variable Length Dataset**
         * ASAP 
     * ### **Reinforcement Learning**

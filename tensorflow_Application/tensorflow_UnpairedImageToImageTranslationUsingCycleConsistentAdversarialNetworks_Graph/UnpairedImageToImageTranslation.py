@@ -15,8 +15,6 @@ def visualize(model_name="CycleGAN", named_images=None, save_path=None):
     cv2.imwrite(os.path.join(save_path, '{}_{}.png'.format(model_name, named_images[0])), image)
     print("{}_{}.png saved in {} folder".format(model_name, named_images[0], save_path))
 
-
-# 2. tf.data.Dataset를 오로지 데이터셋 전처리하는 용도로만 사용한다.
 def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
           cycle_consistency_loss_weight=10,
           optimizer_selection="Adam", beta1=0.9, beta2=0.999,
@@ -28,10 +26,9 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
           weight_decay_epoch=100,
           learning_rate_decay=0.99,
-          training_size=(256, 256),
-          inference_size=(512, 512),
           only_draw_graph=False,
-          weights_to_numpy = False,
+          inference_size=(512, 512),
+          weights_to_numpy=False,
           save_path="translated_image"):
     print("CycleGAN")
 
@@ -260,12 +257,12 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
             # 데이터 전처리
             with tf.name_scope("Dataset"):
                 dataset = Dataset(DB_name=DB_name, batch_size=batch_size, use_TFRecord=use_TFRecord,
-                                  use_TrainDataset=not TEST, training_size=training_size)
+                                  use_TrainDataset=not TEST)
                 A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length = dataset.iterator()
 
                 # 알고리즘
-                A = tf.placeholder(tf.float32, shape=None)
-                B = tf.placeholder(tf.float32, shape=None)
+                A = A_next_batch
+                B = B_next_batch
 
             with tf.name_scope("Origin_A_image"):
                 tf.summary.image("Origin_A_image", A, max_outputs=3)
@@ -395,7 +392,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
             for op in (A, B, AtoB_gene, BtoA_gene):
                 tf.add_to_collection("way", op)
 
-            #아래와 같은 코드도 가능.
+            # 아래와 같은 코드도 가능.
             # tf.add_to_collection('A', A)
             # tf.add_to_collection('B', B)
             # tf.add_to_collection('AtoB', AtoB_gene)
@@ -454,38 +451,38 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                     BtoA_sigmoidG = 0
 
                     for i in range(total_batch):
-                        A_numpy, B_numpy = sess.run([A_next_batch, B_next_batch])
+
+                        # 입력 이미지가 256 x 256 이하이면, exit()
+                        temp = sess.run(A)
+                        if temp.shape[1] < 256 or temp.shape[2] < 256:
+                            print("입력된 이미지 크기는 {}x{} 입니다.".format(temp.shape[1], temp.shape[2]))
+                            print("입력되는 이미지 크기는 256x256 보다 크거나 같아야 합니다.")
+                            print("강제 종료 합니다.")
+                            exit(0)
 
                         # Generator Update
                         _, AtoB_G_Loss, AtoB_Dgene_simgoid = sess.run([AtoB_G_train_op, AtoB_GLoss, AtoB_Dgene],
-                                                                      feed_dict={lr: learning_rate, A: A_numpy,
-                                                                                 B: B_numpy})
+                                                                      feed_dict={lr: learning_rate})
                         _, BtoA_G_Loss, BtoA_Dgene_simgoid = sess.run([BtoA_G_train_op, BtoA_GLoss, BtoA_Dgene],
-                                                                      feed_dict={lr: learning_rate, A: A_numpy,
-                                                                                 B: B_numpy})
+                                                                      feed_dict={lr: learning_rate})
 
                         # image_pool 변수 사용할 때(단 batch_size=1 일 경우만), Discriminator Update
                         if image_pool and batch_size == 1:
-                            fake_AtoB_gene, fake_BtoA_gene = imagepool(
-                                images=sess.run([AtoB_gene, BtoA_gene], feed_dict={A: A_numpy, B: B_numpy}))
+                            fake_AtoB_gene, fake_BtoA_gene = imagepool(images=sess.run([AtoB_gene, BtoA_gene]))
 
                             # AtoB_gene, BtoA_gene 에 과거에 생성된 fake_AtoB_gene, fake_BtoA_gene를 넣어주자!!!
                             _, AtoB_D_Loss, AtoB_Dreal_simgoid = sess.run([AtoB_D_train_op, AtoB_DLoss, AtoB_Dreal],
                                                                           feed_dict={lr: learning_rate,
-                                                                                     AtoB_gene: fake_AtoB_gene,
-                                                                                     A: A_numpy, B: B_numpy})
+                                                                                     AtoB_gene: fake_AtoB_gene})
                             _, BtoA_D_Loss, BtoA_Dreal_simgoid = sess.run([BtoA_D_train_op, BtoA_DLoss, BtoA_Dreal],
                                                                           feed_dict={lr: learning_rate,
-                                                                                     BtoA_gene: fake_BtoA_gene,
-                                                                                     A: A_numpy, B: B_numpy})
+                                                                                     BtoA_gene: fake_BtoA_gene})
                         # image_pool 변수를 사용하지 않을 때, Discriminator Update
                         else:
                             _, AtoB_D_Loss, AtoB_Dreal_simgoid = sess.run([AtoB_D_train_op, AtoB_DLoss, AtoB_Dreal],
-                                                                          feed_dict={lr: learning_rate, A: A_numpy,
-                                                                                     B: B_numpy})
+                                                                          feed_dict={lr: learning_rate})
                             _, BtoA_D_Loss, BtoA_Dreal_simgoid = sess.run([BtoA_D_train_op, BtoA_DLoss, BtoA_Dreal],
-                                                                          feed_dict={lr: learning_rate, A: A_numpy,
-                                                                                     B: B_numpy})
+                                                                          feed_dict={lr: learning_rate})
 
                         AtoB_LossD += (AtoB_D_Loss / total_batch)
                         AtoB_LossG += (AtoB_G_Loss / total_batch)
@@ -509,7 +506,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                                                                                                     BtoA_LossG))
 
                     if epoch % display_step == 0:
-                        summary_str = sess.run(summary_operation, feed_dict={A: A_numpy, B: B_numpy})
+                        summary_str = sess.run(summary_operation)
                         summary_writer.add_summary(summary_str, global_step=epoch)
 
                         save_all_model_path = os.path.join(model_name, 'All')
@@ -519,7 +516,6 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                         if not os.path.exists(save_all_model_path):
                             os.makedirs(save_all_model_path)
 
-                        #
                         if not os.path.exists(save_generator_model_path):
                             os.makedirs(save_generator_model_path)
 
@@ -557,7 +553,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
 
             # Test Dataset 가져오기
             dataset = Dataset(DB_name=DB_name, use_TFRecord=use_TFRecord,
-                              use_TrainDataset=not TEST, inference_size=inference_size)
+                              use_TrainDataset=not TEST)
             A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length = dataset.iterator()
             A_tensor, B_tensor = A_next_batch, B_next_batch
 
@@ -590,10 +586,10 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
 
                 # 가중치 저장 - 약간 생소한 API이다.
                 if weights_to_numpy:
-                    numpy_weight_save_path="NumpyWeightOfModel"
+                    numpy_weight_save_path = "NumpyWeightOfModel"
                     if not os.path.exists(numpy_weight_save_path):
                         os.makedirs(numpy_weight_save_path)
-                    #1, checkpoint 읽어오는 것
+                    # 1, checkpoint 읽어오는 것
                     reader = tf.train.NewCheckpointReader(ckpt.model_checkpoint_path)
                     ''' 2. tf.train.NewCheckpointReader에도
                     reader.get_variable_to_dtype_map() -> 이름 , dype 반환 or reader.get_variable_to_shape_map() 이름 , 형태 반환 
@@ -601,27 +597,28 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                     요 아래의 것은 리스트 형태로 name, shape이 순서대로 나온다.
                     '''
                     dtype = list(reader.get_variable_to_dtype_map().values())[0]
-                    #앞의 shared_variables / Gerator 빼버리기
+                    # 앞의 shared_variables / Gerator 빼버리기
                     name_shape = tf.contrib.framework.list_variables(ckpt.model_checkpoint_path)
-                    with open(os.path.join(numpy_weight_save_path, "name_shape_info.txt"),mode='w') as f:
+                    with open(os.path.join(numpy_weight_save_path, "name_shape_info.txt"), mode='w') as f:
                         f.write("                      < weight 정보 >\n\n")
                         f.write("파일 개수 : {}개\n\n".format(len(name_shape)))
                         f.write("------------------- 1. data type ---------------------\n\n")
-                        f.write("{} \n\n".format(str(dtype).strip("<>").replace(":"," :")))
+                        f.write("{} \n\n".format(str(dtype).strip("<>").replace(":", " :")))
                         print("------------------------------------------------------")
                         print("총 파일 개수 : {}".format(len(name_shape)))
 
                         # 앞의 shared_variables / Gerator 빼버리기
                         f.write("-------------- 2. weight name, shape ----------------\n\n")
                         for name, shape in name_shape:
-                            seperated=name.split("/")[2:]
-                            joined="_".join(seperated)
+                            seperated = name.split("/")[2:]
+                            joined = "_".join(seperated)
                             shape = str(shape).strip('[]')
                             print("##################################################")
                             print("weight : {}.npy".format(joined))
                             print("shape : ({})".format(shape))
                             f.write("{}.npy \nshape : ({}) \n\n".format(joined, shape))
                             np.save(os.path.join(numpy_weight_save_path, joined), reader.get_tensor(name))
+
 
 if __name__ == "__main__":
     model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
@@ -635,10 +632,6 @@ if __name__ == "__main__":
           learning_rate=0.0002, training_epochs=30, batch_size=1, display_step=1,
           weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
           learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
-          # 콘볼루션은 weight를 학습 하는 것 -> 입력이 콘볼루션을 진행하면서 잘리거나 0이 되지 않게 설계 됐다면, (256,256) 으로 학습하고 (512, 512)로 추론하는 것이 가능하다.
-          # 또한 다른 사이즈의 입력을 동시에 학습하는것도 가능하다.
-          training_size=(256, 256),  # TEST=False 때 입력의 크기
-          inference_size=(256, 256),  # TEST=True 일 때 inference 해 볼 크기
           only_draw_graph=False,  # TEST=False 일 떄, 그래프만 그리고 종료할지 말지
           save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더
     print("model imported")

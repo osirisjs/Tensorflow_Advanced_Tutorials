@@ -65,6 +65,9 @@ for i, GL in enumerate(GPU_List):
         print(" " + num + ",", end="")
 
 # DB_name = "horse2zebra" 만...
+# 256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다
+# TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.- 관련 코드는 UnpairedImageToImageTranslation.py 의 458번줄을 보라.
+# optimizers_ selection = "Adam" or "RMSP" or "SGD"
 cycleGAN.model(TEST=True, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
                cycle_consistency_loss_weight=10,
                optimizer_selection="Adam", beta1=0.5, beta2=0.999,  # for Adam optimizer
@@ -73,13 +76,10 @@ cycleGAN.model(TEST=True, DB_name="horse2zebra", use_TFRecord=True, cycle_consis
                norm_selection="instancenorm",  # "instancenorm" or nothing
                image_pool=False,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
                image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지? 논문에선 50개 사용했다고 나옴.
-               learning_rate=0.0002, training_epochs=30, batch_size=1, display_step=1,
+               learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1,
                weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
                learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
-               # 콘볼루션은 weight를 학습 하는 것 -> 입력이 콘볼루션을 진행하면서 잘리거나 0이 되지 않게 설계 됐다면, (256,256) 으로 학습하고 (512, 512)로 추론하는 것이 가능하다.
-               # 또한 다른 사이즈의 입력을 동시에 학습하는것도 가능하다.
-               training_size=(256, 256),  # TEST=False 때 입력의 크기
-               inference_size=(256, 256),  # TEST=True 일 때 inference 해 볼 크기
                only_draw_graph=False,  # TEST=False 일 떄, 그래프만 그리고 종료할지 말지
+               inference_size = (512, 512), # TEST=True 일 떄, inference할 크기는 256 x 256 이상이어야 한다. - 관련 코드는 Dataset.py 의 64번째 줄
                # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다.(폴더 2개 이름 -> AtoB_translated_image , BtoA_translated_image )
                save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더

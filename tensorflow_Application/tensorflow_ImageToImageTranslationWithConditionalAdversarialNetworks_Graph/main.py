@@ -50,8 +50,6 @@ DB_name 은 아래에서 하나 고르자
 2. "facades"
 3. "maps"
 
-use_TFRecord 은 데이터셋을 텐서플로우 표준 파일형식(TFRecord)으로 변환해서 사용 할건지?
-
 AtoB -> A : image,  B : segmentation
 AtoB = True  -> image -> segmentation
 AtoB = False -> segmentation -> image
@@ -107,8 +105,27 @@ for i, GL in enumerate(GPU_List):
     else:
         print(" " + num + ",", end="")
 
+''' 
+256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다. - 이것을 구현하는데 생각보다 시간이 오래 걸렸다.
+데이터가 쌍으로 존재하다보니 반반으로 나눠야 한다. 심지어 다양한 크기의 데이터가 쌍이다. 그래프는 입 출력 등의 모양만 알고있는 채로 그려진다.
+자기가 알아서 나눌수가 없다. 무조건 정보를 줘야한다. 즉 그래프는 나누는 포인트정보가 필요하다.
+이게 사실 pytorch, gluon과 같은 imperative 언어였다면, 실행하면서 계산이 가능하므로 생각할 필요도 없는 문젠데, 
+symbolic 언어인 텐서플로에서는 연산그래프가 고정되어버리기 때문에 복잡하다.
+(numpy로 Dataset을 구현 하고, placeholder에 feed dict 으로 넣어줬으면, 금방 끝났을 일이었지만, 텐서플로에 대한 이해가 조금 더 깊어졌다.)
+
+내가 생각한 총 3가지 방법이 있었다. 
+첫번째, tf.data.Dataset을 batch, shuffle등의 전처리 기능으로만 쓰고, sess.run()으로 실행한 후 numpy로 그림을 나눠줘서 학습하는 방법 
+ - imperative 방식과 다를게 없다. 또한 텐서플로를 제대로 사용하지 않는 것임!!! 
+ - 이럴꺼면 numpy로 
+
+두번째 DB에 대해 나누는 포인트 정보를 가지고 있는 List파일을 만들어서, tf.data.Dataset.from_tensor_slices에서 같이 불러오는 방법 
+ - 비교적 텐서플로답게 사용하는 것이긴 하지만 최선은 아니다. 
+ 
+세번째 방법 TFRecord 이용하는 방식 -> TFRecord로 DB를 쓸 때 내가 원하는 정보를 포함해서 쓸 수 있고, 내가 원하는 정보를 불러오는게 가능하다. 이게 바로 텐서플로다.'''
+
+# TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
 # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-pix2pix.model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, distance_loss="L1",
+pix2pix.model(TEST=True, AtoB=True, DB_name="facades", distance_loss="L1",
               distance_loss_weight=100, optimizer_selection="Adam",
               beta1=0.5, beta2=0.999,  # for Adam optimizer
               decay=0.999, momentum=0.9,  # for RMSProp optimizer
@@ -118,9 +135,6 @@ pix2pix.model(TEST=False, AtoB=True, DB_name="facades", use_TFRecord=True, dista
               learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1, Dropout_rate=0.5,
               # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수 - 논문에서는 Test = Training
               using_moving_variable=False,
-              # 콘볼루션은 weight를 학습 하는 것 -> 입력이 콘볼루션을 진행하면서 잘리거나 0이 되지 않게 설계 됐다면, (256,256) 으로 학습하고 (512, 512)로 추론하는 것이 가능하다.
-              # 또한 다른 사이즈의 입력을 동시에 학습하는것도 가능하다.
-              training_size=(256, 256),  # TEST=False 때 입력의 크기
               inference_size=(256, 256),  # TEST=True 일 때 inference 해 볼 크기
               only_draw_graph=False, # TEST=False 일 떄, 그래프만 그리고 종료할지 말지
               save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더

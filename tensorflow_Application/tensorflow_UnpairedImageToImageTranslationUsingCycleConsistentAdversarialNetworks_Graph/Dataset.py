@@ -54,24 +54,16 @@ https://people.eecs.berkeley.edu/~taesung_park/CycleGAN/datasets/horse2zebra.zip
 class Dataset(object):
 
     def __init__(self, DB_name="horse2zebra",
-                 batch_size=1, use_TFRecord=False, use_TrainDataset=False, training_size=None, inference_size=None):
+                 batch_size=1, use_TFRecord=False, use_TrainDataset=False, inference_size=(512, 512)):
 
         self.Dataset_Path = "Dataset"
         self.DB_name = DB_name
         self.inference_size = inference_size
-        self.training_size = training_size
-
-        # training_size의 최소 크기를 (256, 256)로 지정
-        if use_TrainDataset:
-            if self.training_size == None and self.training_size[0] < 256 and self.training_size[1] < 256:
-                print("training size는 (256,256)보다는 커야 합니다.")
-                exit(0)
-            else:
-                self.height_size = training_size[0]
-                self.width_size = training_size[1]
+        # 학습용 데이터인지 테스트용 데이터인지 알려주는 변수
+        self.use_TrainDataset = use_TrainDataset
 
         # infernece_size의 최소 크기를 (256, 256)로 지정
-        else:
+        if not self.use_TrainDataset:
             if self.inference_size == None and self.inference_size[0] < 256 and self.inference_size[1] < 256:
                 print("inference size는 (256,256)보다는 커야 합니다.")
                 exit(0)
@@ -95,9 +87,6 @@ class Dataset(object):
         self.dataset_folder = os.path.join(self.Dataset_Path, self.DB_name)
         self.dataset_zip = self.dataset_folder + ".zip"
 
-        # 학습용 데이터인지 테스트용 데이터인지 알려주는 변수
-        self.use_TrainDataset = use_TrainDataset
-
         # Test Dataset은 무조건 하나씩 처리하자.
         if self.use_TrainDataset == False:
             self.batch_size = 1
@@ -120,8 +109,8 @@ class Dataset(object):
                 self.TFRecord_train_path = os.path.join(self.dataset_folder, "TFRecord_train")
                 if not os.path.exists(self.TFRecord_train_path):
                     os.makedirs(self.TFRecord_train_path)
-                self.TFRecord_Apath = os.path.join(self.TFRecord_train_path, 'trainA_{}x{}.tfrecords'.format(self.training_size[0],self.training_size[0]))
-                self.TFRecord_Bpath = os.path.join(self.TFRecord_train_path, 'trainB_{}x{}.tfrecords'.format(self.training_size[0],self.training_size[0]))
+                self.TFRecord_Apath = os.path.join(self.TFRecord_train_path, 'trainA.tfrecords')
+                self.TFRecord_Bpath = os.path.join(self.TFRecord_train_path, 'trainB.tfrecords')
                 self.TFRecord_path = [self.TFRecord_Apath, self.TFRecord_Bpath]
                 # TFRecord 파일로 쓰기.
                 self.TFRecordWriter()
@@ -137,8 +126,10 @@ class Dataset(object):
                 self.TFRecord_val_path = os.path.join(self.dataset_folder, "TFRecord_test")
                 if not os.path.exists(self.TFRecord_val_path):
                     os.makedirs(self.TFRecord_val_path)
-                self.TFRecord_Apath = os.path.join(self.TFRecord_val_path, 'testA_{}x{}.tfrecords'.format(inference_size[0], inference_size[1]))
-                self.TFRecord_Bpath = os.path.join(self.TFRecord_val_path, 'testB_{}x{}.tfrecords'.format(inference_size[0], inference_size[1]))
+                self.TFRecord_Apath = os.path.join(self.TFRecord_val_path,
+                                                   'testA{}x{}.tfrecords'.format(self.height_size, self.width_size))
+                self.TFRecord_Bpath = os.path.join(self.TFRecord_val_path,
+                                                   'testB{}x{}.tfrecords'.format(self.height_size, self.width_size))
                 self.TFRecord_path = [self.TFRecord_Apath, self.TFRecord_Bpath]
                 # TFRecord 파일로 쓰기.
                 self.TFRecordWriter()
@@ -193,11 +184,14 @@ class Dataset(object):
 
         if self.use_TFRecord:
             # 1. 이미지를 읽는다.
-            feature = {'image': tf.FixedLenFeature([], tf.string)}
-            features = tf.parse_single_example(image, features=feature)
-            img_decoded_raw = tf.decode_raw(features['image'], tf.float32)
-            # 2. 이미지 사이즈를 self.height_size x self.width_size으로 조정한다.
-            img_decoded = tf.reshape(img_decoded_raw, [self.height_size, self.width_size, 3])
+            feature = {'image': tf.FixedLenFeature([], tf.string),
+                       'height' : tf.FixedLenFeature([], tf.int64),
+                       'width': tf.FixedLenFeature([], tf.int64)}
+            parser = tf.parse_single_example(image, features=feature)
+            img_decoded_raw = tf.decode_raw(parser['image'], tf.float32)
+            height = tf.cast(parser['height'], tf.int32)
+            width = tf.cast(parser['width'], tf.int32)
+            img_decoded = tf.reshape(img_decoded_raw, (height, width, 3))
         else:
             # 1. 이미지를 읽는다
             img = tf.read_file(image)
@@ -206,13 +200,18 @@ class Dataset(object):
             왜 위의 tf.image.decode_image 을 안쓰는가? tf.image.decode_image 는 shape 정보를 반환하지 못한다.
             이게 gif, jpeg, png, bmp를 다 처리하려다 보니 생긴 문제점 같은데, 추후에 해결될 것이라고 믿는다...
             '''
-            # 이미지가 다른 포맷일 경우, tf.image.decode_bmp, tf.image.decode_png 등을 사용.
-            # 2. 이미지 사이즈를 self.height_size x self.width_size 으로 조정한다. / RGB 순서로 읽는다.
-            img_decoded = tf.image.resize_images(tf.image.decode_jpeg(img, channels=3),
-                                                 size=(self.height_size, self.width_size), method=2)  # jpeg 파일 읽기 , method ->   BICUBIC = 2
+            # 2. 이미지가 다른 포맷일 경우, tf.image.decode_bmp, tf.image.decode_png 등을 사용.
+            # RGB 순서로 읽는다.
+            img_decoded = tf.cast(tf.image.decode_jpeg(img, channels=3), tf.float32)
+
+        # TEST = True 일 때
+        if not self.use_TrainDataset:
+            # 2-1. 이미지 사이즈를 self.height_size x self.width_size 으로 조정한다. / RGB 순서로 읽는다.
+            img_decoded = tf.image.resize_images(img_decoded, size=(self.height_size, self.width_size),
+                                                 method=2)  # jpeg 파일 읽기 , method ->   BICUBIC = 2
 
         # 3. gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
-        input = tf.subtract(tf.divide(tf.cast(img_decoded, tf.float32), 127.5), 1.0)  # gerator의 활성화 함수가 tanh이므로, 스케일을 맞춰준다.
+        input = tf.subtract(tf.divide(img_decoded, 127.5), 1.0)
         return input
 
     # 1. tf.data.Dataset.from_tensor_slices 을 사용하는 방법 - 파일명 리스트에서 이미지를 불러와서 처리하기
@@ -262,12 +261,15 @@ class Dataset(object):
 
         return A_iterator, A_iterator.get_next(), A_length, B_iterator, B_iterator.get_next(), B_length
 
-        # TFRecord를 만들기위해 이미지를 불러올때 쓴다.
-
+    # TFRecord를 만들기 위해 이미지를 불러올때 쓴다.
     def load_image(self, address):
         img = cv2.imread(address)
-        img = cv2.resize(img, (self.width_size, self.height_size), interpolation=cv2.INTER_CUBIC)
-        #RGB로 바꾸기
+
+        # TEST = True 일 때
+        if not self.use_TrainDataset:
+            img = cv2.resize(img, (self.width_size, self.height_size), interpolation=cv2.INTER_CUBIC)
+
+        # RGB로 바꾸기
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.astype(np.float32)
         return img
@@ -293,8 +295,14 @@ class Dataset(object):
                         tf.train.BytesList, tf.train.Int64List, tf.train.FloatList 을 지원한다.
                         '''
                         feature = \
-                            {'image': tf.train.Feature(
-                                bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(img.tostring())]))}
+                            {
+                                'image': tf.train.Feature(
+                                bytes_list=tf.train.BytesList(value=[tf.compat.as_bytes(img.tostring())])),
+                                'height' : tf.train.Feature(
+                                    int64_list=tf.train.Int64List(value=[img.shape[0]])),
+                                'width': tf.train.Feature(
+                                    int64_list=tf.train.Int64List(value=[img.shape[1]])),
+                            }
                         example = tf.train.Example(features=tf.train.Features(feature=feature))
                         # 파일로 쓰자.
                         writer.write(example.SerializeToString())
@@ -373,11 +381,12 @@ class ImagePool(object):
         else:
             return images
 
+
 if __name__ == "__main__":
     '''
     Dataset "horse2zebra" 만..
     '''
-    dataset = Dataset(DB_name="horse2zebra", batch_size=4, use_TFRecord=True, use_TrainDataset=False, training_size=(256, 256), inference_size=(256, 256))
+    dataset = Dataset(DB_name="horse2zebra", batch_size=1, use_TFRecord=True, use_TrainDataset=True)
     A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length = dataset.iterator()
 
 else:
