@@ -54,7 +54,7 @@ https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz
 
 class Dataset(object):
 
-    def __init__(self, DB_name="facades", AtoB=False, batch_size=1, use_TrainDataset=True, inference_size=None):
+    def __init__(self, DB_name="facades", AtoB=False, batch_size=1, use_TrainDataset=True, inference_size=(256, 256)):
 
         self.Dataset_Path = "Dataset"
         self.DB_name = DB_name

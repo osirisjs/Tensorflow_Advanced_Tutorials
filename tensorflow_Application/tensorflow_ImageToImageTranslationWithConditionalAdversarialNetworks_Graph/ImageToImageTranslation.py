@@ -23,7 +23,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
           image_pool_size=50,
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1, Dropout_rate=0.5,
           using_moving_variable=False,
-          inference_size=(512, 512),
+          inference_size=(256, 256),
           only_draw_graph=False,
           weights_to_numpy=False,
           save_path="translated_image"):

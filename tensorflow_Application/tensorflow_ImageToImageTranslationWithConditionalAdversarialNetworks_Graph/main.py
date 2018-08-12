@@ -11,7 +11,7 @@ import ImageToImageTranslation as pix2pix
 출력 크기 : <256x256x3>
 optimizers_ selection = "Adam" or "RMSP" or "SGD"
 batch_size = 1 -> instance norm, batch_size > 1 -> batch_norm
-저자코드 따라함 - https://github.com/phillipi/pix2pix/blob/master/models.lua
+저자코드 - https://github.com/phillipi/pix2pix/blob/master/models.lua
 generator는 unet을 사용한다.
 discriminator의 구조는 PatchGAN 70X70을 사용한다. 
 
@@ -123,7 +123,7 @@ symbolic 언어인 텐서플로에서는 연산그래프가 고정되어버리�
  
 세번째 방법 TFRecord 이용하는 방식 -> TFRecord로 DB를 쓸 때 내가 원하는 정보를 포함해서 쓸 수 있고, 내가 원하는 정보를 불러오는게 가능하다. 이게 바로 텐서플로다.'''
 
-# TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
+# TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다. / TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
 # optimizers_ selection = "Adam" or "RMSP" or "SGD"
 pix2pix.model(TEST=True, AtoB=True, DB_name="facades", distance_loss="L1",
               distance_loss_weight=100, optimizer_selection="Adam",

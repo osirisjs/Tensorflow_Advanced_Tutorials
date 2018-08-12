@@ -3,73 +3,11 @@
   <component name="ChangeListManager">
     <list default="true" id="948e679b-593d-44ef-832a-d4ac08a6fd70" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/../../readme.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../readme.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/.idea/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/.idea/workspace.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/Dataset.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/ImageToImageTranslation.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/ReceptiveFieldArithmetic/.idea/ReceptiveFieldArithmetic.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/ReceptiveFieldArithmetic/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/ReceptiveFieldArithmetic/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/ReceptiveFieldArithmetic/.idea/workspace.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/ReceptiveFieldArithmetic/rf.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/main.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/readme.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/reference/paper/57_56_A guide to receptive field arithmetic for Convolutional Neural Networks.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/reference/paper/A guide to receptive field arithmetic for Convolutional Neural Networks.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/reference/paper/Group Normalization.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/reference/paper/Image-to-Image Translation with Conditional Adversarial Networks.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/reference/paper/rcnn_receptive_field_sizes.m at master · rbgirshick_rcnn.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/reference/web/GAN을 이용한 Image to Image Translation- Pix2Pix, CycleGAN, DiscoGAN.url" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/reference/web/Group Normalization –설명.url" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/reference/web/How to write into and read from a TFRecords file in TensorFlow.url" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/reference/web/Image-to-Image Translation in Tensorflow - Affine Layer.url" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/reference/web/Importing Data  -  TensorFlow.url" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/reference/web/Tfrecords Guide.url" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/reference/web/[TensorFlow] Datasets API -- UMBUM.url" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/result_image/incityscapesAtoBPix2PixL1loss_32.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/result_image/incityscapesAtoBPix2PixL1loss_33.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/result_image/incityscapesAtoBPix2PixL1loss_90.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks/result_image/incityscapesAtoBPix2PixL1loss_91.png" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/Dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/Dataset.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/ImageToImageTranslation.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/ImageToImageTranslation.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/.idea/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/.idea/workspace.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/Dataset.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/ReceptiveFieldArithmetic/.idea/ReceptiveFieldArithmetic.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/ReceptiveFieldArithmetic/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/ReceptiveFieldArithmetic/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/ReceptiveFieldArithmetic/.idea/workspace.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/ReceptiveFieldArithmetic/rf.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/UnpairedImageToImageTranslation.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/copy_example.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/main.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/readme.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/reference/paper/1703.10593.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/reference/paper/57_56_A guide to receptive field arithmetic for Convolutional Neural Networks.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/reference/paper/A guide to receptive field arithmetic for Convolutional Neural Networks.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/reference/paper/CycleGANS and Pix2Pix – Towards Data Science.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/reference/paper/Group Normalization.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/reference/paper/Image-to-Image Translation with Conditional Adversarial Networks.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/reference/paper/rcnn_receptive_field_sizes.m at master · rbgirshick_rcnn.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/reference/web/GAN을 이용한 Image to Image Translation- Pix2Pix, CycleGAN, DiscoGAN.url" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/reference/web/Group Normalization –설명.url" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/reference/web/How to write into and read from a TFRecords file in TensorFlow.url" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/reference/web/Importing Data  -  TensorFlow.url" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/reference/web/Tfrecords Guide.url" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/reference/web/[TensorFlow] Datasets API -- UMBUM.url" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/reference/web/tensorflow hello world 05. explicit variables.url" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/result_image/AtoBhorse2zebra_ITNL1ccl_68.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks/result_image/BtoAhorse2zebra_ITNL1ccl_4.png" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/Dataset.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/UnpairedImageToImageTranslation.py" beforeDir="false" afterPath="$PROJECT_DIR$/UnpairedImageToImageTranslation.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -112,31 +50,31 @@
     <session id="964970029">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="19" />
-          <entry key="project.open.time.0" value="14" />
-          <entry key="project.open.time.3" value="2" />
+          <entry key="project.closed" value="21" />
+          <entry key="project.open.time.0" value="15" />
+          <entry key="project.open.time.3" value="3" />
           <entry key="project.open.time.4" value="3" />
-          <entry key="project.opened" value="19" />
+          <entry key="project.opened" value="21" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="py" value="2573" />
+          <entry key="py" value="2596" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Python" value="2573" />
+          <entry key="Python" value="2596" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="py" value="35" />
+          <entry key="py" value="36" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="Python" value="35" />
+          <entry key="Python" value="36" />
         </counts>
       </usages-collector>
     </session>
@@ -146,8 +84,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1235">
-              <caret line="67" column="41" selection-start-line="67" selection-start-column="41" selection-end-line="67" selection-end-column="41" />
+            <state relative-caret-position="443">
+              <caret line="71" column="12" lean-forward="true" selection-start-line="71" selection-start-column="12" selection-end-line="71" selection-end-column="12" />
               <folding>
                 <element signature="e#0#47#0" expanded="true" />
               </folding>
@@ -155,10 +93,10 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Dataset.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="407">
+            <state relative-caret-position="5658">
               <caret line="298" column="32" selection-start-line="298" selection-start-column="32" selection-end-line="298" selection-end-column="32" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
@@ -167,11 +105,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/UnpairedImageToImageTranslation.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="400">
-              <caret line="16" selection-start-line="16" selection-end-line="16" />
+            <state relative-caret-position="283">
+              <caret line="554" column="73" lean-forward="true" selection-start-line="554" selection-start-column="73" selection-end-line="554" selection-end-column="73" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -193,7 +131,7 @@
       <find>_image_preprocessing</find>
       <find>use_TrainDataset</find>
       <find>The image must have the 'jpg' format</find>
-      <find>self.height_size</find>
+      <find>feed_dict</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -202,9 +140,9 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
+        <option value="$PROJECT_DIR$/Dataset.py" />
         <option value="$PROJECT_DIR$/main.py" />
         <option value="$PROJECT_DIR$/UnpairedImageToImageTranslation.py" />
-        <option value="$PROJECT_DIR$/Dataset.py" />
       </list>
     </option>
   </component>
@@ -220,6 +158,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -231,7 +170,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -318,9 +256,8 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
-    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.004214963" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.0036880928" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -495,10 +432,29 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/Dataset.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="5658">
+          <caret line="298" column="32" selection-start-line="298" selection-start-column="32" selection-end-line="298" selection-end-column="32" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1903">
+          <folding>
+            <element signature="e#0#47#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1235">
-          <caret line="67" column="41" selection-start-line="67" selection-start-column="41" selection-end-line="67" selection-end-column="41" />
+        <state relative-caret-position="443">
+          <caret line="71" column="12" lean-forward="true" selection-start-line="71" selection-start-column="12" selection-end-line="71" selection-end-column="12" />
           <folding>
             <element signature="e#0#47#0" expanded="true" />
           </folding>
@@ -507,20 +463,10 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/UnpairedImageToImageTranslation.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="400">
-          <caret line="16" selection-start-line="16" selection-end-line="16" />
+        <state relative-caret-position="283">
+          <caret line="554" column="73" lean-forward="true" selection-start-line="554" selection-start-column="73" selection-end-line="554" selection-end-column="73" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Dataset.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="407">
-          <caret line="298" column="32" selection-start-line="298" selection-start-column="32" selection-end-line="298" selection-end-column="32" />
-          <folding>
-            <element signature="e#0#11#0" expanded="true" />
           </folding>
         </state>
       </provider>
