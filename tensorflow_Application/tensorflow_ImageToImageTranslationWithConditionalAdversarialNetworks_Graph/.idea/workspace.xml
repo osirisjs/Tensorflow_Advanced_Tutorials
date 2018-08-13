@@ -3,10 +3,16 @@
   <component name="ChangeListManager">
     <list default="true" id="72e926ad-a8a7-423b-b8b3-3fecf2391b61" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/Dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/Dataset.py" afterDir="false" />
+<<<<<<< HEAD
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../tensorflow_ModelWithFixedLengthDataset/tensorflow_VariousKindsOfAutoencoder/FeatureExtractionModel/tensorflow_AutoencoderAndPCA/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../tensorflow_ModelWithFixedLengthDataset/tensorflow_VariousKindsOfAutoencoder/FeatureExtractionModel/tensorflow_AutoencoderAndPCA/.idea/workspace.xml" afterDir="false" />
+=======
+      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/Dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/Dataset.py" afterDir="false" />
+>>>>>>> 56bca0bcdba2bf0bde1fb892033eaa0980518539
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -116,11 +122,16 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file leaf-file-name="ImageToImageTranslation.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ImageToImageTranslation.py">
           <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
             <state relative-caret-position="-414">
               <caret line="469" column="42" selection-start-line="469" selection-start-column="42" selection-end-line="469" selection-end-column="42" />
+=======
+            <state relative-caret-position="3641">
+              <caret line="511" column="28" selection-start-line="511" selection-start-column="28" selection-end-line="511" selection-end-column="28" />
+>>>>>>> 56bca0bcdba2bf0bde1fb892033eaa0980518539
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -128,11 +139,16 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file leaf-file-name="Dataset.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Dataset.py">
           <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
             <state relative-caret-position="876">
               <caret line="219" lean-forward="true" selection-start-line="219" selection-end-line="219" />
+=======
+            <state relative-caret-position="418">
+              <caret line="262" column="39" lean-forward="true" selection-start-line="262" selection-start-column="39" selection-end-line="262" selection-end-column="39" />
+>>>>>>> 56bca0bcdba2bf0bde1fb892033eaa0980518539
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -140,11 +156,16 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file leaf-file-name="main.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
             <state relative-caret-position="324">
               <caret line="134" column="53" selection-start-line="134" selection-start-column="53" selection-end-line="134" selection-end-column="53" />
+=======
+            <state relative-caret-position="2356">
+              <caret line="126" column="48" selection-start-line="126" selection-start-column="48" selection-end-line="126" selection-end-column="48" />
+>>>>>>> 56bca0bcdba2bf0bde1fb892033eaa0980518539
               <folding>
                 <element signature="e#0#47#0" expanded="true" />
               </folding>
@@ -212,10 +233,17 @@
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
+<<<<<<< HEAD
     <option name="x" value="90" />
     <option name="y" value="57" />
     <option name="width" value="1799" />
     <option name="height" value="983" />
+=======
+    <option name="x" value="203" />
+    <option name="y" value="49" />
+    <option name="width" value="1799" />
+    <option name="height" value="810" />
+>>>>>>> 56bca0bcdba2bf0bde1fb892033eaa0980518539
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -223,7 +251,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -235,6 +262,7 @@
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -270,9 +298,6 @@
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
     </configuration>
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks" />
@@ -291,9 +316,6 @@
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
     </configuration>
     <configuration name="rf (1)" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks" />
@@ -312,9 +334,6 @@
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
     </configuration>
     <configuration name="rf" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks" />
@@ -333,9 +352,6 @@
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
     </configuration>
     <list>
       <item itemvalue="Python.rf" />
@@ -369,6 +385,7 @@
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
     <editor active="true" />
     <layout>
+<<<<<<< HEAD
       <window_info content_ui="combo" id="Project" order="0" sideWeight="0.498708" visible="true" weight="0.020021075" />
       <window_info id="Structure" order="1" sideWeight="0.502809" side_tool="true" weight="0.08856577" />
       <window_info id="Favorites" order="2" sideWeight="0.501292" side_tool="true" weight="0.08856577" />
@@ -378,33 +395,44 @@
       <window_info anchor="bottom" id="Debug" order="3" weight="0.39107332" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+=======
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.498708" visible="true" weight="0.16227607" />
+>>>>>>> 56bca0bcdba2bf0bde1fb892033eaa0980518539
       <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="bottom" id="Python Console" order="7" />
-      <window_info anchor="bottom" id="Terminal" order="8" />
-      <window_info anchor="bottom" id="Version Control" order="9" />
       <window_info anchor="bottom" id="Event Log" order="10" sideWeight="0.3258427" side_tool="true" type="SLIDING" weight="0.5740741" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.6741573" weight="0.27687296" />
+      <window_info anchor="bottom" id="Version Control" order="9" />
+      <window_info anchor="bottom" id="Python Console" order="7" />
+      <window_info id="Structure" order="1" sideWeight="0.502809" side_tool="true" weight="0.08856577" />
+      <window_info anchor="bottom" id="Terminal" order="8" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.39107332" />
+      <window_info id="Favorites" order="2" sideWeight="0.501292" side_tool="true" weight="0.08856577" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
-      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.3257329" />
     </layout>
     <layout-to-restore>
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="bottom" id="Version Control" order="9" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.498708" visible="true" weight="0.063891575" />
       <window_info id="Structure" order="1" sideWeight="0.502809" side_tool="true" weight="0.08856577" />
-      <window_info id="Favorites" order="2" sideWeight="0.501292" side_tool="true" weight="0.08856577" />
-      <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Find" order="1" weight="0.3257329" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.6741573" weight="0.40173724" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.39107332" />
-      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
-      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
-      <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="bottom" id="Python Console" order="7" />
-      <window_info anchor="bottom" id="Terminal" order="8" />
-      <window_info anchor="bottom" id="Version Control" order="9" />
-      <window_info anchor="bottom" id="Event Log" order="10" sideWeight="0.3258427" side_tool="true" type="SLIDING" weight="0.5740741" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
-      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
-      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.6741573" weight="0.40173724" />
+      <window_info anchor="bottom" id="Python Console" order="7" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.39107332" />
+      <window_info anchor="bottom" id="Terminal" order="8" />
+      <window_info anchor="bottom" id="Event Log" order="10" sideWeight="0.3258427" side_tool="true" type="SLIDING" weight="0.5740741" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.3257329" />
+      <window_info id="Favorites" order="2" sideWeight="0.501292" side_tool="true" weight="0.08856577" />
     </layout-to-restore>
   </component>
   <component name="VcsContentAnnotationSettings">
@@ -422,6 +450,16 @@
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/Dataset.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4959">
+          <caret line="270" column="25" lean-forward="true" selection-start-line="270" selection-start-column="25" selection-end-line="270" selection-end-column="25" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/framework/function.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="145">
@@ -618,9 +656,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/summary/__init__.py">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
     <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/summary/summary.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="221">
@@ -686,19 +721,34 @@
         </state>
       </provider>
     </entry>
+<<<<<<< HEAD
     <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/ops/array_ops.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="451">
           <caret line="1285" column="28" lean-forward="true" selection-start-line="1285" selection-start-column="28" selection-end-line="1285" selection-end-column="28" />
+=======
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2356">
+          <caret line="126" column="48" selection-start-line="126" selection-start-column="48" selection-end-line="126" selection-end-column="48" />
+          <folding>
+            <element signature="e#0#47#0" expanded="true" />
+          </folding>
+>>>>>>> 56bca0bcdba2bf0bde1fb892033eaa0980518539
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/main.py">
+    <entry file="file://$PROJECT_DIR$/ImageToImageTranslation.py">
       <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
         <state relative-caret-position="324">
           <caret line="134" column="53" selection-start-line="134" selection-start-column="53" selection-end-line="134" selection-end-column="53" />
+=======
+        <state relative-caret-position="3641">
+          <caret line="511" column="28" selection-start-line="511" selection-start-column="28" selection-end-line="511" selection-end-column="28" />
+>>>>>>> 56bca0bcdba2bf0bde1fb892033eaa0980518539
           <folding>
-            <element signature="e#0#47#0" expanded="true" />
+            <element signature="e#0#13#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -722,8 +772,13 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Dataset.py">
       <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
         <state relative-caret-position="876">
           <caret line="219" lean-forward="true" selection-start-line="219" selection-end-line="219" />
+=======
+        <state relative-caret-position="418">
+          <caret line="262" column="39" lean-forward="true" selection-start-line="262" selection-start-column="39" selection-end-line="262" selection-end-column="39" />
+>>>>>>> 56bca0bcdba2bf0bde1fb892033eaa0980518539
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>
