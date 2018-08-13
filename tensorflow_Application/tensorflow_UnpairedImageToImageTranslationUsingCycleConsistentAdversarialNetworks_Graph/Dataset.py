@@ -276,9 +276,6 @@ class Dataset(object):
 
     def TFRecordWriter(self):
 
-        '''데이터형식을 텐서플로의 기본 데이터 형식인 TFRecord 로 바꾼다.(대용량의 데이터를 처리하므로 TFRecord를 사용하는게 좋다.)
-        # 바꾸기전에 데이터를 입력, 출력으로 나눈 다음 덩어리로 저장한다. -> Generate_Batch의 map함수에서 입력, 출력 값으로 분리해도 되지만
-        이런 전처리는 미리 되있어야 한다.'''
         # http: // machinelearninguru.com / deep_learning / data_preparation / tfrecord / tfrecord.html 참고했다.
         # TFRecord로 바꾸기
         print("<<< Using TFRecord format >>>")

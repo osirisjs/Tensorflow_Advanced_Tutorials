@@ -208,12 +208,16 @@ class Dataset(object):
         # Train Dataset 에서만 동작하게 하기 위함
         if self.use_TrainDataset:
             # 5. 286x286으로 키운다. - 30씩 더한다
-            iL_resized = tf.image.resize_images(images=iL_scaled, size=(tf.shape(iL_scaled)[0]+30, tf.shape(iL_scaled)[1]+30))
-            iR_resized = tf.image.resize_images(images=iR_scaled, size=(tf.shape(iR_scaled)[0]+30, tf.shape(iR_scaled)[1]+30))
+            iL_resized = tf.image.resize_images(images=iL_scaled,
+                                                size=(tf.shape(iL_scaled)[0] + 30, tf.shape(iL_scaled)[1] + 30))
+            iR_resized = tf.image.resize_images(images=iR_scaled,
+                                                size=(tf.shape(iR_scaled)[0] + 30, tf.shape(iR_scaled)[1] + 30))
 
             # 6. 이미지를 256x256으로 랜덤으로 자른다. - 30
-            iL_random_crop = tf.random_crop(iL_resized, size=(tf.shape(iL_resized)[0],tf.shape(iL_resized)[1],tf.shape(iL_resized)[2]))
-            iR_random_crop = tf.random_crop(iR_resized, size=(tf.shape(iR_resized)[0],tf.shape(iR_resized)[1],tf.shape(iR_resized)[2]))
+            iL_random_crop = tf.random_crop(iL_resized, size=(
+                tf.shape(iL_resized)[0], tf.shape(iL_resized)[1], tf.shape(iL_resized)[2]))
+            iR_random_crop = tf.random_crop(iR_resized, size=(
+                tf.shape(iR_resized)[0], tf.shape(iR_resized)[1], tf.shape(iR_resized)[2]))
 
             input = iL_random_crop
             label = iR_random_crop
@@ -242,9 +246,27 @@ class Dataset(object):
 
     def TFRecordWriter(self):
 
-        '''데이터형식을 텐서플로의 기본 데이터 형식인 TFRecord 로 바꾼다.(대용량의 데이터를 처리하므로 TFRecord를 사용하는게 좋다.)
-        # 바꾸기전에 데이터를 입력, 출력으로 나눈 다음 덩어리로 저장한다. -> Generate_Batch의 map함수에서 입력, 출력 값으로 분리해도 되지만
-        이런 전처리는 미리 되있어야 한다.'''
+        '''
+        데이터 형식을 텐서플로의 기본 데이터 형식인 TFRecord 로 바꾼다. why?
+        첫번째, (속도를 빠르게 하는 용도)대용량의 데이터를 처리할 때 빠르다.
+        두번째, (정보를 담는 용도)현재 우리가 가지고 있는 DB에서 학습 네트워크에 맞는 DB를 만들기 위해선, 각각의 이미지를 반으로 나눠서 추출하는 작업을 거쳐야 한다.
+        이와 같이 데이터를 자르는 점을 알고 있어야 할 때,(명령형(Imperative) 언어인 Pytorch, Gluon, Chainer와 같은 언어에서는 문제가 되지 않는다.), 텐서플로는 값을 정해줘야 한다.(값을 정해주는 순간 그래프의 입력 크기가 고정되어 더는 유연하게 사용할 수 없다.)
+        즉 나누는 정보를 반드시 줘야한다. 이유는 텐서플로가 상징형(symbolic)언어 이기 때문이다.(미리 연산 그래프가 고정되는 구조) 이 문제를 단편적으로 해결한다면, 분기점 정보를 가지고 있는 파일을 직접 손수 만들고, 불러 올 때
+        다시 pair를 맞춰주는 작업을 해야한다. 생각만 해도 정말 힘든 작업이다.
+        TFRecord는 위와 같은 문제의 해결책이다. 손수 분기점 정보를 가지고 있는 파일을 만들 필요가 없으며, 자동으로 해준다.
+        입력, 출력, height, width, depth 정보등을 opencv, numpy와 같은 모듈로 추출 후 TFRecord 파일 작성시 써주기만 하면 된다. 이렇게 생성된 TFRecord파일은 TFRecordDataset으로 쉽게 불러올 수 있다. - 정말 좋은 API이다.
+        이렇게 하면 입력 크기를 유연하게 사용할 수 있는 효과도 생긴다.
+
+        다른 방법들도 있으나, TFRecord를 쓰는 방식보다 느리다. - 물론 TFRecord 방식도 단점이 존재한다. 데이터가 추가될 때마다 새롭게 만들어야 한다.
+
+        다른 방법들을 간략하게 소개하자면,
+        1. numpy 만으로 Dataset을 만드는 방법 - 이 방법은 데이터셋 전체를 Mnist DB처럼 하나의 파일로 만드는 방법과 필요 할 때마다 파일 이름에서 데이터를 읽어 오도록 하는 방법이 있다. 대신 batch, shuffle 등의 기능은 직접 구현해야 한다.
+        2. numpy, tf.data.Dataset을 조합해서 하는 방법 - 이 방법은 그냥 1번처럼 데이터셋 전체를 Mnist DB처럼 하나의 파일로 만드는 방법 또는 필요 할 때마다 파일 이름에서 데이터를 읽어 오도록 하는 방법에 tf.data.Dataset에서 batch, shuffle등 편한 기능을 가져다가 쓰는 정도이다.
+
+        아래의 방법은 텐서플로의 그래프 구조를 이용하긴 하는데, 위에서 설명한대로 분기점 정보를 가지고 있는 파일을 직접 손수 만들어야 한다.
+        3. tf.data.Dataset의 기본 from_tensor_slices() 를 사용하는 방법. (이 방법은 분기점 정보가 따로 저장된 파일을 직접 손수 만들기 + 이 분기점 정보와 이미지와 같이 불러와서 다시 pair 처리해야 하는 굉장히 귀찮은 작업이다.)
+        '''
+
         # http: // machinelearninguru.com / deep_learning / data_preparation / tfrecord / tfrecord.html 참고했다.
         # TFRecord로 바꾸기
         print("<<< Using TFRecord format >>>")
