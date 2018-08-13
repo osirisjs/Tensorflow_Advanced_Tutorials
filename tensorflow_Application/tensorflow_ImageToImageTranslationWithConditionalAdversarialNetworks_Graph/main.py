@@ -125,14 +125,14 @@ symbolic 언어인 텐서플로에서는 연산그래프가 고정되어버리�
 
 # TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다. / TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
 # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-pix2pix.model(TEST=True, AtoB=True, DB_name="facades", distance_loss="L1",
+pix2pix.model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
               distance_loss_weight=100, optimizer_selection="Adam",
               beta1=0.5, beta2=0.999,  # for Adam optimizer
               decay=0.999, momentum=0.9,  # for RMSProp optimizer
               # batch_size는 1~10사이로 하자
               image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
               image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
-              learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1, Dropout_rate=0.5,
+              learning_rate=0.0002, training_epochs=3, batch_size=1, display_step=1, Dropout_rate=0.5,
               # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수 - 논문에서는 Test = Training
               using_moving_variable=False,
               inference_size=(256, 256),  # TEST=True 일 때 inference 해 볼 크기

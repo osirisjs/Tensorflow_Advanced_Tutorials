@@ -207,14 +207,14 @@ class Dataset(object):
         '''
         # Train Dataset 에서만 동작하게 하기 위함
         if self.use_TrainDataset:
-            # 5. 286x286으로 키운다. - 30씩 더한다
+            # 5. 286x286으로 키운다. -> 30씩 더한다
             iL_resized = tf.image.resize_images(images=iL_scaled, size=(tf.shape(iL_scaled)[0]+30, tf.shape(iL_scaled)[1]+30))
             iR_resized = tf.image.resize_images(images=iR_scaled, size=(tf.shape(iR_scaled)[0]+30, tf.shape(iR_scaled)[1]+30))
 
-            # 6. 이미지를 256x256으로 랜덤으로 자른다. - 30
-            iL_random_crop = tf.random_crop(iL_resized, size=(tf.shape(iL_resized)[0],tf.shape(iL_resized)[1],tf.shape(iL_resized)[2]))
-            iR_random_crop = tf.random_crop(iR_resized, size=(tf.shape(iR_resized)[0],tf.shape(iR_resized)[1],tf.shape(iR_resized)[2]))
-
+            # 6. 이미지를 256x256으로 랜덤으로 자른다.
+            concat_resized = tf.concat(values=[iL_resized, iR_resized], axis=-1)
+            concat_cropped = tf.random_crop(concat_resized, size=(tf.shape(iL_scaled)[0], tf.shape(iL_scaled)[1], tf.shape(concat_resized)[-1]))
+            iL_random_crop, iR_random_crop =tf.split(concat_cropped, 2, axis = -1 )
             input = iL_random_crop
             label = iR_random_crop
 
