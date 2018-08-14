@@ -39,6 +39,8 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
 
     if cycle_consistency_loss == "L1":
         model_name += "L1ccl"  # L1 cycle consistency loss
+    else:
+        model_name += "L2ccl"  # L1 cycle consistency loss
 
     if use_identity_mapping:
         model_name += "iml"  # identity mapping loss
