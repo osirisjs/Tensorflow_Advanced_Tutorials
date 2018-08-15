@@ -63,7 +63,7 @@ class Dataset(object):
         # 학습용 데이터인지 테스트용 데이터인지 알려주는 변수
         self.use_TrainDataset = use_TrainDataset
 
-        # infernece_size의 최소 크기를 (256, 256)로 지정
+        # 내가 입력하는 infernece_size의 최소 크기를 (256, 256)로 지정
         if not self.use_TrainDataset:
             if self.inference_size == None and self.inference_size[0] < 256 and self.inference_size[1] < 256:
                 print("inference size는 (256,256)보다는 커야 합니다.")
@@ -112,6 +112,7 @@ class Dataset(object):
             if self.AtoB:
                 self.TFRecord_path = os.path.join(self.TFRecord_train_path,
                                                   'AtoBtrain.tfrecords')
+            else:
                 self.TFRecord_path = os.path.join(self.TFRecord_train_path,
                                                   'BtoAtrain.tfrecords')
             # TFRecord 파일로 쓰기.
@@ -131,6 +132,7 @@ class Dataset(object):
                 self.TFRecord_path = os.path.join(self.TFRecord_val_path,
                                                   'BtoAval{}x{}.tfrecords'.format(self.height_size,
                                                                                   self.width_size))
+
             # TFRecord 파일로 쓰기.
             self.TFRecordWriter()
 
@@ -229,12 +231,11 @@ class Dataset(object):
 
         # TEST = True 일 때
         if not self.use_TrainDataset:
-            img = cv2.resize(img, (self.width_size, self.height_size), interpolation=cv2.INTER_CUBIC)
+            img = cv2.resize(img, (self.width_size*2, self.height_size), interpolation=cv2.INTER_CUBIC)
 
         # RGB로 바꾸기
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.astype(np.float32)
-
         middle_point = int(img.shape[1] / 2)
         img_left = img[:, :middle_point, :]
         img_right = img[:, middle_point:, :]
@@ -254,7 +255,6 @@ class Dataset(object):
                 random.shuffle(self.file_path_list)
                 for image_address in tqdm(self.file_path_list):
                     img_left, img_right = self.load_image(image_address)
-
                     '''넘파이 배열의 값을 바이트 스트링으로 변환한다.
                     tf.train.BytesList, tf.train.Int64List, tf.train.FloatList 을 지원한다.
                     '''

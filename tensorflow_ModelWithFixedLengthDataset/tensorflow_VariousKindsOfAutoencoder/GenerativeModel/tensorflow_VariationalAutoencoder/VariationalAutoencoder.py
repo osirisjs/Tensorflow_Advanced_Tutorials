@@ -36,7 +36,7 @@ def model(TEST=True, targeting=True, latent_number=16, optimizer_selection="Adam
         model_name = "RandomVAE"
 
     if batch_norm:
-        model_name = "BatchNorm_" + model_name
+        model_name = "BN" + model_name
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
@@ -146,14 +146,12 @@ def model(TEST=True, targeting=True, latent_number=16, optimizer_selection="Adam
                 latent_variable, encoder_output, decoder_output = inference(x, target, latent_number)
             # scope.reuse_variables()
 
-        # Adam optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
+        # optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
         with tf.name_scope("saver"):
             saver_all = tf.train.Saver(var_list=tf.global_variables(), max_to_keep=3)
             # set으로 중복 제거 하고, 다시 list로 바꾼다.
-            saver_generator = tf.train.Saver(var_list=list(set(np.concatenate(( \
-                tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/decoder'), \
-                tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/decoder')), \
-                axis=0))), max_to_keep=3)
+            saver_generator = tf.train.Saver(var_list=tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,
+                                                                        scope='shared_variables/decoder'), max_to_keep=3)
 
         if not TEST:
             # Variational Auotoencoder Loss

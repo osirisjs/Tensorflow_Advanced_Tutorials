@@ -256,7 +256,7 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", target_
                 encoder_output, decoder_output, hidden = inference(x)
             # or scope.reuse_variables()
 
-        # Adam optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
+        # optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
         with tf.name_scope("saver"):
             saver = tf.train.Saver(var_list=tf.global_variables(), max_to_keep=3)
         if not TEST:

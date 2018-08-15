@@ -2,10 +2,33 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="5195729f-d669-4e91-9295-33279e6b685a" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/../../../../tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../tensorflow_ConvolutionNeuralNetwork/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../tensorflow_FullyConnectedNeuralNetwork/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../GenerativeModel/tensorflow_VariationalAutoencoder/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../../../tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/Dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/Dataset.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/ImageToImageTranslation.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/ImageToImageTranslation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../tensorflow_Application/tensorflow_NeuralStyle/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../tensorflow_Application/tensorflow_NeuralStyle/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../../../tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../../tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/Dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/Dataset.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/UnpairedImageToImageTranslation.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/UnpairedImageToImageTranslation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../tensorflow_Application/tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../tensorflow_ConvolutionNeuralNetwork/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../../tensorflow_ConvolutionNeuralNetwork/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../tensorflow_ConvolutionNeuralNetwork/CNN.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../../tensorflow_ConvolutionNeuralNetwork/CNN.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../tensorflow_FullyConnectedNeuralNetwork/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../../tensorflow_FullyConnectedNeuralNetwork/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../tensorflow_FullyConnectedNeuralNetwork/FNN.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../../tensorflow_FullyConnectedNeuralNetwork/FNN.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Autoencoder.py" beforeDir="false" afterPath="$PROJECT_DIR$/Autoencoder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../tensorflow_DenoisingAutoencoderAndPCA/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_DenoisingAutoencoderAndPCA/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../tensorflow_DenoisingAutoencoderAndPCA/DenoisingAutoencoder.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_DenoisingAutoencoderAndPCA/DenoisingAutoencoder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../tensorflow_SparseAutoencoderAndPCA/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_SparseAutoencoderAndPCA/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../tensorflow_SparseAutoencoderAndPCA/SparseAutoencoder.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_SparseAutoencoderAndPCA/SparseAutoencoder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../GenerativeModel/tensorflow_GenerativeAdversarialNetworks/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../GenerativeModel/tensorflow_GenerativeAdversarialNetworks/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../GenerativeModel/tensorflow_GenerativeAdversarialNetworks/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../GenerativeModel/tensorflow_GenerativeAdversarialNetworks/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../GenerativeModel/tensorflow_GenerativeAdversarialNetworks/GenerativeAdversarialNetworks.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../GenerativeModel/tensorflow_GenerativeAdversarialNetworks/GenerativeAdversarialNetworks.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../GenerativeModel/tensorflow_GenerativeAdversarialNetworks/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../GenerativeModel/tensorflow_GenerativeAdversarialNetworks/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../GenerativeModel/tensorflow_VariationalAutoencoder/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../GenerativeModel/tensorflow_VariationalAutoencoder/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../GenerativeModel/tensorflow_VariationalAutoencoder/VariationalAutoencoder.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../GenerativeModel/tensorflow_VariationalAutoencoder/VariationalAutoencoder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../GenerativeModel/tensorflow_VariationalAutoencoder/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../GenerativeModel/tensorflow_VariationalAutoencoder/main.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -17,10 +40,10 @@
     <session id="-1353325282">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="2" />
-          <entry key="project.open.time.0" value="1" />
+          <entry key="project.closed" value="4" />
+          <entry key="project.open.time.0" value="3" />
           <entry key="project.open.time.3" value="1" />
-          <entry key="project.opened" value="2" />
+          <entry key="project.opened" value="4" />
         </counts>
       </usages-collector>
     </session>
@@ -30,11 +53,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Autoencoder.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="266">
-              <caret line="173" column="54" selection-start-line="173" selection-start-column="54" selection-end-line="173" selection-end-column="54" />
+            <state relative-caret-position="992">
+              <caret line="71" column="75" lean-forward="true" selection-start-line="71" selection-start-column="75" selection-end-line="71" selection-end-column="75" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -51,10 +74,10 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="112">
+            <state relative-caret-position="133">
               <caret line="7" selection-start-line="7" selection-end-line="7" />
             </state>
           </provider>
@@ -87,16 +110,16 @@
       <list>
         <option value="$PROJECT_DIR$/Convolution_Autoencoder.py" />
         <option value="$PROJECT_DIR$/PCA.py" />
-        <option value="$PROJECT_DIR$/Autoencoder.py" />
         <option value="$PROJECT_DIR$/main.py" />
+        <option value="$PROJECT_DIR$/Autoencoder.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="450" />
-    <option name="y" value="317" />
-    <option name="width" value="1932" />
-    <option name="height" value="1040" />
+    <option name="x" value="921" />
+    <option name="y" value="182" />
+    <option name="width" value="1918" />
+    <option name="height" value="1085" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -104,6 +127,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -115,7 +139,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -202,6 +225,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info id="Favorites" order="0" side_tool="true" weight="0.32982087" />
       <window_info active="true" content_ui="combo" id="Project" order="1" sideWeight="0.70731705" visible="true" weight="0.19178082" />
@@ -398,6 +422,16 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/Autoencoder.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="992">
+          <caret line="71" column="75" lean-forward="true" selection-start-line="71" selection-start-column="75" selection-end-line="71" selection-end-column="75" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/PCA.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="171">
@@ -405,19 +439,9 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Autoencoder.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="266">
-          <caret line="173" column="54" selection-start-line="173" selection-start-column="54" selection-end-line="173" selection-end-column="54" />
-          <folding>
-            <element signature="e#0#9#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="112">
+        <state relative-caret-position="133">
           <caret line="7" selection-start-line="7" selection-end-line="7" />
         </state>
       </provider>

@@ -22,9 +22,9 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
           image_pool=True,
           image_pool_size=50,
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1, Dropout_rate=0.5,
-          using_moving_variable=False,
           inference_size=(256, 256),
           only_draw_graph=False,
+          show_translated_image=False,
           weights_to_numpy=False,
           save_path="translated_image"):
 
@@ -74,10 +74,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
 
         # batch_norm을 적용하면 bias를 안써도 된다곤 하지만, 나는 썼다.
         if norm_selection == "batch_norm":
-            if TEST and using_moving_variable:
-                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=not TEST)
-            else:
-                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=TEST)
+             return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=True)
         elif norm_selection == "instance_norm":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
         else:
@@ -98,10 +95,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
 
         # batch_norm을 적용하면 bias를 안써도 된다곤 하지만, 나는 썼다.
         if norm_selection == "batch_norm":
-            if TEST and using_moving_variable:
-                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=not TEST)
-            else:
-                return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=TEST)
+            return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=True)
         elif norm_selection == "instance_norm":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
         else:
@@ -115,7 +109,6 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
 
         총 16개의 층이다.
         '''
-
         with tf.variable_scope("Generator"):
             with tf.variable_scope("encoder"):
                 with tf.variable_scope("conv1"):
@@ -222,7 +215,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
                     # result shape = (batch_size, 128, 128, 128)
                 with tf.variable_scope("trans_conv8"):
                     output = tf.nn.tanh(
-                        conv2d_transpose(tf.nn.relu(trans_conv7), output_shape=tf.shape(target),
+                        conv2d_transpose(tf.nn.relu(trans_conv7), output_shape=tf.shape(images),
                                          weight_shape=(4, 4, 3, 128),
                                          bias_shape=(3),
                                          strides=[1, 2, 2, 1], padding="SAME"))
@@ -270,17 +263,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
             return output, tf.nn.sigmoid(output)
 
     def training(cost, var_list, scope=None):
-        if scope == None:
-            tf.summary.scalar("Discriminator Loss", cost)
-        else:
-            tf.summary.scalar("Generator Loss", cost)
 
-        '''GAN 구현시 Batch Normalization을 쓸 때 주의할 점!!!
-        #scope를 써줘야 한다. - 그냥 tf.get_collection(tf.GraphKeys.UPDATE_OPS) 이렇게 써버리면 
-        shared_variables 아래에 있는 변수들을 다 업데이트 해야하므로 scope를 지정해줘야한다.
-        - GAN의 경우 예)discriminator의 optimizer는 batch norm의 param 전체를 업데이트해야하고
-                        generator의 optimizer는 batch_norm param의 generator 부분만 업데이트 해야 한다.   
-        '''
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope=scope)
         with tf.control_dependencies(update_ops):
             if optimizer_selection == "Adam":
@@ -302,18 +285,18 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
 
             # 데이터 전처리
             with tf.name_scope("Dataset"):
-                dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TrainDataset=not TEST)
+                dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TrainDataset=True)
                 iterator, next_batch, data_length = dataset.iterator()
 
                 # 알고리즘
                 x = next_batch[0]
                 target = next_batch[1]
 
-            with tf.name_scope("Origin_image"):
-                tf.summary.image("Origin_image", x, max_outputs=3)
+            #tensorboard에 띄우기
+            tf.summary.image("OriginImage", x, max_outputs=3)
 
-            with tf.name_scope("target"):
-                tf.summary.image("target", target, max_outputs=3)
+            #tensorboard에 띄우기
+            tf.summary.image("target", target, max_outputs=3)
 
             with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
                 with tf.name_scope("Generator"):
@@ -323,53 +306,52 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
                     # scope.reuse_variables()
                     D_gene, sigmoid_D_gene = discriminator(images=G, condition=x)
 
-            with tf.name_scope("Generated_image"):
-                tf.summary.image("Generated_image", G, max_outputs=3)
+            #tensorboard에 띄우기
+            tf.summary.image("GeneratedImage", G, max_outputs=3)
 
-            var_D = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                      scope='shared_variables/Discriminator')
+            var_D = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/Discriminator')
 
-            # set으로 중복 제거 하고, 다시 list로 바꾼다.
-            var_G = list(set(np.concatenate(
-                (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/Generator'),
-                 tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/Generator')),
-                axis=0)))
+            var_G = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/Generator')
 
-            # Adam optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
+            # optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
             with tf.name_scope("saver"):
                 saver_all = tf.train.Saver(var_list=tf.global_variables(), max_to_keep=3)
                 saver_generator = tf.train.Saver(var_list=var_G, max_to_keep=3)
 
             # Algorithjm - 속이고 속이는 과정
 
-            with tf.name_scope("Discriminator_loss"):
+            with tf.name_scope("DiscriminatorLoss"):
                 # for discriminator
                 D_Loss = min_max_loss(logits=D_real, labels=tf.ones_like(D_real)) + min_max_loss(logits=D_gene,
                                                                                                  labels=tf.zeros_like(
                                                                                                      D_gene))
-            with tf.name_scope("Generator_loss"):
+            tf.summary.scalar("DLoss", D_Loss)
+
+            with tf.name_scope("Generator_Loss"):
                 # for generator
                 G_Loss = min_max_loss(logits=D_gene, labels=tf.ones_like(D_gene))
+
+            tf.summary.scalar("GLoss", G_Loss)
 
             if distance_loss == "L1":
                 with tf.name_scope("{}_loss".format(distance_loss)):
                     dis_loss = tf.losses.absolute_difference(target, G)
-                    tf.summary.scalar("{} Loss".format(distance_loss), dis_loss)
+                    tf.summary.scalar("{}Loss".format(distance_loss), dis_loss)
                     G_Loss += tf.multiply(dis_loss, distance_loss_weight)
             elif distance_loss == "L2":
                 with tf.name_scope("{}_loss".format(distance_loss)):
                     dis_loss = tf.losses.mean_squared_error(target, G)
-                    tf.summary.scalar("{} Loss".format(distance_loss), dis_loss)
+                    tf.summary.scalar("{}Loss".format(distance_loss), dis_loss)
                     G_Loss += tf.multiply(dis_loss, distance_loss_weight)
             else:
                 dis_loss = tf.constant(value=0, dtype=tf.float32)
 
             with tf.name_scope("Discriminator_trainer"):
-                D_train_op = training(D_Loss, var_D, scope=None)
+                D_train_op = training(D_Loss, var_D, scope='shared_variables/Discriminator')
             with tf.name_scope("Generator_trainer"):
-                G_train_op = training(G_Loss, var_G, scope='shared_variables/generator')
-            with tf.name_scope("tensorboard"):
-                summary_operation = tf.summary.merge_all()
+                G_train_op = training(G_Loss, var_G, scope='shared_variables/Generator')
+
+            summary_operation = tf.summary.merge_all()
 
             '''
             WHY? 아래 2줄의 코드를 적어 주지 않고, 학습을 하게되면, TEST부분에서 tf.train.import_meta_graph를 사용할 때 오류가 난다. 
@@ -378,13 +360,12 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
             사용해 출력된 모든 연산의 리스트에서 하나하나 찾아야한다.
             필요한 변수가 있을 시 아래와 같이 추가해서 그래프를 새로 만들어 주면 된다.
             '''
-            for op in (x, G, target):
+            for op in (x, G):
                 tf.add_to_collection("way", op)
 
             #아래와 같은 코드도 가능.
             # tf.add_to_collection('x', x)
             # tf.add_to_collection('G', G)
-            # tf.add_to_collection('t', target)
 
             # generator graph 구조를 파일에 쓴다.
             meta_save_file_path = os.path.join(model_name, 'Generator', 'Generator_Graph.meta')
@@ -506,10 +487,10 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
                 print("<<< meta 파일을 읽을 수 없습니다. >>>")
                 exit(0)
 
-            x, G, t = tf.get_collection('way')
+            x, G = tf.get_collection('way')
 
             # Test Dataset 가져오기
-            dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TrainDataset=not TEST, inference_size=inference_size)
+            dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TrainDataset=False, inference_size=inference_size)
             iterator, next_batch, data_length = dataset.iterator()
 
             with tf.Session(graph=JG) as sess:
@@ -526,50 +507,58 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
                     print("Restore {} checkpoint!!!".format(os.path.basename(ckpt.model_checkpoint_path)))
                     saver.restore(sess, ckpt.model_checkpoint_path)
 
-                # image 보여주기
-                for i in range(data_length):
-                    x_numpy, target_numpy = sess.run(next_batch)  # 이런식으로 하는 것은 상당히 비효율적 -> tf.data.Dataset 에 더익숙해지고자!!!
-                    translated_image = sess.run(G, feed_dict={x: x_numpy, t: target_numpy})
-                    visualize(model_name=model_name, named_images=[i, x_numpy[0], target_numpy[0], translated_image[0]],
-                              save_path=save_path)
+                # Generator에서 생성된 이미지 저장
+                if show_translated_image:
+                    for i in range(data_length):
+                        x_numpy, target_numpy = sess.run(next_batch)
+                        # 입력 이미지가 256 x 256 이하이면, exit()
+                        if x_numpy.shape[1] < 256 or x_numpy.shape[2] < 256:
+                            print("입력된 이미지 크기는 {}x{} 입니다.".format(x_numpy.shape[1], x_numpy.shape[2]))
+                            print("입력되는 이미지 크기는 256x256 보다 크거나 같아야 합니다.")
+                            print("강제 종료 합니다.")
+                            exit(0)
+                        translated_image = sess.run(G, feed_dict={x: x_numpy})
+                        visualize(model_name=model_name, named_images=[i, x_numpy[0], target_numpy[0], translated_image[0]],
+                                  save_path=save_path)
 
-                # 가중치 저장 - 약간 생소한 API이다.
+                # 가중치 저장 - 약간 생소한 API지만 유용.
                 if weights_to_numpy:
-                    numpy_weight_save_path="NumpyWeightOfModel"
+                    numpy_weight_save_path = "NumpyWeightOfModel"
                     if not os.path.exists(numpy_weight_save_path):
                         os.makedirs(numpy_weight_save_path)
-                    #1, checkpoint 읽어오는 것
+                    # 1, checkpoint 읽어오는 것
                     reader = tf.train.NewCheckpointReader(ckpt.model_checkpoint_path)
+                    dtype = list(reader.get_variable_to_dtype_map().values())[0]
                     ''' 2. tf.train.NewCheckpointReader에도
                     reader.get_variable_to_dtype_map() -> 이름 , dype 반환 or reader.get_variable_to_shape_map() 이름 , 형태 반환 
                     하는데 사전형이라 순서가 중구난방이다.
                     요 아래의 것은 리스트 형태로 name, shape이 순서대로 나온다.
                     '''
-                    dtype = list(reader.get_variable_to_dtype_map().values())[0]
-                    #앞의 shared_variables / Gerator 빼버리기
                     name_shape = tf.contrib.framework.list_variables(ckpt.model_checkpoint_path)
-                    with open(os.path.join(numpy_weight_save_path, "name_shape_info.txt"),mode='w') as f:
+                    with open(os.path.join(numpy_weight_save_path, "name_shape_info.txt"), mode='w') as f:
                         f.write("                      < weight 정보 >\n\n")
                         f.write("파일 개수 : {}개\n\n".format(len(name_shape)))
                         f.write("------------------- 1. data type ---------------------\n\n")
-                        f.write("{} \n\n".format(str(dtype).strip("<>").replace(":"," :")))
+                        f.write("{} \n\n".format(str(dtype).strip("<>").replace(":", " :")))
                         print("------------------------------------------------------")
                         print("총 파일 개수 : {}".format(len(name_shape)))
 
-                        # 앞의 shared_variables / Gerator 빼버리기
                         f.write("-------------- 2. weight name, shape ----------------\n\n")
                         for name, shape in name_shape:
-                            seperated=name.split("/")[2:]
-                            joined="_".join(seperated)
+                            # 앞의 shared_variables / Generator 빼버리기
+                            seperated = name.split("/")[2:]
+                            joined = "_".join(seperated)
                             shape = str(shape).strip('[]')
                             print("##################################################")
                             print("weight : {}.npy".format(joined))
                             print("shape : ({})".format(shape))
                             f.write("{}.npy \nshape : ({}) \n\n".format(joined, shape))
+
+                            # weight npy로 저장하기
                             np.save(os.path.join(numpy_weight_save_path, joined), reader.get_tensor(name))
 
-
 if __name__ == "__main__":
+
     model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
           distance_loss_weight=100, optimizer_selection="Adam",
           beta1=0.5, beta2=0.999,  # for Adam optimizer
@@ -577,11 +566,10 @@ if __name__ == "__main__":
           # batch_size는 1~10사이로 하자
           image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
           image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
-          learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1, Dropout_rate=0.5,
-          # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수 - 논문에서는 Test = Training
-          using_moving_variable=False,
+          learning_rate=0.0002, training_epochs=3, batch_size=2, display_step=1, Dropout_rate=0.5,
           inference_size=(256, 256),  # TEST=True 일 때 inference 해 볼 크기
           only_draw_graph=False,  # TEST=False 일 떄, 그래프만 그리고 종료할지 말지
+          weights_to_numpy=False,  # TEST=True 일 때 가중치를 npy 파일로 저장할지 말지
           save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더
 else:
     print("model imported")

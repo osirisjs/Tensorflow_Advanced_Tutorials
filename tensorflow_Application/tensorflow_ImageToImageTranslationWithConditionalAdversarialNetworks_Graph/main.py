@@ -123,18 +123,19 @@ symbolic 언어인 텐서플로에서는 연산그래프가 고정되어버리�
  
 세번째 방법 TFRecord 이용하는 방식 -> TFRecord로 DB를 쓸 때 내가 원하는 정보를 포함해서 쓸 수 있고, 내가 원하는 정보를 불러오는게 가능하다. 이게 바로 텐서플로다.'''
 
-# TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다. / TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
+# TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다. - ImageToImageTranslation.py 의 411번줄을 보라.
+# TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다. - ImageToImageTranslation.py 의 515번줄을 보라.
 # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-pix2pix.model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
+pix2pix.model(TEST=False, AtoB=False, DB_name="facades", distance_loss="L1",
               distance_loss_weight=100, optimizer_selection="Adam",
               beta1=0.5, beta2=0.999,  # for Adam optimizer
               decay=0.999, momentum=0.9,  # for RMSProp optimizer
               # batch_size는 1~10사이로 하자
               image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
               image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
-              learning_rate=0.0002, training_epochs=3, batch_size=1, display_step=1, Dropout_rate=0.5,
-              # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수 - 논문에서는 Test = Training
-              using_moving_variable=False,
+              learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1, Dropout_rate=0.5,
               inference_size=(256, 256),  # TEST=True 일 때 inference 해 볼 크기
               only_draw_graph=False, # TEST=False 일 떄, 그래프만 그리고 종료할지 말지
+              show_translated_image=True,  # TEST=True 일 때변환 된 이미지를 보여줄지 말지
+              weights_to_numpy=False,  # TEST=True 일 때 가중치를 npy 파일로 저장할지 말지
               save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더

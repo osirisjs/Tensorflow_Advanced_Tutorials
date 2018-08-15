@@ -35,16 +35,16 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
     else:
         if distance_loss == "L1":
             print("target generative GAN with L1 loss")
-            model_name = "ConditionalGAN_WithL1loss"
+            model_name = "CGANL1"
         elif distance_loss == "L2":
-            print("target generative GAN with L1 loss")
-            model_name = "ConditionalGAN_WithL2loss"
+            print("target generative GAN with L2 loss")
+            model_name = "CGANL2"
         else:
             print("target generative GAN")
-            model_name = "ConditionalGAN"
+            model_name = "CGAN"
 
     if batch_norm == True:
-        model_name = "batchnorm" + model_name
+        model_name = "BN" + model_name
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
@@ -92,15 +92,11 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
         return output, tf.nn.sigmoid(output)
 
     def training(cost, var_list, scope=None):
-        if scope == None:
-            tf.summary.scalar("Discriminator Loss", cost)
-        else:
-            tf.summary.scalar("Generator Loss", cost)
-        '''GAN 구현시 Batch Normalization을 쓸 때 주의할 점!!!
+
+        '''
+        GAN 구현시 Batch Normalization을 쓸 때 주의할 점!!!
         #scope를 써줘야 한다. - 그냥 tf.get_collection(tf.GraphKeys.UPDATE_OPS) 이렇게 써버리면 
-        shared_variables 아래에 있는 변수들을 다 업데이트 해야하므로 scope를 지정해줘야한다.
-        - GAN의 경우 예)discriminator의 optimizer는 batch norm의 param 전체를 업데이트해야하고
-                        generator의 optimizer는 batch_norm param의 generator 부분만 업데이트 해야 한다.   
+        shared_variables 아래에 있는 변수들을 다 업데이트 하므로 scope를 지정해줘야한다.
         '''
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope=scope)
         with tf.control_dependencies(update_ops):
@@ -132,15 +128,11 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
                 D_gene, sigmoid_D_gene = discriminator(x=G, target=target)
 
         # Algorithjm
-        var_D = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                  scope='shared_variables/discriminator')
-        # set으로 중복 제거 하고, 다시 list로 바꾼다.
-        var_G = list(set(np.concatenate(
-            (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/generator'),
-             tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/generator')),
-            axis=0)))
+        var_D = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/discriminator')
 
-        # Adam optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
+        var_G = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/generator')
+
+        # optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
         with tf.name_scope("saver"):
             saver_all = tf.train.Saver(var_list=tf.global_variables(), max_to_keep=3)
             saver_generator = tf.train.Saver(var_list=var_G, max_to_keep=3)
@@ -154,9 +146,12 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
                 D_Loss = min_max_loss(logits=D_real, labels=tf.ones_like(D_real)) + min_max_loss(logits=D_gene,
                                                                                                  labels=tf.zeros_like(
                                                                                                      D_gene))
+                tf.summary.scalar("Discriminator Loss", D_Loss)
+
             with tf.name_scope("Generator_loss"):
                 # for generator
                 G_Loss = min_max_loss(logits=D_gene, labels=tf.ones_like(D_gene))
+                tf.summary.scalar("Generator Loss", G_Loss)
 
             if distance_loss == "L1":
                 with tf.name_scope("L1_loss"):
@@ -172,11 +167,11 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
                 dis_loss = tf.constant(value=0, dtype=tf.float32)
 
             with tf.name_scope("Discriminator_trainer"):
-                D_train_op = training(D_Loss, var_D, scope=None)
+                D_train_op = training(D_Loss, var_D, scope='shared_variables/discriminator')
             with tf.name_scope("Generator_trainer"):
                 G_train_op = training(G_Loss, var_G, scope='shared_variables/generator')
-            with tf.name_scope("tensorboard"):
-                summary_operation = tf.summary.merge_all()
+
+            summary_operation = tf.summary.merge_all()
 
     config = tf.ConfigProto(log_device_placement=False, allow_soft_placement=True)
     config.gpu_options.allow_growth = True

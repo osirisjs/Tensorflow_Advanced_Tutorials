@@ -76,7 +76,7 @@ def model(TEST=True, model_name="FNN", optimizer_selection="Adam", learning_rate
                 output = inference(x)
             # or scope.reuse_variables()
 
-        # Adam optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
+        # optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
         with tf.name_scope("saver"):
             saver = tf.train.Saver(var_list=tf.global_variables(), max_to_keep=3)
 

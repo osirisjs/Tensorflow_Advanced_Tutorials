@@ -11,7 +11,8 @@ import UnpairedImageToImageTranslation as cycleGAN
 optimizers_ selection = "Adam" or "RMSP" or "SGD"
 AtoB_generator, BtoA_generator 는 residual net 을 사용한다. -  9 blocks 
 discriminator의 구조는 PatchGAN 70X70을 사용한다. 
--논문 내용과 거의 똑같이 구현했다. - image pool도 구현하기!!!
+-논문 내용과 거의 똑같이 구현했다. - 저자가 논문에는 Generator 마지막 layer에 instance norm을 쓰라고 했는데,
+정작 자신의 코드에는 없어서 나도 뺐다.
 '''
 
 '''
@@ -66,21 +67,23 @@ for i, GL in enumerate(GPU_List):
 
 # DB_name = "horse2zebra" 만...
 # 256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다
-# TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.- 관련 코드는 UnpairedImageToImageTranslation.py 의 458번줄을 보라.
-# TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
+# TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.- 관련 코드는 UnpairedImageToImageTranslation.py 의 451번줄을 보라.
+# TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다. - 관련 코드는 UnpairedImageToImageTranslation.py 의 577번줄을 보라.
 # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-cycleGAN.model(TEST=True, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
+cycleGAN.model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
                cycle_consistency_loss_weight=10,
                optimizer_selection="Adam", beta1=0.5, beta2=0.999,  # for Adam optimizer
                decay=0.999, momentum=0.9,  # for RMSProp optimizer
                use_identity_mapping=False,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용 - 우선은 False
                norm_selection="instancenorm",  # "instancenorm" or nothing
-               image_pool=False,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
+               image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
                image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지? 논문에선 50개 사용했다고 나옴.
-               learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1,
+               learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
                weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
                learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
-               inference_size=(256, 256), # TEST=True 일 떄, inference할 크기는 256 x 256 이상이어야 한다. - 관련 코드는 Dataset.py 의 64번째 줄
+               inference_size=(256, 256), # TEST=True 일 떄, inference할 크기는 256 x 256 이상이어야 한다. - 관련 코드는 Dataset.py 의 65번째 줄
                only_draw_graph=False,  # TEST=False 일 떄, 그래프만 그리고 종료할지 말지
+               show_translated_image=True,  # TEST=True 일 때변환 된 이미지를 보여줄지 말지
                # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다.(폴더 2개 이름 -> AtoB_translated_image , BtoA_translated_image )
-               save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더
+               save_path="translated_image",  # TEST=True 일 때 변환된 이미지가 저장될 폴더
+               weights_to_numpy = False)  # TEST=True 일 때 가중치를 npy 파일로 저장할지 말지

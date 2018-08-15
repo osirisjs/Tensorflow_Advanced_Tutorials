@@ -15,6 +15,7 @@ def visualize(model_name="CycleGAN", named_images=None, save_path=None):
     cv2.imwrite(os.path.join(save_path, '{}_{}.png'.format(model_name, named_images[0])), image)
     print("{}_{}.png saved in {} folder".format(model_name, named_images[0], save_path))
 
+
 def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
           cycle_consistency_loss_weight=10,
           optimizer_selection="Adam", beta1=0.9, beta2=0.999,
@@ -28,8 +29,9 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
           learning_rate_decay=0.99,
           inference_size=(256, 256),
           only_draw_graph=False,
-          weights_to_numpy=False,
-          save_path="translated_image"):
+          show_translated_image=True,
+          save_path="translated_image",
+          weights_to_numpy=False):
     print("CycleGAN")
 
     model_name = DB_name
@@ -170,9 +172,9 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
 
             with tf.variable_scope("output"):
                 padded_trans_conv2 = tf.pad(trans_conv2, [[0, 0], [3, 3], [3, 3], [0, 0]], "REFLECT")
-                output = tf.nn.tanh(conv2d(padded_trans_conv2, weight_shape=(7, 7, 32, 3), bias_shape=(3),
-                                           norm_selection=norm_selection,
-                                           strides=[1, 1, 1, 1], padding="VALID"))
+                output = tf.nn.tanh(
+                    conv2d(padded_trans_conv2, weight_shape=(7, 7, 32, 3), bias_shape=(3), strides=[1, 1, 1, 1],
+                           padding="VALID"))
             # result shape = (batch_size, 256, 256, 3)
         return output
 
@@ -217,7 +219,6 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
 
     def training(cost, var_list, scope=None):
 
-        tf.summary.scalar(scope, cost)
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope=scope)
         with tf.control_dependencies(update_ops):
             if optimizer_selection == "Adam":
@@ -259,18 +260,15 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
             # 데이터 전처리
             with tf.name_scope("Dataset"):
                 dataset = Dataset(DB_name=DB_name, batch_size=batch_size, use_TFRecord=use_TFRecord,
-                                  use_TrainDataset=not TEST)
+                                  use_TrainDataset=True)
                 A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length = dataset.iterator()
 
                 # 알고리즘
                 A = A_next_batch
                 B = B_next_batch
 
-            with tf.name_scope("Origin_A_image"):
-                tf.summary.image("Origin_A_image", A, max_outputs=3)
-
-            with tf.name_scope("Origin_B_image"):
-                tf.summary.image("Origin_B_image", B, max_outputs=3)
+            tf.summary.image("Origin_Aimage", A, max_outputs=3)
+            tf.summary.image("Origin_Bimage", B, max_outputs=3)
 
             with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
 
@@ -303,33 +301,22 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                         im_AtoB_GeneratorWithB = generator(images=B, name="AtoB_generator")
                         im_BtoA_GeneratorWithA = generator(images=A, name="BtoA_generator")
 
-            with tf.name_scope("AtoB_image"):
-                tf.summary.image("AtoB_image", AtoB_gene, max_outputs=3)
+            tf.summary.image("AtoBImage", AtoB_gene, max_outputs=3)
+            tf.summary.image("BtoAImage", BtoA_gene, max_outputs=3)
 
-            with tf.name_scope("BtoA_image"):
-                tf.summary.image("BtoA_image", BtoA_gene, max_outputs=3)
+            AtoB_varD = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/AtoB_Discriminator')
 
-            AtoB_varD = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/AtoB_Discriminator')
-            # set으로 중복 제거 하고, 다시 list로 바꾼다.
+            AtoB_varG = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/AtoB_generator')
 
-            AtoB_varG = list(set(np.concatenate(
-                (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/AtoB_generator'),
-                 tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/AtoB_generator')),
-                axis=0)))
-
-            BtoA_varD = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/BtoA_Discriminator')
+            BtoA_varD = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/BtoA_Discriminator')
 
             # set으로 중복 제거 하고, 다시 list로 바꾼다.
-            BtoA_varG = list(set(np.concatenate(
-                (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/BtoA_generator'),
-                 tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/BtoA_generator')),
-                axis=0)))
+            BtoA_varG = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/BtoA_generator')
 
-            # Adam optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
+            # optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
             with tf.name_scope("saver"):
                 saver_all = tf.train.Saver(var_list=tf.global_variables(), max_to_keep=3)
                 saver_generator = tf.train.Saver(var_list=AtoB_varG + BtoA_varG, max_to_keep=3)
-
             '''
             논문에 나와있듯이, log likelihood objective 대신 least-square loss를 사용한다.
             '''
@@ -337,31 +324,38 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 # for AtoB discriminator
                 AtoB_DLoss = tf.reduce_mean(tf.square(AtoB_Dreal - tf.ones_like(AtoB_Dreal))) + tf.reduce_mean(
                     tf.square(AtoB_Dgene - tf.zeros_like(AtoB_Dgene)))
+            tf.summary.scalar("AtoBDLoss", AtoB_DLoss)
+
             with tf.name_scope("AtoB_Generator_loss"):
                 # for AtoB generator
                 AtoB_GLoss = tf.reduce_mean(tf.square(AtoB_Dgene - tf.ones_like(AtoB_Dgene)))
+            tf.summary.scalar("AtoBGLoss", AtoB_GLoss)
 
             with tf.name_scope("BtoA_Discriminator_loss"):
                 # for BtoA discriminator
                 BtoA_DLoss = tf.reduce_mean(tf.square(BtoA_Dreal - tf.ones_like(BtoA_Dreal))) + tf.reduce_mean(
                     tf.square(BtoA_Dgene - tf.zeros_like(BtoA_Dgene)))
+            tf.summary.scalar("BtoADLoss", BtoA_DLoss)
+
             with tf.name_scope("BtoA_Generator_loss"):
                 # for BtoA generator
                 BtoA_GLoss = tf.reduce_mean(tf.square(BtoA_Dgene - tf.ones_like(BtoA_Dgene)))
+            tf.summary.scalar("BtoAGLoss", BtoA_GLoss)
 
             # Cycle Consistency Loss
             if cycle_consistency_loss == "L1":
                 with tf.name_scope("{}_loss".format(cycle_consistency_loss)):
                     cycle_loss = tf.losses.absolute_difference(A, BackA) + tf.losses.absolute_difference(B, BackB)
-                    tf.summary.scalar("{} Loss".format(cycle_consistency_loss), cycle_loss)
                     AtoB_GLoss += tf.multiply(cycle_loss, cycle_consistency_loss_weight)
                     BtoA_GLoss += tf.multiply(cycle_loss, cycle_consistency_loss_weight)
+                tf.summary.scalar("{}Loss".format(cycle_consistency_loss), cycle_loss)
             else:  # cycle_consistency_loss == "L2"
                 with tf.name_scope("{}_loss".format(cycle_consistency_loss)):
                     cycle_loss = tf.losses.mean_squared_error(BackA, A) + tf.losses.mean_squared_error(BackB, B)
                     tf.summary.scalar("{} Loss".format(cycle_consistency_loss), cycle_loss)
                     AtoB_GLoss += tf.multiply(cycle_loss, cycle_consistency_loss_weight)
                     BtoA_GLoss += tf.multiply(cycle_loss, cycle_consistency_loss_weight)
+                tf.summary.scalar("{}Loss".format(cycle_consistency_loss), cycle_loss)
 
             # Identity mapping -> input과 output의 컬러 구성을 보존하기 위해 쓴다고 함(논문에서는 painting -> photo DB로 학습할 때 씀)
             if use_identity_mapping:
@@ -381,9 +375,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
             with tf.name_scope("BtoA_Generator_trainer"):
                 BtoA_G_train_op = training(BtoA_GLoss, BtoA_varG, scope='shared_variables/BtoA_generator')
 
-            with tf.name_scope("tensorboard"):
-                summary_operation = tf.summary.merge_all()
-
+            summary_operation = tf.summary.merge_all()
             '''
             WHY? 아래 2줄의 코드를 적어 주지 않고, 학습을 하게되면, TEST부분에서 tf.train.import_meta_graph를 사용할 때 오류가 난다. 
             -> 단순히 그래프를 가져오고 가중치를 복원하는 것만으로는 안된다. 세션을 실행할때 인수로 사용할 변수에 대한 
@@ -575,31 +567,41 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                     print("Restore {} checkpoint!!!".format(os.path.basename(ckpt.model_checkpoint_path)))
                     saver.restore(sess, ckpt.model_checkpoint_path)
 
-                # A_length 와 B_length 중 짧은 길이만큼만 생성
-                for i in range(data_length):
-                    A_numpy, B_numpy = sess.run(
-                        [A_tensor, B_tensor])  # 이런식으로 하는 것은 상당히 비효율적 -> tf.data.Dataset 에 더익숙해지고자!!!
-                    AtoB_translated_image, BtoA_translated_image = sess.run([AtoB_gene, BtoA_gene],
-                                                                            feed_dict={A: A_numpy, B: B_numpy})
-                    visualize(model_name="AtoB" + model_name, named_images=[i, A_numpy[0], AtoB_translated_image[0]],
-                              save_path="AtoB" + save_path)
-                    visualize(model_name="BtoA" + model_name, named_images=[i, B_numpy[0], BtoA_translated_image[0]],
-                              save_path="BtoA" + save_path)
+                # Generator에서 생성된 이미지 저장
+                if show_translated_image:
+                    # A_length 와 B_length 중 짧은 길이만큼만 생성
+                    for i in range(data_length):
+                        A_numpy, B_numpy = sess.run(
+                            [A_tensor, B_tensor])  # 이런식으로 하는 것은 상당히 비효율적 -> tf.data.Dataset 에 더익숙해지고자!!!
+                        # 입력 이미지가 256 x 256 이하이면, exit()
+                        if A_numpy.shape[1] < 256 or A_numpy.shape[2] < 256 or B_numpy.shape[1] < 256 or B_numpy.shape[2] < 256:
+                            print("입력된 이미지 크기는 {}x{} 입니다.".format(A_numpy.shape[1], A_numpy.shape[2]))
+                            print("입력되는 이미지 크기는 256x256 보다 크거나 같아야 합니다.")
+                            print("강제 종료 합니다.")
+                            exit(0)
+                        AtoB_translated_image, BtoA_translated_image = sess.run([AtoB_gene, BtoA_gene],
+                                                                                feed_dict={A: A_numpy, B: B_numpy})
+                        visualize(model_name="AtoB" + model_name,
+                                  named_images=[i, A_numpy[0], AtoB_translated_image[0]],
+                                  save_path="AtoB" + save_path)
+                        visualize(model_name="BtoA" + model_name,
+                                  named_images=[i, B_numpy[0], BtoA_translated_image[0]],
+                                  save_path="BtoA" + save_path)
 
-                # 가중치 저장 - 약간 생소한 API이다.
+                # 가중치 저장 - 약간 생소한 API지만 유용.
                 if weights_to_numpy:
                     numpy_weight_save_path = "NumpyWeightOfModel"
                     if not os.path.exists(numpy_weight_save_path):
                         os.makedirs(numpy_weight_save_path)
                     # 1, checkpoint 읽어오는 것
                     reader = tf.train.NewCheckpointReader(ckpt.model_checkpoint_path)
+                    dtype = list(reader.get_variable_to_dtype_map().values())[0]
+
                     ''' 2. tf.train.NewCheckpointReader에도
                     reader.get_variable_to_dtype_map() -> 이름 , dype 반환 or reader.get_variable_to_shape_map() 이름 , 형태 반환 
                     하는데 사전형이라 순서가 중구난방이다.
                     요 아래의 것은 리스트 형태로 name, shape이 순서대로 나온다.
                     '''
-                    dtype = list(reader.get_variable_to_dtype_map().values())[0]
-                    # 앞의 shared_variables / Gerator 빼버리기
                     name_shape = tf.contrib.framework.list_variables(ckpt.model_checkpoint_path)
                     with open(os.path.join(numpy_weight_save_path, "name_shape_info.txt"), mode='w') as f:
                         f.write("                      < weight 정보 >\n\n")
@@ -609,9 +611,9 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                         print("------------------------------------------------------")
                         print("총 파일 개수 : {}".format(len(name_shape)))
 
-                        # 앞의 shared_variables / Gerator 빼버리기
                         f.write("-------------- 2. weight name, shape ----------------\n\n")
                         for name, shape in name_shape:
+                            # 앞의 shared_variables / Generator 빼버리기
                             seperated = name.split("/")[2:]
                             joined = "_".join(seperated)
                             shape = str(shape).strip('[]')
@@ -619,6 +621,8 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                             print("weight : {}.npy".format(joined))
                             print("shape : ({})".format(shape))
                             f.write("{}.npy \nshape : ({}) \n\n".format(joined, shape))
+
+                            # weight npy로 저장하기
                             np.save(os.path.join(numpy_weight_save_path, joined), reader.get_tensor(name))
 
 
@@ -631,10 +635,14 @@ if __name__ == "__main__":
           norm_selection="instancenorm",  # "instancenorm" or nothing
           image_pool=False,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
           image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지? 논문에선 50개 사용했다고 나옴.
-          learning_rate=0.0002, training_epochs=30, batch_size=1, display_step=1,
+          learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1,
           weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
           learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
-          inference_size=(256, 256),  # TEST=True 일 떄, inference할 크기는 256 x 256 이상이어야 한다. - 관련 코드는 Dataset.py 의 64번째 줄
+          inference_size=(256, 256),
+          # TEST=True 일 떄, inference할 크기는 256 x 256 이상이어야 한다. - 관련 코드는 Dataset.py 의 65번째 줄
           only_draw_graph=False,  # TEST=False 일 떄, 그래프만 그리고 종료할지 말지
-          save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더
+          show_translated_image=True,  # TEST=True 일 때변환 된 이미지를 보여줄지 말지
+          # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다.(폴더 2개 이름 -> AtoB_translated_image , BtoA_translated_image )
+          save_path="translated_image",  # TEST=True 일 때 변환된 이미지가 저장될 폴더
+          weights_to_numpy=False)  # TEST=True 일 때 가중치를 npy 파일로 저장할지 말지
     print("model imported")
