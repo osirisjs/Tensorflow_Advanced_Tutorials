@@ -10,14 +10,14 @@ from tqdm import tqdm
 import PCA
 
 
-def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", corrupt_probability=0.5,
+def model(TEST=True, Comparison_with_PCA=True, model_name="DA", corrupt_probability=0.5,
           optimizer_selection="Adam",
           learning_rate=0.001, training_epochs=100,
           batch_size=128, display_step=10, batch_norm=True):
     mnist = input_data.read_data_sets("", one_hot=False)
 
     if batch_norm == True:
-        model_name = "BN" + model_name
+        model_name = "BN"+ model_name
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
@@ -97,7 +97,7 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", corrupt
             return tf.nn.bias_add(conv_out, b)
 
     def inference(x):
-        if model_name == "Autoencoder" or model_name == "BNAutoencoder":
+        if model_name == "DA" or model_name == "BNDA":
             with tf.variable_scope("encoder"):
                 with tf.variable_scope("fully1"):
                     fully_1 = tf.nn.leaky_relu(layer(tf.reshape(x, (-1, 784)), [784, 256], [256]))
@@ -119,7 +119,7 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", corrupt
                     decoder_output = tf.nn.sigmoid(fullylayer(fully_6, [256, 784], [784]))
             return encoder_output, decoder_output
 
-        elif model_name == 'Convolution_Autoencoder' or model_name == "BNAutoencoder":
+        elif model_name == 'CDA' or model_name == "BNCDA":
             with tf.variable_scope("encoder"):
                 with tf.variable_scope("conv_1"):
                     conv_1 = tf.nn.leaky_relu(
@@ -206,9 +206,9 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", corrupt
             tf.summary.image('input_image', tf.reshape(x, [-1, 28, 28, 1]), max_outputs=10)
             tf.summary.image('output_image', tf.reshape(output, [-1, 28, 28, 1]), max_outputs=10)
 
-            if model_name == 'Convolution_Autoencoder' or model_name == "BNConvolution_Autoencoder":
+            if model_name == 'CDA' or model_name == "BNCDA":
                 l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(output, x)), axis=[1, 2, 3]))
-            elif model_name == "Autoencoder" or model_name == "BNAutoencoder":
+            elif model_name == "DA" or model_name == "BNDA":
                 l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(output, tf.reshape(x, (-1, 784)))), axis=1))
 
             val_loss = tf.reduce_mean(l2)
@@ -216,9 +216,9 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", corrupt
             return val_loss
 
     def loss(output, x):
-        if model_name == 'Convolution_Autoencoder' or model_name == "BNConvolution_Autoencoder":
+        if model_name == 'CDA' or model_name == "BNCDA":
             l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(output, x)), axis=[1, 2, 3]))
-        elif model_name == "Autoencoder" or model_name == "BNAutoencoder":
+        elif model_name == "DA" or model_name == "BNDA":
             l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(output, tf.reshape(x, (-1, 784)))), axis=1))
         train_loss = tf.reduce_mean(l2)
         return train_loss
@@ -246,6 +246,9 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", corrupt
     # print(tf.get_default_graph()) #기본그래프이다.
     JG_Graph = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
     with JG_Graph.as_default():  # as_default()는 JG_Graph를 기본그래프로 설정한다.
+
+        global_step = tf.Variable(0, name="global_step", trainable=False)
+
         with tf.name_scope("feed_dict"):
             x = tf.placeholder("float", [None, 28, 28, 1])
             d_x = Denoising(x, r=corrupt_probability)
@@ -259,7 +262,6 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", corrupt
             saver = tf.train.Saver(var_list=tf.global_variables(), max_to_keep=3)
         if not TEST:
             with tf.name_scope("loss"):
-                global_step = tf.Variable(0, name="global_step", trainable=False)
                 cost = loss(decoder_output, x)
             with tf.name_scope("trainer"):
                 train_operation = training(cost, global_step)
@@ -305,7 +307,7 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", corrupt
                     save_model_path = os.path.join('model', model_name)
                     if not os.path.exists(save_model_path):
                         os.makedirs(save_model_path)
-                    saver.save(sess, save_model_path + '/', global_step=sess.run(global_step),
+                    saver.save(sess, save_model_path + "/", global_step=sess.run(global_step),
                                write_meta_graph=False)
 
             print("Optimization Finished!")
@@ -336,21 +338,21 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", corrupt
                 ax[x].legend()
 
             # plt.tight_layout()
-            if model_name == "Autoencoder":
+            if model_name == "DA":
                 plt.savefig("PCA vs Autoencoder.png", dpi=300)
-            elif model_name == "BNAutoencoder":
+            elif model_name == "BNDA":
                 plt.savefig("PCA vs batch_Autoencoder.png", dpi=300)
-            elif model_name == "Convolution_Autoencoder":
+            elif model_name == "CDA":
                 plt.savefig("PCA vs ConvAutoencoder.png", dpi=300)
-            elif model_name == "BNConvolution_Autoencoder":
+            elif model_name == "BNCDA":
                 plt.savefig("PCA vs batchConvAutoencoder.png", dpi=300)
             plt.show()
 
 
 if __name__ == "__main__":
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-    # model_name = "Convolution_Autoencoder" or "Autoencoder"
-    model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder",
+    # model_name =  CDA -> ConvolutionDenosingAutoencoder" or DA -> DenosingAutoencoder
+    model(TEST=True, Comparison_with_PCA=True, model_name="DA",
           corrupt_probability=0.5,
           optimizer_selection="Adam", learning_rate=0.001, training_epochs=300, batch_size=256,
           display_step=1, batch_norm=False)
