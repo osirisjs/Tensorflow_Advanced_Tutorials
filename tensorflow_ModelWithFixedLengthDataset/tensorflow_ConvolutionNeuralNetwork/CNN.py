@@ -18,6 +18,18 @@ def model(TEST=True, model_name="CNN", optimizer_selection="Adam", learning_rate
             shutil.rmtree("tensorboard/{}".format(model_name))
 
     # stride? -> [1, 2, 2, 1] = [one image, width, height, one channel]
+    def generalconv2d(input, weight_shape='', bias_shape='', strides=[1, 1, 1, 1], padding="VALID"):
+        # weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
+        weight_init = tf.truncated_normal_initializer(stddev=0.02)
+        bias_init = tf.constant_initializer(value=0)
+        weight_decay = tf.constant(0.0001, dtype=tf.float32)
+        w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        b = tf.get_variable("b", bias_shape, initializer=bias_init)
+        conv_out = tf.nn.conv2d(input, w, strides=strides, padding=padding)
+        return tf.nn.bias_add(conv_out, b)
+
+    # stride? -> [1, 2, 2, 1] = [one image, width, height, one channel]
     def conv2d(input, weight_shape='', bias_shape='', strides=[1, 1, 1, 1], padding="VALID"):
         # weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
         weight_init = tf.truncated_normal_initializer(stddev=0.02)
@@ -32,24 +44,6 @@ def model(TEST=True, model_name="CNN", optimizer_selection="Adam", learning_rate
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
         conv_out = tf.nn.conv2d(input, w, strides=strides, padding=padding)
 
-        if batch_norm:
-            return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=not TEST)
-        else:
-            return tf.nn.bias_add(conv_out, b)
-
-    def conv2d_transpose(input, output_shape='', weight_shape='', bias_shape='', strides=[1, 1, 1, 1], padding="VALID"):
-        # weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
-        weight_init = tf.truncated_normal_initializer(stddev=0.02)
-        bias_init = tf.constant_initializer(value=0)
-        if batch_norm:
-            w = tf.get_variable("w", weight_shape, initializer=weight_init)
-        else:
-            weight_decay = tf.constant(0.0001, dtype=tf.float32)
-            w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
-        b = tf.get_variable("b", bias_shape, initializer=bias_init)
-
-        conv_out = tf.nn.conv2d_transpose(input, w, output_shape=output_shape, strides=strides, padding=padding)
         if batch_norm:
             return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=not TEST)
         else:
@@ -70,19 +64,19 @@ def model(TEST=True, model_name="CNN", optimizer_selection="Adam", learning_rate
         x = tf.reshape(x, shape=[-1, 28, 28, 1])
         # in pooling, type = max or avg
         with tf.variable_scope("conv_1"):
-            conv_1 = tf.nn.relu(
+            conv_1 = tf.nn.leaky_relu(
                 conv2d(x, weight_shape=[5, 5, 1, 24], bias_shape=[24], strides=[1, 1, 1, 1], padding="VALID"))
             pool_1 = pooling(conv_1, type="avg", k=2, padding="VALID")  # result -> batch_size, 12, 12, 12
         with tf.variable_scope("conv_2"):
-            conv_2 = tf.nn.relu(
+            conv_2 = tf.nn.leaky_relu(
                 conv2d(pool_1, weight_shape=[5, 5, 24, 48], bias_shape=[48], strides=[1, 1, 1, 1], padding="VALID"))
             pool_2 = pooling(conv_2, type="avg", k=2, padding="VALID")  # result -> batcj_size, 4, 4 ,24
         with tf.variable_scope("conv_3"):
-            conv_3 = tf.nn.relu(
+            conv_3 = tf.nn.leaky_relu(
                 conv2d(pool_2, weight_shape=[4, 4, 48, 72], bias_shape=[72], strides=[1, 1, 1, 1], padding="VALID"))
             # result -> batcj_size, 1, 1 ,36
         with tf.variable_scope("conv_4"):
-            output = conv2d(conv_3, weight_shape=[1, 1, 72, 10], bias_shape=[10], strides=[1, 1, 1, 1], padding="VALID")
+            output = generalconv2d(conv_3, weight_shape=[1, 1, 72, 10], bias_shape=[10], strides=[1, 1, 1, 1], padding="VALID")
         return tf.reshape(output, (-1, 10))
 
     def loss(output, y):
@@ -104,7 +98,7 @@ def model(TEST=True, model_name="CNN", optimizer_selection="Adam", learning_rate
         return train_operation
 
     def evaluate(output, y):
-        correct_prediction = tf.equal(tf.argmax(output, 1), tf.argmax(y, 1))
+        correct_prediction = tf.equal(tf.argmax(tf.nn.softmax(output), 1), tf.argmax(y, 1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
         return accuracy
 

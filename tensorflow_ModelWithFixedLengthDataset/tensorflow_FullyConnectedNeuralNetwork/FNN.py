@@ -17,6 +17,16 @@ def model(TEST=True, model_name="FNN", optimizer_selection="Adam", learning_rate
         if os.path.exists("tensorboard/{}".format(model_name)):
             shutil.rmtree("tensorboard/{}".format(model_name))
 
+    def fullylayer(input, weight_shape, bias_shape):
+        weight_init = tf.random_normal_initializer(stddev=0.01)
+        bias_init = tf.random_normal_initializer(stddev=0.01)
+        weight_decay = tf.constant(0.000001, dtype=tf.float32)
+        w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        b = tf.get_variable("b", bias_shape, initializer=bias_init)
+
+        return tf.matmul(input, w) + b
+
     def layer(input, weight_shape, bias_shape):
         weight_init = tf.truncated_normal_initializer(stddev=0.02)
         bias_init = tf.truncated_normal_initializer(stddev=0.02)
@@ -35,11 +45,11 @@ def model(TEST=True, model_name="FNN", optimizer_selection="Adam", learning_rate
 
     def inference(x):
         with tf.variable_scope("hidden_1"):
-            hidden1 = tf.nn.relu(layer(x, [784, 256], [256]))
+            hidden1 = tf.nn.leaky_relu(layer(x, [784, 256], [256]))
         with tf.variable_scope("hidden_2"):
-            hidden2 = tf.nn.relu(layer(hidden1, [256, 256], [256]))
+            hidden2 = tf.nn.leaky_relu(layer(hidden1, [256, 256], [256]))
         with tf.variable_scope("output"):
-            output = layer(hidden2, [256, 10], [10])
+            output = fullylayer(hidden2, [256, 10], [10])
         return output
 
     def loss(output, y):
@@ -61,7 +71,7 @@ def model(TEST=True, model_name="FNN", optimizer_selection="Adam", learning_rate
         return train_operation
 
     def evaluate(output, y):
-        correct_prediction = tf.equal(tf.argmax(output, 1), tf.argmax(y, 1))
+        correct_prediction = tf.equal(tf.argmax(tf.nn.softmax(output), 1), tf.argmax(y, 1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
         return accuracy
 

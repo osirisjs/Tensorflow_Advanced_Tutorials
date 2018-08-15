@@ -66,16 +66,26 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
         else:
             return tf.matmul(input, w) + b
 
+    def fullylayer(input, weight_shape, bias_shape):
+        weight_init = tf.random_normal_initializer(stddev=0.01)
+        bias_init = tf.random_normal_initializer(stddev=0.01)
+        weight_decay = tf.constant(0.000001, dtype=tf.float32)
+        w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        b = tf.get_variable("b", bias_shape, initializer=bias_init)
+
+        return tf.matmul(input, w) + b
+
     def generator(noise=None, target=None):
         if targeting:
             noise = tf.concat([noise, target], axis=1)
         with tf.variable_scope("generator"):
             with tf.variable_scope("fully1"):
-                fully_1 = tf.nn.relu(layer(noise, [np.shape(noise)[1], 256], [256]))
+                fully_1 = tf.nn.leaky_relu(layer(noise, [np.shape(noise)[1], 256], [256]))
             with tf.variable_scope("fully2"):
-                fully_2 = tf.nn.relu(layer(fully_1, [256, 512], [512]))
+                fully_2 = tf.nn.leaky_relu(layer(fully_1, [256, 512], [512]))
             with tf.variable_scope("output"):
-                output = tf.nn.sigmoid(layer(fully_2, [512, 784], [784]))
+                output = tf.nn.sigmoid(fullylayer(fully_2, [512, 784], [784]))
 
         return output
 
@@ -84,11 +94,11 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
             x = tf.concat([x, target], axis=1)
         with tf.variable_scope("discriminator"):
             with tf.variable_scope("fully1"):
-                fully_1 = tf.nn.relu(layer(x, [np.shape(x)[1], 500], [500]))
+                fully_1 = tf.nn.leaky_relu(layer(x, [np.shape(x)[1], 500], [500]))
             with tf.variable_scope("fully2"):
-                fully_2 = tf.nn.relu(layer(fully_1, [500, 100], [100]))
+                fully_2 = tf.nn.leaky_relu(layer(fully_1, [500, 100], [100]))
             with tf.variable_scope("output"):
-                output = layer(fully_2, [100, 1], [1])
+                output = fullylayer(fully_2, [100, 1], [1])
         return output, tf.nn.sigmoid(output)
 
     def training(cost, var_list, scope=None):
@@ -274,8 +284,6 @@ if __name__ == "__main__":
     targeting = True 일 때 -> distance_loss = 'L1' 일 경우 , generator에서 나오는 출력과 실제 출력값을 비교하는 L1 loss를 생성
     targeting = True 일 때 -> distance_loss = 'L2' 일 경우 , generator에서 나오는 출력과 실제 출력값을 비교하는 L2 loss를 생성
     targeting = True 일 때 -> distamce_loss = None 일 경우 , 추가적인 loss 없음
-    참고 : distance_loss를 사용하지 않고, batch_norm을 쓰면 생성이 잘 안된다. 네트워크 구조를 간단히 하기위해
-    fully connected network를 사용해서 그런지 batch_norm이 generator가 숫자이미지를 생성하려는 것을 방해하는 것 같다.
     '''
     model(TEST=True, noise_size=128, targeting=True, distance_loss="L2", distance_loss_weight=1,
           optimizer_selection="Adam", learning_rate=0.0002, training_epochs=100,

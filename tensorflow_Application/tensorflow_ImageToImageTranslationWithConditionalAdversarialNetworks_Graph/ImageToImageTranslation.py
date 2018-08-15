@@ -74,7 +74,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
 
         # batch_norm을 적용하면 bias를 안써도 된다곤 하지만, 나는 썼다.
         if norm_selection == "batch_norm":
-             return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=True)
+            return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=True)
         elif norm_selection == "instance_norm":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
         else:

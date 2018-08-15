@@ -488,6 +488,9 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                         BtoA_sigmoidD += (BtoA_Dreal_simgoid / total_batch)
                         BtoA_sigmoidG += (BtoA_Dgene_simgoid / total_batch)
 
+                        summary_str = sess.run(summary_operation)
+                        summary_writer.add_summary(summary_str, global_step=epoch)
+
                         print("{} epoch : {} batch running of {} total batch...".format(epoch, i, total_batch))
 
                     print("<<< AtoB Discriminator mean output : {} / AtoB Generator mean output : {} >>>".format(
@@ -500,8 +503,6 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                                                                                                     BtoA_LossG))
 
                     if epoch % display_step == 0:
-                        summary_str = sess.run(summary_operation)
-                        summary_writer.add_summary(summary_str, global_step=epoch)
 
                         save_all_model_path = os.path.join(model_name, 'All')
                         # saver_generator.export_meta_graph 에서 경로가 생성되지만, 혹시모를 오류에 대비해서!!!

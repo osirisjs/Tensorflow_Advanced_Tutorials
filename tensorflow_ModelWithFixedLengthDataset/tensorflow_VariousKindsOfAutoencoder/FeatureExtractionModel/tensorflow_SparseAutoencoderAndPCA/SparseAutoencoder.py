@@ -17,19 +17,11 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", target_
     mnist = input_data.read_data_sets("", one_hot=False)
 
     if batch_norm == True:
-        model_name = "batch_norm_" + model_name
+        model_name = "BN" + model_name
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
             shutil.rmtree("tensorboard/{}".format(model_name))
-
-    # ksize, strides? -> [1, 2, 2, 1] = [one image, width, height, one channel]
-    # pooling을 할때, 각 batch 에 대해 한 채널에 대해서 하니까, 1, 1,로 설정해준것.
-    def pooling(input, type="avg", k=2, padding='VALID'):
-        if type == "max":
-            return tf.nn.max_pool(input, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding=padding)
-        else:
-            return tf.nn.avg_pool(input, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding=padding)
 
     def layer(input, weight_shape, bias_shape):
         weight_init = tf.random_normal_initializer(stddev=0.01)
@@ -85,7 +77,7 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", target_
 
     def inference(x):
         hidden = []
-        if model_name == "Autoencoder" or model_name == "batch_norm_Autoencoder":
+        if model_name == "Autoencoder" or model_name == "BNAutoencoder":
             with tf.variable_scope("encoder"):
                 with tf.variable_scope("fully1"):
                     fully_1 = tf.nn.sigmoid(layer(tf.reshape(x, (-1, 784)), [784, 256], [256]))
@@ -113,7 +105,7 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", target_
                     decoder_output = tf.nn.sigmoid(layer(fully_6, [256, 784], [784]))
             return encoder_output, decoder_output, hidden
 
-        elif model_name == 'Convolution_Autoencoder' or model_name == "batch_norm_Convolution_Autoencoder":
+        elif model_name == 'Convolution_Autoencoder' or model_name == "BNConvolution_Autoencoder":
             with tf.variable_scope("encoder"):
                 with tf.variable_scope("conv_1"):
                     conv_1 = tf.nn.sigmoid(
@@ -212,9 +204,9 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", target_
             tf.summary.image('input_image', tf.reshape(x, [-1, 28, 28, 1]), max_outputs=5)
             tf.summary.image('output_image', tf.reshape(output, [-1, 28, 28, 1]), max_outputs=5)
 
-            if model_name == 'Convolution_Autoencoder' or model_name == "batch_norm_Convolution_Autoencoder":
+            if model_name == 'Convolution_Autoencoder' or model_name == "BNConvolution_Autoencoder":
                 l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(output, x)), axis=[1, 2, 3]))
-            elif model_name == "Autoencoder" or model_name == "batch_norm_Autoencoder":
+            elif model_name == "Autoencoder" or model_name == "BNAutoencoder":
                 l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(output, tf.reshape(x, (-1, 784)))), axis=1))
 
             val_loss = tf.reduce_mean(l2)
@@ -235,9 +227,9 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", target_
         return train_operation
 
     def loss(output, x):
-        if model_name == 'Convolution_Autoencoder' or model_name == "batch_norm_Convolution_Autoencoder":
+        if model_name == 'Convolution_Autoencoder' or model_name == "BNConvolution_Autoencoder":
             l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(output, x)), axis=[1, 2, 3]))
-        elif model_name == "Autoencoder" or model_name == "batch_norm_Autoencoder":
+        elif model_name == "Autoencoder" or model_name == "BNAutoencoder":
             l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(output, tf.reshape(x, (-1, 784)))), axis=1))
         train_loss = tf.reduce_mean(l2)
         return train_loss
@@ -350,11 +342,11 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", target_
             plt.tight_layout()
             if model_name == "Autoencoder":
                 plt.savefig("PCA vs Autoencoder.png", dpi=300)
-            elif model_name == "batch_norm_Autoencoder":
+            elif model_name == "BNAutoencoder":
                 plt.savefig("PCA vs batch_Autoencoder.png", dpi=300)
             elif model_name == "Convolution_Autoencoder":
                 plt.savefig("PCA vs ConvAutoencoder.png", dpi=300)
-            elif model_name == "batch_norm_Convolution_Autoencoder":
+            elif model_name == "BNConvolution_Autoencoder":
                 plt.savefig("PCA vs batchConvAutoencoder.png", dpi=300)
             plt.show()
 

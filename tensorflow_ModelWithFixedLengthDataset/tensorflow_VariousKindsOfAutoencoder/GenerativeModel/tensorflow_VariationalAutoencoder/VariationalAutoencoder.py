@@ -58,15 +58,25 @@ def model(TEST=True, targeting=True, latent_number=16, optimizer_selection="Adam
         else:
             return tf.matmul(input, w) + b
 
+    def fullylayer(input, weight_shape, bias_shape):
+        weight_init = tf.random_normal_initializer(stddev=0.01)
+        bias_init = tf.random_normal_initializer(stddev=0.01)
+        weight_decay = tf.constant(0.000001, dtype=tf.float32)
+        w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        b = tf.get_variable("b", bias_shape, initializer=bias_init)
+
+        return tf.matmul(input, w) + b
+
     def inference(x, target, latent_number):
 
         with tf.variable_scope("encoder"):
             with tf.variable_scope("fully1"):
-                fully_1 = tf.nn.relu(layer(tf.reshape(x, (-1, 784)), [784, 256], [256]))
+                fully_1 = tf.nn.leaky_relu(layer(tf.reshape(x, (-1, 784)), [784, 256], [256]))
             with tf.variable_scope("fully2"):
-                fully_2 = tf.nn.relu(layer(fully_1, [256, 128], [128]))
+                fully_2 = tf.nn.leaky_relu(layer(fully_1, [256, 128], [128]))
             with tf.variable_scope("fully3"):
-                fully_3 = tf.nn.relu(layer(fully_2, [128, 64], [64]))
+                fully_3 = tf.nn.leaky_relu(layer(fully_2, [128, 64], [64]))
 
         with tf.variable_scope("mean_variance"):
             # 활성화 함수 쓰면 안된다.
@@ -88,13 +98,13 @@ def model(TEST=True, targeting=True, latent_number=16, optimizer_selection="Adam
         # 학습이 완료된 후에는 아래의 decoder의 가중치만 사용하면 된다.
         with tf.variable_scope("decoder"):
             with tf.variable_scope("fully1"):
-                fully_4 = tf.nn.relu(layer(latent_variable, [latent_number * 2, 64], [64]))
+                fully_4 = tf.nn.leaky_relu(layer(latent_variable, [latent_number * 2, 64], [64]))
             with tf.variable_scope("fully2"):
-                fully_5 = tf.nn.relu(layer(fully_4, [64, 128], [128]))
+                fully_5 = tf.nn.leaky_relu(layer(fully_4, [64, 128], [128]))
             with tf.variable_scope("fully3"):
-                fully_6 = tf.nn.relu(layer(fully_5, [128, 256], [256]))
+                fully_6 = tf.nn.leaky_relu(layer(fully_5, [128, 256], [256]))
             with tf.variable_scope("output"):
-                decoder_output = tf.nn.sigmoid(layer(fully_6, [256, 784], [784]))
+                decoder_output = tf.nn.sigmoid(fullylayer(fully_6, [256, 784], [784]))
 
         return latent_variable, encoder_output, decoder_output
 
