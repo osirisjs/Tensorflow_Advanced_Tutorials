@@ -87,17 +87,12 @@ class Dataset(object):
         self.dataset_folder = os.path.join(self.Dataset_Path, self.DB_name)
         self.dataset_zip = self.dataset_folder + ".zip"
 
-        # Test Dataset은 무조건 하나씩 처리하자.
-        if self.use_TrainDataset == False:
-            self.batch_size = 1
-        else:
-            self.batch_size = batch_size
-
         # 데이터셋 다운로드 한다.
         self.Preparing_Learning_Dataset()
 
         # TFRecord를 쓰기 위한 변수, use_TFRecord 가 True 이면 TFRecord 파일로 쓴다.
         if self.use_TrainDataset:
+            self.batch_size = batch_size
             # (1). tf.data.Dataset.from_tensor_slices
             self.file_path_Alist = glob.glob(os.path.join(self.dataset_folder, "trainA/*"))
             self.file_path_Blist = glob.glob(os.path.join(self.dataset_folder, "trainB/*"))
@@ -115,6 +110,8 @@ class Dataset(object):
                 # TFRecord 파일로 쓰기.
                 self.TFRecordWriter()
         else:
+            # Test Dataset은 무조건 하나씩 처리하자.
+            self.batch_size = 1
             # (1). tf.data.Dataset.from_tensor_slices
             self.file_path_Alist = glob.glob(os.path.join(self.dataset_folder, "testA/*"))
             self.file_path_Blist = glob.glob(os.path.join(self.dataset_folder, "testB/*"))

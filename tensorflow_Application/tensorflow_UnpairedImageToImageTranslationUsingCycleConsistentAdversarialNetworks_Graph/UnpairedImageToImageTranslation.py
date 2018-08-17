@@ -13,39 +13,47 @@ def visualize(model_name="CycleGAN", named_images=None, save_path=None):
     # RGB로 바꾸기
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     cv2.imwrite(os.path.join(save_path, '{}_{}.png'.format(model_name, named_images[0])), image)
-    print("{}_{}.png saved in {} folder".format(model_name, named_images[0], save_path))
+    print("<<< {}_{}.png saved in {} folder >>>".format(model_name, named_images[0], save_path))
 
 
 def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
+          filter_size=32,
+          norm_selection="BN",
           cycle_consistency_loss_weight=10,
           optimizer_selection="Adam", beta1=0.9, beta2=0.999,
           decay=0.999, momentum=0.9,
           use_identity_mapping=True,
-          norm_selection="instancenorm",
           image_pool=True,
           image_pool_size=50,
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
           weight_decay_epoch=100,
           learning_rate_decay=0.99,
           inference_size=(256, 256),
+          using_moving_variable=False,
           only_draw_graph=False,
           show_translated_image=True,
           save_path="translated_image",
           weights_to_numpy=False):
-    print("CycleGAN")
+    print("<<< CycleGAN >>>")
 
     model_name = DB_name
 
-    if norm_selection == "instancenorm":
-        model_name += "_ITN"
-
     if cycle_consistency_loss == "L1":
-        model_name += "L1ccl"  # L1 cycle consistency loss
+        model_name += "L1cl"  # L1 cycle consistency loss
     else:
-        model_name += "L2ccl"  # L1 cycle consistency loss
+        model_name += "L2cl"  # L1 cycle consistency loss
 
     if use_identity_mapping:
-        model_name += "iml"  # identity mapping loss
+        model_name += "im"  # identity mapping loss
+
+    if norm_selection == "BN":
+        model_name = model_name + "BN"
+    elif norm_selection == "IN":
+        model_name = model_name + "IN"
+
+    if batch_size == 1 and norm_selection == "BN":
+        norm_selection = "IN"
+        model_name = model_name[:-2] + "IN"
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
@@ -64,7 +72,10 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
         conv_out = tf.nn.conv2d(input, w, strides=strides, padding=padding)
 
-        if norm_selection == "instancenorm":
+        # batch_norm을 적용하면 bias를 안써도 된다곤 하지만, 나는 썼다.
+        if norm_selection == "BN":
+            return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=BN_FLAG)
+        elif norm_selection == "IN":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
         else:
             return tf.nn.bias_add(conv_out, b)
@@ -82,7 +93,10 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
 
         conv_out = tf.nn.conv2d_transpose(input, w, output_shape=output_shape, strides=strides, padding=padding)
 
-        if norm_selection == "instancenorm":
+        # batch_norm을 적용하면 bias를 안써도 된다곤 하지만, 나는 썼다.
+        if norm_selection == "BN":
+            return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=BN_FLAG)
+        elif norm_selection == "IN":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
         else:
             return tf.nn.bias_add(conv_out, b)
@@ -90,11 +104,11 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
     def residual_block(x):
 
         y = tf.pad(x, [[0, 0], [1, 1], [1, 1], [0, 0]], "REFLECT")
-        y = tf.nn.relu(conv2d(y, weight_shape=(3, 3, 128, 128), bias_shape=(128),
+        y = tf.nn.relu(conv2d(y, weight_shape=(3, 3, filter_size * 4, filter_size * 4), bias_shape=(filter_size * 4),
                               norm_selection=norm_selection,
                               strides=[1, 1, 1, 1], padding="VALID"))
         y = tf.pad(y, [[0, 0], [1, 1], [1, 1], [0, 0]], "REFLECT")
-        y = tf.nn.relu(conv2d(y, weight_shape=(3, 3, 128, 128), bias_shape=(128),
+        y = tf.nn.relu(conv2d(y, weight_shape=(3, 3, filter_size * 4, filter_size * 4), bias_shape=(filter_size * 4),
                               norm_selection=norm_selection,
                               strides=[1, 1, 1, 1], padding="VALID"))
         return y + x
@@ -123,19 +137,21 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
             with tf.variable_scope("conv1"):
                 padded_images = tf.pad(images, [[0, 0], [3, 3], [3, 3], [0, 0]], "REFLECT")
                 conv1 = tf.nn.relu(
-                    conv2d(padded_images, weight_shape=(7, 7, 3, 32), bias_shape=(32),
+                    conv2d(padded_images, weight_shape=(7, 7, 3, filter_size), bias_shape=(filter_size),
                            norm_selection=norm_selection,
                            strides=[1, 1, 1, 1], padding="VALID"))
                 # result shape = (batch_size, 256, 256, 64)
             with tf.variable_scope("conv2"):
-                conv2 = tf.nn.relu(conv2d(conv1, weight_shape=(3, 3, 32, 64), bias_shape=(64),
-                                          norm_selection=norm_selection,
-                                          strides=[1, 2, 2, 1], padding="SAME"))
+                conv2 = tf.nn.relu(
+                    conv2d(conv1, weight_shape=(3, 3, filter_size, filter_size * 2), bias_shape=(filter_size * 2),
+                           norm_selection=norm_selection,
+                           strides=[1, 2, 2, 1], padding="SAME"))
                 # result shape = (batch_size, 128, 128, 64)
             with tf.variable_scope("conv3"):
-                conv3 = tf.nn.relu(conv2d(conv2, weight_shape=(3, 3, 64, 128), bias_shape=(128),
-                                          norm_selection=norm_selection,
-                                          strides=[1, 2, 2, 1], padding="SAME"))
+                conv3 = tf.nn.relu(
+                    conv2d(conv2, weight_shape=(3, 3, filter_size * 2, filter_size * 4), bias_shape=(filter_size * 4),
+                           norm_selection=norm_selection,
+                           strides=[1, 2, 2, 1], padding="SAME"))
                 # result shape = (batch_size, 64, 64, 128)
 
             with tf.variable_scope("9_residual_block"):
@@ -158,22 +174,23 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 어쨌든 output_shape = tf.shape(conv2) 처럼 코딩하는게 무조건 좋다. 
                 '''
                 trans_conv1 = tf.nn.relu(conv2d_transpose(r9, output_shape=tf.shape(conv2),
-                                                          weight_shape=(3, 3, 64, 128),
-                                                          bias_shape=(64), norm_selection=norm_selection,
+                                                          weight_shape=(3, 3, filter_size * 2, filter_size * 4),
+                                                          bias_shape=(filter_size * 2), norm_selection=norm_selection,
                                                           strides=[1, 2, 2, 1], padding="SAME"))
                 # result shape = (batch_size, 128, 128, 64)
 
             with tf.variable_scope("trans_conv2"):
                 trans_conv2 = tf.nn.relu(conv2d_transpose(trans_conv1, output_shape=tf.shape(conv1),
-                                                          weight_shape=(3, 3, 32, 64),
-                                                          bias_shape=(32), norm_selection=norm_selection,
+                                                          weight_shape=(3, 3, filter_size, filter_size * 2),
+                                                          bias_shape=(filter_size), norm_selection=norm_selection,
                                                           strides=[1, 2, 2, 1], padding="SAME"))
                 # result shape = (batch_size, 256, 256, 32)
 
             with tf.variable_scope("output"):
                 padded_trans_conv2 = tf.pad(trans_conv2, [[0, 0], [3, 3], [3, 3], [0, 0]], "REFLECT")
                 output = tf.nn.tanh(
-                    conv2d(padded_trans_conv2, weight_shape=(7, 7, 32, 3), bias_shape=(3), strides=[1, 1, 1, 1],
+                    conv2d(padded_trans_conv2, weight_shape=(7, 7, filter_size, 3), bias_shape=(3),
+                           strides=[1, 1, 1, 1],
                            padding="VALID"))
             # result shape = (batch_size, 256, 256, 3)
         return output
@@ -189,30 +206,33 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
         with tf.variable_scope(name):
             with tf.variable_scope("conv1"):
                 conv1 = tf.nn.leaky_relu(
-                    conv2d(images, weight_shape=(4, 4, 3, 64), bias_shape=(64),
+                    conv2d(images, weight_shape=(4, 4, 3, filter_size * 2), bias_shape=(filter_size * 2),
                            strides=[1, 2, 2, 1], padding="SAME"), alpha=0.2)
                 # result shape = (batch_size, 128, 128, 64)
             with tf.variable_scope("conv2"):
                 conv2 = tf.nn.leaky_relu(
-                    conv2d(conv1, weight_shape=(4, 4, 64, 128), bias_shape=(128), norm_selection=norm_selection,
+                    conv2d(conv1, weight_shape=(4, 4, filter_size * 2, filter_size * 4), bias_shape=(filter_size * 4),
+                           norm_selection=norm_selection,
                            strides=[1, 2, 2, 1], padding="SAME"), alpha=0.2)
                 # result shape = (batch_size, 64, 64, 128)
             with tf.variable_scope("conv3"):
-                conv3 = conv2d(conv2, weight_shape=(4, 4, 128, 256), bias_shape=(256), norm_selection=norm_selection,
+                conv3 = conv2d(conv2, weight_shape=(4, 4, filter_size * 4, filter_size * 8),
+                               bias_shape=(filter_size * 8), norm_selection=norm_selection,
                                strides=[1, 2, 2, 1], padding="SAME")
                 # result shape = (batch_size, 32, 32, 256)
                 conv3 = tf.nn.leaky_relu(
                     tf.pad(conv3, [[0, 0], [1, 1], [1, 1], [0, 0]], mode="CONSTANT", constant_values=0), alpha=0.2)
                 # result shape = (batch_size, 34, 34, 256)
             with tf.variable_scope("conv4"):
-                conv4 = conv2d(conv3, weight_shape=(4, 4, 256, 512), bias_shape=(512), norm_selection=norm_selection,
+                conv4 = conv2d(conv3, weight_shape=(4, 4, filter_size * 8, filter_size * 16),
+                               bias_shape=(filter_size * 16), norm_selection=norm_selection,
                                strides=[1, 1, 1, 1], padding="VALID")
                 # result shape = (batch_size, 31, 31, 256)
                 conv4 = tf.nn.leaky_relu(
                     tf.pad(conv4, [[0, 0], [1, 1], [1, 1], [0, 0]], mode="CONSTANT", constant_values=0), alpha=0.2)
                 # result shape = (batch_size, 33, 33, 512)
             with tf.variable_scope("output"):
-                output = conv2d(conv4, weight_shape=(4, 4, 512, 1), bias_shape=(1),
+                output = conv2d(conv4, weight_shape=(4, 4, filter_size * 16, 1), bias_shape=(1),
                                 strides=[1, 1, 1, 1], padding="VALID")
                 # result shape = (batch_size, 30, 30, 1)
             return tf.nn.sigmoid(output)
@@ -236,6 +256,9 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
         JG_Graph = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
         with JG_Graph.as_default():  # as_default()는 JG_Graph를 기본그래프로 설정한다.
 
+            with tf.name_scope("BN_FLAG"):
+                if norm_selection == "BN":
+                    BN_FLAG = tf.placeholder(tf.bool, shape=None)
             '''
             학습률 - 논문에서 100epoch 후에 선형적으로 줄인다고 했으므로, 아래의 변수가 필요하다. 2가지 방법
 
@@ -383,8 +406,13 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
             사용해 출력된 모든 연산의 리스트에서 하나하나 찾아야 한다.
             필요한 변수가 있을 시 아래와 같이 추가해서 그래프를 새로 만들어 주면 된다.
             '''
-            for op in (A, B, AtoB_gene, BtoA_gene):
-                tf.add_to_collection("way", op)
+
+            if norm_selection == "BN":
+                for op in (A, B, AtoB_gene, BtoA_gene, BN_FLAG):
+                    tf.add_to_collection("way", op)
+            else:
+                for op in (A, B, AtoB_gene, BtoA_gene):
+                    tf.add_to_collection("way", op)
 
             # 아래와 같은 코드도 가능.
             # tf.add_to_collection('A', A)
@@ -397,7 +425,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
             saver_generator.export_meta_graph(meta_save_file_path, collection_list=['way'])
 
             if only_draw_graph:
-                print('Generator_Graph.meta 파일만 저장하고 종료합니다.')
+                print('<<< Generator_Graph.meta 파일만 저장하고 종료합니다. >>>')
                 exit(0)
 
             if image_pool and batch_size == 1:
@@ -408,13 +436,13 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
             # config.gpu_options.per_process_gpu_memory_fraction = 0.1
 
             with tf.Session(graph=JG_Graph, config=config) as sess:
-                print("initializing!!!")
+                print("<<< initializing!!! >>>")
                 sess.run(tf.global_variables_initializer())
                 ckpt_all = tf.train.get_checkpoint_state(os.path.join(model_name, 'All'))
 
                 if (ckpt_all and tf.train.checkpoint_exists(ckpt_all.model_checkpoint_path)):
-                    print("all variable retored except for optimizer parameter")
-                    print("Restore {} checkpoint!!!".format(os.path.basename(ckpt_all.model_checkpoint_path)))
+                    print("<<< all variable retored except for optimizer parameter >>>")
+                    print("<<< Restore {} checkpoint!!! >>>".format(os.path.basename(ckpt_all.model_checkpoint_path)))
                     saver_all.restore(sess, ckpt_all.model_checkpoint_path)
 
                 summary_writer = tf.summary.FileWriter(os.path.join('tensorboard', model_name), sess.graph)
@@ -454,11 +482,18 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                             print("강제 종료 합니다.")
                             exit(0)
 
-                        # Generator Update
-                        _, AtoB_G_Loss, AtoB_Dgene_simgoid = sess.run([AtoB_G_train_op, AtoB_GLoss, AtoB_Dgene],
-                                                                      feed_dict={lr: learning_rate})
-                        _, BtoA_G_Loss, BtoA_Dgene_simgoid = sess.run([BtoA_G_train_op, BtoA_GLoss, BtoA_Dgene],
-                                                                      feed_dict={lr: learning_rate})
+                        if norm_selection == "BN":
+                            # Generator Update
+                            _, AtoB_G_Loss, AtoB_Dgene_simgoid = sess.run([AtoB_G_train_op, AtoB_GLoss, AtoB_Dgene],
+                                                                          feed_dict={lr: learning_rate, BN_FLAG: True})
+                            _, BtoA_G_Loss, BtoA_Dgene_simgoid = sess.run([BtoA_G_train_op, BtoA_GLoss, BtoA_Dgene],
+                                                                          feed_dict={lr: learning_rate, BN_FLAG: True})
+                        else:
+                            # Generator Update
+                            _, AtoB_G_Loss, AtoB_Dgene_simgoid = sess.run([AtoB_G_train_op, AtoB_GLoss, AtoB_Dgene],
+                                                                          feed_dict={lr: learning_rate})
+                            _, BtoA_G_Loss, BtoA_Dgene_simgoid = sess.run([BtoA_G_train_op, BtoA_GLoss, BtoA_Dgene],
+                                                                          feed_dict={lr: learning_rate})
 
                         # image_pool 변수 사용할 때(단 batch_size=1 일 경우만), Discriminator Update
                         if image_pool and batch_size == 1:
@@ -473,10 +508,18 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                                                                                      BtoA_gene: fake_BtoA_gene})
                         # image_pool 변수를 사용하지 않을 때, Discriminator Update
                         else:
-                            _, AtoB_D_Loss, AtoB_Dreal_simgoid = sess.run([AtoB_D_train_op, AtoB_DLoss, AtoB_Dreal],
-                                                                          feed_dict={lr: learning_rate})
-                            _, BtoA_D_Loss, BtoA_Dreal_simgoid = sess.run([BtoA_D_train_op, BtoA_DLoss, BtoA_Dreal],
-                                                                          feed_dict={lr: learning_rate})
+                            if norm_selection == "BN":
+                                _, AtoB_D_Loss, AtoB_Dreal_simgoid = sess.run([AtoB_D_train_op, AtoB_DLoss, AtoB_Dreal],
+                                                                              feed_dict={lr: learning_rate,
+                                                                                         BN_FLAG: True})
+                                _, BtoA_D_Loss, BtoA_Dreal_simgoid = sess.run([BtoA_D_train_op, BtoA_DLoss, BtoA_Dreal],
+                                                                              feed_dict={lr: learning_rate,
+                                                                                         BN_FLAG: True})
+                            else:
+                                _, AtoB_D_Loss, AtoB_Dreal_simgoid = sess.run([AtoB_D_train_op, AtoB_DLoss, AtoB_Dreal],
+                                                                              feed_dict={lr: learning_rate})
+                                _, BtoA_D_Loss, BtoA_Dreal_simgoid = sess.run([BtoA_D_train_op, BtoA_DLoss, BtoA_Dreal],
+                                                                              feed_dict={lr: learning_rate})
 
                         AtoB_LossD += (AtoB_D_Loss / total_batch)
                         AtoB_LossG += (AtoB_G_Loss / total_batch)
@@ -488,10 +531,14 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                         BtoA_sigmoidD += (BtoA_Dreal_simgoid / total_batch)
                         BtoA_sigmoidG += (BtoA_Dgene_simgoid / total_batch)
 
-                        summary_str = sess.run(summary_operation)
+                        if norm_selection == "BN":
+                            summary_str = sess.run(summary_operation, feed_dict={BN_FLAG: True})
+                        else:
+                            summary_str = sess.run(summary_operation)
+
                         summary_writer.add_summary(summary_str, global_step=epoch)
 
-                        print("{} epoch : {} batch running of {} total batch...".format(epoch, i, total_batch))
+                        print("<<< {} epoch : {} batch running of {} total batch... >>>".format(epoch, i, total_batch))
 
                     print("<<< AtoB Discriminator mean output : {} / AtoB Generator mean output : {} >>>".format(
                         np.mean(AtoB_sigmoidD), np.mean(AtoB_sigmoidG)))
@@ -544,7 +591,10 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 print("<<< meta 파일을 읽을 수 없습니다. >>>")
                 exit(0)
 
-            A, B, AtoB_gene, BtoA_gene = tf.get_collection('way')
+            if norm_selection == "BN":
+                A, B, AtoB_gene, BtoA_gene, BN_FLAG = tf.get_collection('way')
+            else:
+                A, B, AtoB_gene, BtoA_gene = tf.get_collection('way')
 
             # Test Dataset 가져오기
             dataset = Dataset(DB_name=DB_name, use_TFRecord=use_TFRecord,
@@ -564,8 +614,8 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                     print("<<< Exit the program >>>")
                     exit(0)
                 if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
-                    print("generator variable retored except for optimizer parameter")
-                    print("Restore {} checkpoint!!!".format(os.path.basename(ckpt.model_checkpoint_path)))
+                    print("<<< generator variable retored except for optimizer parameter >>>")
+                    print("<<< Restore {} checkpoint!!! >>>".format(os.path.basename(ckpt.model_checkpoint_path)))
                     saver.restore(sess, ckpt.model_checkpoint_path)
 
                 # Generator에서 생성된 이미지 저장
@@ -575,13 +625,20 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                         A_numpy, B_numpy = sess.run(
                             [A_tensor, B_tensor])  # 이런식으로 하는 것은 상당히 비효율적 -> tf.data.Dataset 에 더익숙해지고자!!!
                         # 입력 이미지가 256 x 256 이하이면, exit()
-                        if A_numpy.shape[1] < 256 or A_numpy.shape[2] < 256 or B_numpy.shape[1] < 256 or B_numpy.shape[2] < 256:
-                            print("입력된 이미지 크기는 {}x{} 입니다.".format(A_numpy.shape[1], A_numpy.shape[2]))
-                            print("입력되는 이미지 크기는 256x256 보다 크거나 같아야 합니다.")
-                            print("강제 종료 합니다.")
+                        if A_numpy.shape[1] < 256 or A_numpy.shape[2] < 256 or B_numpy.shape[1] < 256 or B_numpy.shape[
+                            2] < 256:
+                            print("<<< 입력된 이미지 크기는 {}x{} 입니다. >>>".format(A_numpy.shape[1], A_numpy.shape[2]))
+                            print("<<< 입력되는 이미지 크기는 256x256 보다 크거나 같아야 합니다. >>>")
+                            print("<<< 강제 종료 합니다. >>>")
                             exit(0)
-                        AtoB_translated_image, BtoA_translated_image = sess.run([AtoB_gene, BtoA_gene],
-                                                                                feed_dict={A: A_numpy, B: B_numpy})
+
+                        if norm_selection == "BN":
+                            AtoB_translated_image, BtoA_translated_image = sess.run([AtoB_gene, BtoA_gene],
+                                                                                    feed_dict={A: A_numpy, B: B_numpy,
+                                                                                               BN_FLAG: not not using_moving_variable})
+                        else:
+                            AtoB_translated_image, BtoA_translated_image = sess.run([AtoB_gene, BtoA_gene],
+                                                                                    feed_dict={A: A_numpy, B: B_numpy})
                         visualize(model_name="AtoB" + model_name,
                                   named_images=[i, A_numpy[0], AtoB_translated_image[0]],
                                   save_path="AtoB" + save_path)
@@ -610,7 +667,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                         f.write("------------------- 1. data type ---------------------\n\n")
                         f.write("{} \n\n".format(str(dtype).strip("<>").replace(":", " :")))
                         print("------------------------------------------------------")
-                        print("총 파일 개수 : {}".format(len(name_shape)))
+                        print("<<< 총 파일 개수 : {} >>>".format(len(name_shape)))
 
                         f.write("-------------- 2. weight name, shape ----------------\n\n")
                         for name, shape in name_shape:
@@ -619,28 +676,32 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                             joined = "_".join(seperated)
                             shape = str(shape).strip('[]')
                             print("##################################################")
-                            print("weight : {}.npy".format(joined))
-                            print("shape : ({})".format(shape))
-                            f.write("{}.npy \nshape : ({}) \n\n".format(joined, shape))
+                            print("<<< weight : {}.npy >>>".format(joined))
+                            print("<<< shape : ({}) >>>".format(shape))
+                            f.write("<<< {}.npy >>>\n<<< shape : ({}) >>>\n\n".format(joined, shape))
 
                             # weight npy로 저장하기
                             np.save(os.path.join(numpy_weight_save_path, joined), reader.get_tensor(name))
 
 
 if __name__ == "__main__":
-    model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
+    model(TEST=False, DB_name="horse2zebra", use_TFRecord=True,
+          filter_size=16,
+          norm_selection="BN",  # IN - instance normalizaiton , BN -> batch normalization, NOTHING
+          cycle_consistency_loss="L1",
           cycle_consistency_loss_weight=10,
           optimizer_selection="Adam", beta1=0.5, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
           use_identity_mapping=False,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용 - 우선은 False
-          norm_selection="instancenorm",  # "instancenorm" or nothing
-          image_pool=False,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
+          image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
           image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지? 논문에선 50개 사용했다고 나옴.
-          learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1,
+          learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
           weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
           learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
-          inference_size=(256, 256),
-          # TEST=True 일 떄, inference할 크기는 256 x 256 이상이어야 한다. - 관련 코드는 Dataset.py 의 65번째 줄
+          inference_size=(256, 256),  # TEST=True 일 떄, inference할 크기는 256 x 256 이상이어야 한다.
+          # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수 - 논문에서는 Test = Training
+          # 후에 moving_variable을 사용할 수도 있을 경우를 대비하여 만들어 놓은 변수 Test=False일 때
+          using_moving_variable=False,  # TEST=True 일때, Moving Average를 사용할건지 말건지 선택하는 변수 -> 보통 사용안함.
           only_draw_graph=False,  # TEST=False 일 떄, 그래프만 그리고 종료할지 말지
           show_translated_image=True,  # TEST=True 일 때변환 된 이미지를 보여줄지 말지
           # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다.(폴더 2개 이름 -> AtoB_translated_image , BtoA_translated_image )

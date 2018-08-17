@@ -79,7 +79,7 @@ config.gpu_options.per_process_gpu_memory_fraction = 0.4
 session = tf.Session(config=config, ...)
 '''
 
-print("* 한대의 컴퓨터에 여러대의 GPU 가 설치되어 있을 경우 참고할 사항")
+print("<<< * 한대의 컴퓨터에 여러대의 GPU 가 설치되어 있을 경우 참고할 사항 >>>")
 print(
     "<<< 경우의 수 1 : GPU가 여러대 설치 / 통합개발 환경에서 실행 / GPU 번호 지정 원하는 경우 -> os.environ[\"CUDA_VISIBLE_DEVICES\"]=\"번호\"와 os.environ[\"CUDA_DEVICE_ORDER\"]=\"PCI_BUS_ID\"를 tf API를 하나라도 사용하기 전에 작성해 넣으면 됨 >>>")
 print(
@@ -91,12 +91,12 @@ print("<<< CPU만 사용하고 싶다면? '현재 사용 가능한 GPU 번호' �
 # os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 # 현재 사용하고 있는 GPU 번호를 얻기 위한 코드 - 여러개의 GPU를 쓸 경우 정보 확인을 위해!
-print("Ubuntu Terminal 창에서 지정해준 경우, 무조건 GPU : 1대, GPU 번호 : 0 라고 출력 됨")
+print("<<< Ubuntu Terminal 창에서 지정해준 경우, 무조건 GPU : 1대, GPU 번호 : 0 라고 출력 됨 >>>")
 local_device_protos = device_lib.list_local_devices()
 GPU_List = [x.name for x in local_device_protos if x.device_type == 'GPU']
 # gpu_number_list = []
-print("# 사용 가능한 GPU : {} 대".format(len(GPU_List)))
-print("# 사용 가능한 GPU 번호 :", end="")
+print("<<< # 사용 가능한 GPU : {} 대 >>>".format(len(GPU_List)))
+print("<<< # 사용 가능한 GPU 번호 : >>>", end="")
 for i, GL in enumerate(GPU_List):
     num = GL.split(":")[-1]
     # gpu_number_list.append(num)
@@ -123,18 +123,24 @@ symbolic 언어인 텐서플로에서는 연산그래프가 고정되어버리�
  
 세번째 방법 TFRecord 이용하는 방식 -> TFRecord로 DB를 쓸 때 내가 원하는 정보를 포함해서 쓸 수 있고, 내가 원하는 정보를 불러오는게 가능하다. 이게 바로 텐서플로다.'''
 
-# TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다. - ImageToImageTranslation.py 의 411번줄을 보라.
-# TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다. - ImageToImageTranslation.py 의 515번줄을 보라.
+# TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
+# TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
 # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-pix2pix.model(TEST=True, AtoB=False, DB_name="facades", distance_loss="L1",
+pix2pix.model(TEST=True, TFRecord=True, filter_size=32, AtoB=False, DB_name="facades",
+              norm_selection ="BN", #IN - instance normalizaiton , BN -> batch normalization, NOTHING
+              distance_loss="L1",
               distance_loss_weight=100, optimizer_selection="Adam",
               beta1=0.5, beta2=0.999,  # for Adam optimizer
               decay=0.999, momentum=0.9,  # for RMSProp optimizer
               # batch_size는 1~10사이로 하자
               image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
               image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
-              learning_rate=0.0002, training_epochs=1, batch_size=2, display_step=1, Dropout_rate=0.5,
-              inference_size=(256, 256),  # TEST=True 일 때 inference 해 볼 크기
+              learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1, Dropout_rate=0.5,
+              inference_size=(256, 256),  # TEST=True 일 떄, inference할 크기는 256 x 256 이상이어야 한다.
+              # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수 - 논문에서는 Test = Training
+              # 후에 moving_variable을 사용할 수도 있을 경우를 대비하여 만들어 놓은 변수 Test=False일 때
+              using_moving_variable=False,  # TEST=True 일때, Moving Average를 사용할건지 말건지 선택하는 변수 -> 보통 사용안함.
+              # 아래의 변수가 True이면 그래프만 그리고 종료,
               only_draw_graph=False, # TEST=False 일 떄, 그래프만 그리고 종료할지 말지
               show_translated_image=True,  # TEST=True 일 때변환 된 이미지를 보여줄지 말지
               weights_to_numpy=True,  # TEST=True 일 때 가중치를 npy 파일로 저장할지 말지

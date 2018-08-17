@@ -54,8 +54,9 @@ https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz
 
 class Dataset(object):
 
-    def __init__(self, DB_name="facades", AtoB=False, batch_size=1, use_TrainDataset=True, inference_size=(256, 256)):
+    def __init__(self, DB_name="facades", AtoB=False, batch_size=1, use_TrainDataset=True, inference_size=(256, 256), TFRecord=True):
 
+        self.TFRecord_path = TFRecord
         self.Dataset_Path = "Dataset"
         self.DB_name = DB_name
         self.AtoB = AtoB
@@ -84,24 +85,16 @@ class Dataset(object):
             print("The program is forcibly terminated.")
             exit(0)
 
-        if not os.path.exists(self.Dataset_Path):
-            os.makedirs(self.Dataset_Path)
-
         self.url = "https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/{}.tar.gz".format(self.DB_name)
         self.dataset_folder = os.path.join(self.Dataset_Path, self.DB_name)
         self.dataset_targz = self.dataset_folder + ".tar.gz"
-
-        # Test Dataset은 무조건 하나씩 처리하자.
-        if self.use_TrainDataset == False:
-            self.batch_size = 1
-        else:
-            self.batch_size = batch_size
 
         # 데이터셋 다운로드 한다.
         self.Preparing_Learning_Dataset()
 
         if self.use_TrainDataset:
 
+            self.batch_size = batch_size
             # TFRecord
             self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "train/*"))
             self.TFRecord_train_path = os.path.join(self.dataset_folder, "TFRecord_train")
@@ -119,6 +112,8 @@ class Dataset(object):
             self.TFRecordWriter()
 
         else:
+            # Test Dataset은 무조건 하나씩 처리하자.
+            self.batch_size = 1
             self.file_path_list = glob.glob(os.path.join(self.dataset_folder, "val/*"))
             self.TFRecord_val_path = os.path.join(self.dataset_folder, "TFRecord_val")
 
@@ -146,6 +141,9 @@ class Dataset(object):
         return iterator, next_batch, db_length
 
     def Preparing_Learning_Dataset(self):
+
+        if not os.path.exists(self.Dataset_Path):
+            os.makedirs(self.Dataset_Path)
 
         # 1. 데이터셋 폴더가 존재하지 않으면 다운로드
         if not os.path.exists(self.dataset_folder):

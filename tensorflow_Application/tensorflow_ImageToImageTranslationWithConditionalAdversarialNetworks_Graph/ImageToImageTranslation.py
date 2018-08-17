@@ -13,9 +13,12 @@ def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=N
     # RGB로 바꾸기
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     cv2.imwrite(os.path.join(save_path, '{}_{}.png'.format(model_name, named_images[0])), image)
-    print("{}_{}.png saved in {} folder".format(model_name, named_images[0], save_path))
+    print("<<< {}_{}.png saved in {} folder >>>".format(model_name, named_images[0], save_path))
 
-def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
+
+def model(TEST=False, TFRecord=True, filter_size=64, AtoB=True, DB_name="facades",
+          norm_selection="BN",
+          distance_loss="L1",
           distance_loss_weight=100, optimizer_selection="Adam",
           beta1=0.5, beta2=0.999,
           decay=0.999, momentum=0.9,
@@ -23,19 +26,19 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
           image_pool_size=50,
           learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1, Dropout_rate=0.5,
           inference_size=(256, 256),
+          using_moving_variable=False,
           only_draw_graph=False,
           show_translated_image=False,
           weights_to_numpy=False,
           save_path="translated_image"):
-
     if distance_loss == "L1":
-        print("target generative GAN with L1 loss")
+        print("<<< target generative GAN with L1 loss >>>")
         model_name = "Pix2PixL1loss"
     elif distance_loss == "L2":
-        print("target generative GAN with L1 loss")
+        print("<<< target generative GAN with L1 loss >>>")
         model_name = "Pix2PixL2loss"
     else:
-        print("target generative GAN")
+        print("<<< target generative GAN >>>")
         model_name = "Pix2PixGAN"
 
     # DB 이름도 추가
@@ -46,12 +49,14 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
 
     model_name = DB_name + model_name
 
-    if batch_size == 1:
-        norm_selection = "instance_norm"
-        model_name = "in" + model_name
-    else:
-        norm_selection = "batch_norm"
-        model_name = "bn" + model_name
+    if norm_selection == "BN":
+        model_name = model_name + "BN"
+    elif norm_selection == "IN":
+        model_name = model_name + "IN"
+
+    if batch_size == 1 and norm_selection == "BN":
+        norm_selection = "IN"
+        model_name = model_name[:-2] + "IN"
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
@@ -73,9 +78,9 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
         conv_out = tf.nn.conv2d(input, w, strides=strides, padding=padding)
 
         # batch_norm을 적용하면 bias를 안써도 된다곤 하지만, 나는 썼다.
-        if norm_selection == "batch_norm":
-            return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=True)
-        elif norm_selection == "instance_norm":
+        if norm_selection == "BN":
+            return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=BN_FLAG)
+        elif norm_selection == "IN":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
         else:
             return tf.nn.bias_add(conv_out, b)
@@ -94,9 +99,9 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
         conv_out = tf.nn.conv2d_transpose(input, w, output_shape=output_shape, strides=strides, padding=padding)
 
         # batch_norm을 적용하면 bias를 안써도 된다곤 하지만, 나는 썼다.
-        if norm_selection == "batch_norm":
-            return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=True)
-        elif norm_selection == "instance_norm":
+        if norm_selection == "BN":
+            return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=BN_FLAG)
+        elif norm_selection == "IN":
             return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
         else:
             return tf.nn.bias_add(conv_out, b)
@@ -112,41 +117,48 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
         with tf.variable_scope("Generator"):
             with tf.variable_scope("encoder"):
                 with tf.variable_scope("conv1"):
-                    conv1 = conv2d(images, weight_shape=(4, 4, 3, 64), bias_shape=(64),
+                    conv1 = conv2d(images, weight_shape=(4, 4, 3, filter_size), bias_shape=(filter_size),
                                    strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 128, 128, 64)
                 with tf.variable_scope("conv2"):
-                    conv2 = conv2d(tf.nn.leaky_relu(conv1, alpha=0.2), weight_shape=(4, 4, 64, 128), bias_shape=(128),
+                    conv2 = conv2d(tf.nn.leaky_relu(conv1, alpha=0.2),
+                                   weight_shape=(4, 4, filter_size, filter_size * 2), bias_shape=(filter_size * 2),
                                    norm_selection=norm_selection,
                                    strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 64, 64, 128)
                 with tf.variable_scope("conv3"):
-                    conv3 = conv2d(tf.nn.leaky_relu(conv2, alpha=0.2), weight_shape=(4, 4, 128, 256), bias_shape=(256),
+                    conv3 = conv2d(tf.nn.leaky_relu(conv2, alpha=0.2),
+                                   weight_shape=(4, 4, filter_size * 2, filter_size * 4), bias_shape=(filter_size * 4),
                                    norm_selection=norm_selection,
                                    strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 32, 32, 256)
                 with tf.variable_scope("conv4"):
-                    conv4 = conv2d(tf.nn.leaky_relu(conv3, alpha=0.2), weight_shape=(4, 4, 256, 512), bias_shape=(512),
+                    conv4 = conv2d(tf.nn.leaky_relu(conv3, alpha=0.2),
+                                   weight_shape=(4, 4, filter_size * 4, filter_size * 8), bias_shape=(filter_size * 8),
                                    norm_selection=norm_selection,
                                    strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 16, 16, 512)
                 with tf.variable_scope("conv5"):
-                    conv5 = conv2d(tf.nn.leaky_relu(conv4, alpha=0.2), weight_shape=(4, 4, 512, 512), bias_shape=(512),
+                    conv5 = conv2d(tf.nn.leaky_relu(conv4, alpha=0.2),
+                                   weight_shape=(4, 4, filter_size * 8, filter_size * 8), bias_shape=(filter_size * 8),
                                    norm_selection=norm_selection,
                                    strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 8, 8, 512)
                 with tf.variable_scope("conv6"):
-                    conv6 = conv2d(tf.nn.leaky_relu(conv5, alpha=0.2), weight_shape=(4, 4, 512, 512), bias_shape=(512),
+                    conv6 = conv2d(tf.nn.leaky_relu(conv5, alpha=0.2),
+                                   weight_shape=(4, 4, filter_size * 8, filter_size * 8), bias_shape=(filter_size * 8),
                                    norm_selection=norm_selection,
                                    strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 4, 4, 512)
                 with tf.variable_scope("conv7"):
-                    conv7 = conv2d(tf.nn.leaky_relu(conv6, alpha=0.2), weight_shape=(4, 4, 512, 512), bias_shape=(512),
+                    conv7 = conv2d(tf.nn.leaky_relu(conv6, alpha=0.2),
+                                   weight_shape=(4, 4, filter_size * 8, filter_size * 8), bias_shape=(filter_size * 8),
                                    norm_selection=norm_selection,
                                    strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 2, 2, 512)
                 with tf.variable_scope("conv8"):
-                    conv8 = conv2d(tf.nn.leaky_relu(conv7, alpha=0.2), weight_shape=(4, 4, 512, 512), bias_shape=(512),
+                    conv8 = conv2d(tf.nn.leaky_relu(conv7, alpha=0.2),
+                                   weight_shape=(4, 4, filter_size * 8, filter_size * 8), bias_shape=(filter_size * 8),
                                    strides=[1, 2, 2, 1], padding="SAME")
                     # result shape = (batch_size, 1, 1, 512)
 
@@ -159,8 +171,9 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
                     어쨌든 output_shape = tf.shape(conv2) 처럼 코딩하는게 무조건 좋다. 
                     '''
                     trans_conv1 = tf.nn.dropout(
-                        conv2d_transpose(tf.nn.relu(conv8), output_shape=tf.shape(conv7), weight_shape=(4, 4, 512, 512),
-                                         bias_shape=(512), norm_selection=norm_selection,
+                        conv2d_transpose(tf.nn.relu(conv8), output_shape=tf.shape(conv7),
+                                         weight_shape=(4, 4, filter_size * 8, filter_size * 8),
+                                         bias_shape=(filter_size * 8), norm_selection=norm_selection,
                                          strides=[1, 2, 2, 1], padding="SAME"), keep_prob=Dropout_rate)
                     # result shape = (batch_size, 2, 2, 512)
                     # 주의 : 활성화 함수 들어가기전의 encoder 요소를 concat 해줘야함
@@ -170,8 +183,8 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
                 with tf.variable_scope("trans_conv2"):
                     trans_conv2 = tf.nn.dropout(
                         conv2d_transpose(tf.nn.relu(trans_conv1), output_shape=tf.shape(conv6),
-                                         weight_shape=(4, 4, 512, 1024),
-                                         bias_shape=(512), norm_selection=norm_selection,
+                                         weight_shape=(4, 4, filter_size * 8, filter_size * 16),
+                                         bias_shape=(filter_size * 8), norm_selection=norm_selection,
                                          strides=[1, 2, 2, 1], padding="SAME"), keep_prob=Dropout_rate)
                     trans_conv2 = tf.concat([trans_conv2, conv6], axis=-1)
                     # result shape = (batch_size, 4, 4, 1024)
@@ -179,44 +192,44 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
                 with tf.variable_scope("trans_conv3"):
                     trans_conv3 = tf.nn.dropout(
                         conv2d_transpose(tf.nn.relu(trans_conv2), output_shape=tf.shape(conv5),
-                                         weight_shape=(4, 4, 512, 1024),
-                                         bias_shape=(512), norm_selection=norm_selection,
+                                         weight_shape=(4, 4, filter_size * 8, filter_size * 16),
+                                         bias_shape=(filter_size * 8), norm_selection=norm_selection,
                                          strides=[1, 2, 2, 1], padding="SAME"), keep_prob=Dropout_rate)
                     trans_conv3 = tf.concat([trans_conv3, conv5], axis=-1)
                     # result shape = (batch_size, 8, 8, 1024)
 
                 with tf.variable_scope("trans_conv4"):
                     trans_conv4 = conv2d_transpose(tf.nn.relu(trans_conv3), output_shape=tf.shape(conv4),
-                                                   weight_shape=(4, 4, 512, 1024),
-                                                   bias_shape=(512), norm_selection=norm_selection,
+                                                   weight_shape=(4, 4, filter_size * 8, filter_size * 16),
+                                                   bias_shape=(filter_size * 8), norm_selection=norm_selection,
                                                    strides=[1, 2, 2, 1], padding="SAME")
                     trans_conv4 = tf.concat([trans_conv4, conv4], axis=-1)
                     # result shape = (batch_size, 16, 16, 1024)
                 with tf.variable_scope("trans_conv5"):
                     trans_conv5 = conv2d_transpose(tf.nn.relu(trans_conv4), output_shape=tf.shape(conv3),
-                                                   weight_shape=(4, 4, 256, 1024),
-                                                   bias_shape=(256), norm_selection=norm_selection,
+                                                   weight_shape=(4, 4, filter_size * 4, filter_size * 16),
+                                                   bias_shape=(filter_size * 4), norm_selection=norm_selection,
                                                    strides=[1, 2, 2, 1], padding="SAME")
                     trans_conv5 = tf.concat([trans_conv5, conv3], axis=-1)
                     # result shape = (batch_size, 32, 32, 512)
                 with tf.variable_scope("trans_conv6"):
                     trans_conv6 = conv2d_transpose(tf.nn.relu(trans_conv5), output_shape=tf.shape(conv2),
-                                                   weight_shape=(4, 4, 128, 512),
-                                                   bias_shape=(128), norm_selection=norm_selection,
+                                                   weight_shape=(4, 4, filter_size * 2, filter_size * 8),
+                                                   bias_shape=(filter_size * 2), norm_selection=norm_selection,
                                                    strides=[1, 2, 2, 1], padding="SAME")
                     trans_conv6 = tf.concat([trans_conv6, conv2], axis=-1)
                     # result shape = (batch_size, 64, 64, 256)
                 with tf.variable_scope("trans_conv7"):
                     trans_conv7 = conv2d_transpose(tf.nn.relu(trans_conv6), output_shape=tf.shape(conv1),
-                                                   weight_shape=(4, 4, 64, 256),
-                                                   bias_shape=(64), norm_selection=norm_selection,
+                                                   weight_shape=(4, 4, filter_size, filter_size * 4),
+                                                   bias_shape=(filter_size), norm_selection=norm_selection,
                                                    strides=[1, 2, 2, 1], padding="SAME")
                     trans_conv7 = tf.concat([trans_conv7, conv1], axis=-1)
                     # result shape = (batch_size, 128, 128, 128)
                 with tf.variable_scope("trans_conv8"):
                     output = tf.nn.tanh(
                         conv2d_transpose(tf.nn.relu(trans_conv7), output_shape=tf.shape(images),
-                                         weight_shape=(4, 4, 3, 128),
+                                         weight_shape=(4, 4, 3, filter_size * 2),
                                          bias_shape=(3),
                                          strides=[1, 2, 2, 1], padding="SAME"))
                     # result shape = (batch_size, 256, 256, 3)
@@ -233,31 +246,34 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
         with tf.variable_scope("Discriminator"):
             with tf.variable_scope("conv1"):
                 conv1 = tf.nn.leaky_relu(
-                    conv2d(conditional_input, weight_shape=(4, 4, 6, 64),
-                           bias_shape=(64),
+                    conv2d(conditional_input, weight_shape=(4, 4, 6, filter_size),
+                           bias_shape=(filter_size),
                            strides=[1, 2, 2, 1], padding="SAME"), alpha=0.2)
                 # result shape = (batch_size, 128, 128, 64)
             with tf.variable_scope("conv2"):
                 conv2 = tf.nn.leaky_relu(
-                    conv2d(conv1, weight_shape=(4, 4, 64, 128), bias_shape=(128), norm_selection=norm_selection,
+                    conv2d(conv1, weight_shape=(4, 4, filter_size, filter_size * 2), bias_shape=(filter_size * 2),
+                           norm_selection=norm_selection,
                            strides=[1, 2, 2, 1], padding="SAME"), alpha=0.2)
                 # result shape = (batch_size, 64, 64, 128)
             with tf.variable_scope("conv3"):
-                conv3 = conv2d(conv2, weight_shape=(4, 4, 128, 256), bias_shape=(256), norm_selection=norm_selection,
+                conv3 = conv2d(conv2, weight_shape=(4, 4, filter_size * 2, filter_size * 4),
+                               bias_shape=(filter_size * 4), norm_selection=norm_selection,
                                strides=[1, 2, 2, 1], padding="SAME")
                 # result shape = (batch_size, 32, 32, 256)
                 conv3 = tf.nn.leaky_relu(
                     tf.pad(conv3, [[0, 0], [1, 1], [1, 1], [0, 0]], mode="CONSTANT", constant_values=0), alpha=0.2)
                 # result shape = (batch_size, 34, 34, 256)
             with tf.variable_scope("conv4"):
-                conv4 = conv2d(conv3, weight_shape=(4, 4, 256, 512), bias_shape=(512), norm_selection=norm_selection,
+                conv4 = conv2d(conv3, weight_shape=(4, 4, filter_size * 4, filter_size * 8),
+                               bias_shape=(filter_size * 8), norm_selection=norm_selection,
                                strides=[1, 1, 1, 1], padding="VALID")
                 # result shape = (batch_size, 31, 31, 256)
                 conv4 = tf.nn.leaky_relu(
                     tf.pad(conv4, [[0, 0], [1, 1], [1, 1], [0, 0]], mode="CONSTANT", constant_values=0), alpha=0.2)
                 # result shape = (batch_size, 33, 33, 512)
             with tf.variable_scope("output"):
-                output = conv2d(conv4, weight_shape=(4, 4, 512, 1), bias_shape=(1),
+                output = conv2d(conv4, weight_shape=(4, 4, filter_size * 8, 1), bias_shape=(1),
                                 strides=[1, 1, 1, 1], padding="VALID")
                 # result shape = (batch_size, 30, 30, 1)
             return output, tf.nn.sigmoid(output)
@@ -283,19 +299,24 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
         JG_Graph = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
         with JG_Graph.as_default():  # as_default()는 JG_Graph를 기본그래프로 설정한다.
 
+            with tf.name_scope("BN_FLAG"):
+                if norm_selection == "BN":
+                    BN_FLAG = tf.placeholder(tf.bool, shape=None)
+
             # 데이터 전처리
             with tf.name_scope("Dataset"):
-                dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TrainDataset=True)
+                dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TrainDataset=True,
+                                  TFRecord=TFRecord)
                 iterator, next_batch, data_length = dataset.iterator()
 
                 # 알고리즘
                 x = next_batch[0]
                 target = next_batch[1]
 
-            #tensorboard에 띄우기
+            # tensorboard에 띄우기
             tf.summary.image("OriginImage", x, max_outputs=3)
 
-            #tensorboard에 띄우기
+            # tensorboard에 띄우기
             tf.summary.image("target", target, max_outputs=3)
 
             with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
@@ -306,7 +327,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
                     # scope.reuse_variables()
                     D_gene, sigmoid_D_gene = discriminator(images=G, condition=x)
 
-            #tensorboard에 띄우기
+            # tensorboard에 띄우기
             tf.summary.image("GeneratedImage", G, max_outputs=3)
 
             var_D = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/Discriminator')
@@ -360,19 +381,24 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
             사용해 출력된 모든 연산의 리스트에서 하나하나 찾아야한다.
             필요한 변수가 있을 시 아래와 같이 추가해서 그래프를 새로 만들어 주면 된다.
             '''
-            for op in (x, G):
-                tf.add_to_collection("way", op)
+            if norm_selection == "BN":
+                for op in (x, G, BN_FLAG):
+                    tf.add_to_collection("way", op)
+            else:
+                for op in (x, G):
+                    tf.add_to_collection("way", op)
 
-            #아래와 같은 코드도 가능.
+            # 아래와 같은 코드도 가능.
             # tf.add_to_collection('x', x)
             # tf.add_to_collection('G', G)
+            # tf.add_to_collection('BN_FLAG', BN_FLAG)
 
             # generator graph 구조를 파일에 쓴다.
             meta_save_file_path = os.path.join(model_name, 'Generator', 'Generator_Graph.meta')
             saver_generator.export_meta_graph(meta_save_file_path, collection_list=["way"])
 
             if only_draw_graph:
-                print('Generator_Graph.meta 파일만 저장하고 종료합니다.')
+                print('<<< Generator_Graph.meta 파일만 저장하고 종료합니다. >>>')
                 exit(0)
 
             if image_pool and batch_size == 1:
@@ -383,13 +409,13 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
             # config.gpu_options.per_process_gpu_memory_fraction = 0.1
 
             with tf.Session(graph=JG_Graph, config=config) as sess:
-                print("initializing!!!")
+                print("<<< initializing!!! >>>")
                 sess.run(tf.global_variables_initializer())
                 ckpt_all = tf.train.get_checkpoint_state(os.path.join(model_name, 'All'))
 
                 if (ckpt_all and tf.train.checkpoint_exists(ckpt_all.model_checkpoint_path)):
-                    print("all variable retored except for optimizer parameter")
-                    print("Restore {} checkpoint!!!".format(os.path.basename(ckpt_all.model_checkpoint_path)))
+                    print("<<< all variable retored except for optimizer parameter >>>")
+                    print("<<< Restore {} checkpoint!!! >>>".format(os.path.basename(ckpt_all.model_checkpoint_path)))
                     saver_all.restore(sess, ckpt_all.model_checkpoint_path)
 
                 summary_writer = tf.summary.FileWriter(os.path.join("tensorboard", model_name), sess.graph)
@@ -409,13 +435,17 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
                         # 입력 이미지가 256 x 256 이하이면, exit()
                         temp = sess.run(x)
                         if temp.shape[1] < 256 or temp.shape[2] < 256:
-                            print("입력된 이미지 크기는 {}x{} 입니다.".format(temp.shape[1], temp.shape[2]))
-                            print("입력되는 이미지 크기는 256x256 보다 크거나 같아야 합니다.")
-                            print("강제 종료 합니다.")
+                            print("<<< 입력된 이미지 크기는 {}x{} 입니다. >>>".format(temp.shape[1], temp.shape[2]))
+                            print("<<< 입력되는 이미지 크기는 256x256 보다 크거나 같아야 합니다. >>>")
+                            print("<<< 강제 종료 합니다. >>>")
                             exit(0)
 
-                        _, Generator_Loss, Distance_Loss, D_gene_simgoid = sess.run(
-                            [G_train_op, G_Loss, dis_loss, sigmoid_D_gene])
+                        if norm_selection == "BN":
+                            _, Generator_Loss, Distance_Loss, D_gene_simgoid = sess.run(
+                                [G_train_op, G_Loss, dis_loss, sigmoid_D_gene], feed_dict={BN_FLAG: True})
+                        else:
+                            _, Generator_Loss, Distance_Loss, D_gene_simgoid = sess.run(
+                                [G_train_op, G_Loss, dis_loss, sigmoid_D_gene])
 
                         # image_pool 변수 사용할 때(단 batch_size=1 일 경우만), Discriminator Update
                         if image_pool and batch_size == 1:
@@ -425,29 +455,40 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
                                                                              feed_dict={G: fake_G})
                         # image_pool 변수를 사용하지 않을 때, Discriminator Update
                         else:
-                            _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real])
+                            if norm_selection == "BN":
+                                _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real],
+                                                                                 feed_dict={BN_FLAG: True})
+                            else:
+                                _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real])
 
                         Loss_D += (Discriminator_Loss / total_batch)
                         Loss_G += (Generator_Loss / total_batch)
                         Loss_Distance += (Distance_Loss / total_batch)
-                        sigmoid_D += D_real_simgoid / total_batch
-                        sigmoid_G += D_gene_simgoid / total_batch
-                        print("{} epoch : {} batch running of {} total batch...".format(epoch, i, total_batch))
+                        sigmoid_D += np.mean(D_real_simgoid, axis=(1, 2, 3)) / total_batch
+                        sigmoid_G += np.mean(D_gene_simgoid, axis=(1, 2, 3)) / total_batch
+                        print("<<< {} epoch : {} batch running of {} total batch... >>>".format(epoch, i, total_batch))
 
-                    print("Discriminator mean output : {} / Generator mean output : {}".format(np.mean(sigmoid_D),
-                                                                                               np.mean(sigmoid_G)))
+                    print(
+                        "<<< Discriminator mean output : {} / Generator mean output : {} >>>".format(np.mean(sigmoid_D),
+                                                                                                     np.mean(
+                                                                                                         sigmoid_G)))
 
                     if distance_loss == "L1" or distance_loss == "L2":
                         print(
-                            "Discriminator Loss : {} / Generator Loss  : {} / {} loss : {}".format(Loss_D, Loss_G,
-                                                                                                   distance_loss,
-                                                                                                   Loss_Distance))
+                            "<<< Discriminator Loss : {} / Generator Loss  : {} / {} loss : {} >>>".format(Loss_D,
+                                                                                                           Loss_G,
+                                                                                                           distance_loss,
+                                                                                                           Loss_Distance))
                     else:
                         print(
-                            "Discriminator Loss : {} / Generator Loss  : {}".format(Loss_D, Loss_G))
+                            "<<< Discriminator Loss : {} / Generator Loss  : {} >>>".format(Loss_D, Loss_G))
 
                     if epoch % display_step == 0:
-                        summary_str = sess.run(summary_operation)
+                        if norm_selection == "BN":
+                            summary_str = sess.run(summary_operation, feed_dict={BN_FLAG: True})
+                        else:
+                            summary_str = sess.run(summary_operation)
+
                         summary_writer.add_summary(summary_str, global_step=epoch)
 
                         save_all_model_path = os.path.join(model_name, 'All')
@@ -463,7 +504,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
                         saver_generator.save(sess, save_generator_model_path + "/", global_step=epoch,
                                              write_meta_graph=False)
 
-                print("Optimization Finished!")
+                print("<<< Optimization Finished! >>>")
 
     else:
         tf.reset_default_graph()
@@ -487,10 +528,14 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
                 print("<<< meta 파일을 읽을 수 없습니다. >>>")
                 exit(0)
 
-            x, G = tf.get_collection('way')
+            if norm_selection == "BN":
+                x, G, BN_FLAG = tf.get_collection('way')
+            else:
+                x, G = tf.get_collection('way')
 
             # Test Dataset 가져오기
-            dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TrainDataset=False, inference_size=inference_size)
+            dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TrainDataset=False,
+                              inference_size=inference_size, TFRecord=TFRecord)
             iterator, next_batch, data_length = dataset.iterator()
 
             with tf.Session(graph=JG) as sess:
@@ -503,8 +548,8 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
                     exit(0)
 
                 if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
-                    print("generator variable retored except for optimizer parameter")
-                    print("Restore {} checkpoint!!!".format(os.path.basename(ckpt.model_checkpoint_path)))
+                    print("<<< generator variable retored except for optimizer parameter >>>")
+                    print("<<< Restore {} checkpoint!!! >>>".format(os.path.basename(ckpt.model_checkpoint_path)))
                     saver.restore(sess, ckpt.model_checkpoint_path)
 
                 # Generator에서 생성된 이미지 저장
@@ -513,12 +558,18 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
                         x_numpy, target_numpy = sess.run(next_batch)
                         # 입력 이미지가 256 x 256 이하이면, exit()
                         if x_numpy.shape[1] < 256 or x_numpy.shape[2] < 256:
-                            print("입력된 이미지 크기는 {}x{} 입니다.".format(x_numpy.shape[1], x_numpy.shape[2]))
-                            print("입력되는 이미지 크기는 256x256 보다 크거나 같아야 합니다.")
-                            print("강제 종료 합니다.")
+                            print("<<< 입력된 이미지 크기는 {}x{} 입니다. >>>".format(x_numpy.shape[1], x_numpy.shape[2]))
+                            print("<<< 입력되는 이미지 크기는 256x256 보다 크거나 같아야 합니다. >>>")
+                            print("<<< 강제 종료 합니다. >>>")
                             exit(0)
-                        translated_image = sess.run(G, feed_dict={x: x_numpy})
-                        visualize(model_name=model_name, named_images=[i, x_numpy[0], target_numpy[0], translated_image[0]],
+
+                        if norm_selection == "BN":
+                            translated_image = sess.run(G, feed_dict={x: x_numpy, BN_FLAG: not using_moving_variable})
+                        else:
+                            translated_image = sess.run(G, feed_dict={x: x_numpy})
+
+                        visualize(model_name=model_name,
+                                  named_images=[i, x_numpy[0], target_numpy[0], translated_image[0]],
                                   save_path=save_path)
 
                 # 가중치 저장 - 약간 생소한 API지만 유용.
@@ -541,7 +592,7 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
                         f.write("------------------- 1. data type ---------------------\n\n")
                         f.write("{} \n\n".format(str(dtype).strip("<>").replace(":", " :")))
                         print("------------------------------------------------------")
-                        print("총 파일 개수 : {}".format(len(name_shape)))
+                        print("<<< 총 파일 개수 : {} >>>".format(len(name_shape)))
 
                         f.write("-------------- 2. weight name, shape ----------------\n\n")
                         for name, shape in name_shape:
@@ -550,26 +601,34 @@ def model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
                             joined = "_".join(seperated)
                             shape = str(shape).strip('[]')
                             print("##################################################")
-                            print("weight : {}.npy".format(joined))
+                            print("<<< weight : {}.npy >>>".format(joined))
                             print("shape : ({})".format(shape))
-                            f.write("{}.npy \nshape : ({}) \n\n".format(joined, shape))
+                            f.write("<<< {}.npy >>>\n<<< shape : ({}) >>>\n\n".format(joined, shape))
 
                             # weight npy로 저장하기
                             np.save(os.path.join(numpy_weight_save_path, joined), reader.get_tensor(name))
 
+
 if __name__ == "__main__":
 
-    model(TEST=False, AtoB=True, DB_name="facades", distance_loss="L1",
+    model(TEST=True, TFRecord=True, filter_size=64, AtoB=False, DB_name="facades",
+          norm_selection="BN",  # IN - instance normalizaiton , BN -> batch normalization, NOTHING
+          distance_loss="L1",
           distance_loss_weight=100, optimizer_selection="Adam",
           beta1=0.5, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
           # batch_size는 1~10사이로 하자
           image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
           image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
-          learning_rate=0.0002, training_epochs=3, batch_size=2, display_step=1, Dropout_rate=0.5,
+          learning_rate=0.0002, training_epochs=1, batch_size=2, display_step=1, Dropout_rate=0.5,
           inference_size=(256, 256),  # TEST=True 일 때 inference 해 볼 크기
+          # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수 - 논문에서는 Test = Training
+          # 후에 moving_variable을 사용할 수도 있을 경우를 대비하여 만들어 놓은 변수 Test=False일 때
+          using_moving_variable=False,  # TEST=True 일때, Moving Average를 사용할건지 말건지 선택하는 변수 -> 보통 사용안함.
+          # 아래의 변수가 True이면 그래프만 그리고 종료,
           only_draw_graph=False,  # TEST=False 일 떄, 그래프만 그리고 종료할지 말지
-          weights_to_numpy=False,  # TEST=True 일 때 가중치를 npy 파일로 저장할지 말지
+          show_translated_image=True,  # TEST=True 일 때변환 된 이미지를 보여줄지 말지
+          weights_to_numpy=True,  # TEST=True 일 때 가중치를 npy 파일로 저장할지 말지
           save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더
 else:
     print("model imported")
