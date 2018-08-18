@@ -313,11 +313,6 @@ def model(TEST=False, TFRecord=True, filter_size=64, AtoB=True, DB_name="facades
                 x = next_batch[0]
                 target = next_batch[1]
 
-            # tensorboard에 띄우기
-            tf.summary.image("OriginImage", x, max_outputs=3)
-
-            # tensorboard에 띄우기
-            tf.summary.image("target", target, max_outputs=3)
 
             with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
                 with tf.name_scope("Generator"):
@@ -326,9 +321,6 @@ def model(TEST=False, TFRecord=True, filter_size=64, AtoB=True, DB_name="facades
                     D_real, sigmoid_D_real = discriminator(images=target, condition=x)
                     # scope.reuse_variables()
                     D_gene, sigmoid_D_gene = discriminator(images=G, condition=x)
-
-            # tensorboard에 띄우기
-            tf.summary.image("GeneratedImage", G, max_outputs=3)
 
             var_D = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/Discriminator')
 
@@ -346,23 +338,19 @@ def model(TEST=False, TFRecord=True, filter_size=64, AtoB=True, DB_name="facades
                 D_Loss = min_max_loss(logits=D_real, labels=tf.ones_like(D_real)) + min_max_loss(logits=D_gene,
                                                                                                  labels=tf.zeros_like(
                                                                                                      D_gene))
-            tf.summary.scalar("DLoss", D_Loss)
 
             with tf.name_scope("Generator_Loss"):
                 # for generator
                 G_Loss = min_max_loss(logits=D_gene, labels=tf.ones_like(D_gene))
 
-            tf.summary.scalar("GLoss", G_Loss)
 
             if distance_loss == "L1":
                 with tf.name_scope("{}_loss".format(distance_loss)):
                     dis_loss = tf.losses.absolute_difference(target, G)
-                    tf.summary.scalar("{}Loss".format(distance_loss), dis_loss)
                     G_Loss += tf.multiply(dis_loss, distance_loss_weight)
             elif distance_loss == "L2":
                 with tf.name_scope("{}_loss".format(distance_loss)):
                     dis_loss = tf.losses.mean_squared_error(target, G)
-                    tf.summary.scalar("{}Loss".format(distance_loss), dis_loss)
                     G_Loss += tf.multiply(dis_loss, distance_loss_weight)
             else:
                 dis_loss = tf.constant(value=0, dtype=tf.float32)
@@ -371,6 +359,16 @@ def model(TEST=False, TFRecord=True, filter_size=64, AtoB=True, DB_name="facades
                 D_train_op = training(D_Loss, var_D, scope='shared_variables/Discriminator')
             with tf.name_scope("Generator_trainer"):
                 G_train_op = training(G_Loss, var_G, scope='shared_variables/Generator')
+
+            # tensorboard에 띄우기
+            with tf.name_scope("Visualizer"):
+                stacked_image = tf.concat([G,target,x],axis=2)
+                tf.summary.image("stacked", stacked_image, max_outputs=3)
+
+            with tf.name_scope("Loss"):
+                tf.summary.scalar("DLoss", D_Loss)
+                tf.summary.scalar("GLoss", G_Loss)
+                tf.summary.scalar("{}Loss".format(distance_loss), dis_loss)
 
             summary_operation = tf.summary.merge_all()
 

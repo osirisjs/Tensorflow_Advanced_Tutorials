@@ -290,9 +290,6 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 A = A_next_batch
                 B = B_next_batch
 
-            tf.summary.image("Origin_Aimage", A, max_outputs=3)
-            tf.summary.image("Origin_Bimage", B, max_outputs=3)
-
             with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
 
                 with tf.name_scope("AtoB_Generator"):
@@ -324,8 +321,11 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                         im_AtoB_GeneratorWithB = generator(images=B, name="AtoB_generator")
                         im_BtoA_GeneratorWithA = generator(images=A, name="BtoA_generator")
 
-            tf.summary.image("AtoBImage", AtoB_gene, max_outputs=3)
-            tf.summary.image("BtoAImage", BtoA_gene, max_outputs=3)
+            with tf.name_scope("visualizer"):
+                tf.summary.image("Origin_Aimage", A, max_outputs=3)
+                tf.summary.image("Origin_Bimage", B, max_outputs=3)
+                tf.summary.image("AtoBImage", AtoB_gene, max_outputs=3)
+                tf.summary.image("BtoAImage", BtoA_gene, max_outputs=3)
 
             AtoB_varD = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/AtoB_Discriminator')
 
@@ -347,23 +347,19 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 # for AtoB discriminator
                 AtoB_DLoss = tf.reduce_mean(tf.square(AtoB_Dreal - tf.ones_like(AtoB_Dreal))) + tf.reduce_mean(
                     tf.square(AtoB_Dgene - tf.zeros_like(AtoB_Dgene)))
-            tf.summary.scalar("AtoBDLoss", AtoB_DLoss)
 
             with tf.name_scope("AtoB_Generator_loss"):
                 # for AtoB generator
                 AtoB_GLoss = tf.reduce_mean(tf.square(AtoB_Dgene - tf.ones_like(AtoB_Dgene)))
-            tf.summary.scalar("AtoBGLoss", AtoB_GLoss)
 
             with tf.name_scope("BtoA_Discriminator_loss"):
                 # for BtoA discriminator
                 BtoA_DLoss = tf.reduce_mean(tf.square(BtoA_Dreal - tf.ones_like(BtoA_Dreal))) + tf.reduce_mean(
                     tf.square(BtoA_Dgene - tf.zeros_like(BtoA_Dgene)))
-            tf.summary.scalar("BtoADLoss", BtoA_DLoss)
 
             with tf.name_scope("BtoA_Generator_loss"):
                 # for BtoA generator
                 BtoA_GLoss = tf.reduce_mean(tf.square(BtoA_Dgene - tf.ones_like(BtoA_Dgene)))
-            tf.summary.scalar("BtoAGLoss", BtoA_GLoss)
 
             # Cycle Consistency Loss
             if cycle_consistency_loss == "L1":
@@ -371,11 +367,9 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                     cycle_loss = tf.losses.absolute_difference(A, BackA) + tf.losses.absolute_difference(B, BackB)
                     AtoB_GLoss += tf.multiply(cycle_loss, cycle_consistency_loss_weight)
                     BtoA_GLoss += tf.multiply(cycle_loss, cycle_consistency_loss_weight)
-                tf.summary.scalar("{}Loss".format(cycle_consistency_loss), cycle_loss)
             else:  # cycle_consistency_loss == "L2"
                 with tf.name_scope("{}_loss".format(cycle_consistency_loss)):
                     cycle_loss = tf.losses.mean_squared_error(BackA, A) + tf.losses.mean_squared_error(BackB, B)
-                    tf.summary.scalar("{} Loss".format(cycle_consistency_loss), cycle_loss)
                     AtoB_GLoss += tf.multiply(cycle_loss, cycle_consistency_loss_weight)
                     BtoA_GLoss += tf.multiply(cycle_loss, cycle_consistency_loss_weight)
                 tf.summary.scalar("{}Loss".format(cycle_consistency_loss), cycle_loss)
@@ -385,7 +379,6 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 with tf.name_scope("{}_loss".format("Identity_mapping_Loss")):
                     Identity_mapping_Loss = tf.losses.absolute_difference(im_AtoB_GeneratorWithB, B) + \
                                             tf.losses.absolute_difference(im_BtoA_GeneratorWithA, A)
-                    tf.summary.scalar("Identity_mapping_Loss", Identity_mapping_Loss)
                     AtoB_GLoss += tf.multiply(Identity_mapping_Loss, 0.5 * cycle_consistency_loss_weight)
                     BtoA_GLoss += tf.multiply(Identity_mapping_Loss, 0.5 * cycle_consistency_loss_weight)
 
@@ -397,6 +390,22 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 BtoA_D_train_op = training(BtoA_DLoss, BtoA_varD, scope='shared_variables/BtoA_Discriminator')
             with tf.name_scope("BtoA_Generator_trainer"):
                 BtoA_G_train_op = training(BtoA_GLoss, BtoA_varG, scope='shared_variables/BtoA_generator')
+
+            if use_identity_mapping:
+                with tf.name_scope("visualizer"):
+                    tf.summary.scalar("AtoBDLoss", AtoB_DLoss)
+                    tf.summary.scalar("AtoBGLoss", AtoB_GLoss)
+                    tf.summary.scalar("BtoADLoss", BtoA_DLoss)
+                    tf.summary.scalar("BtoAGLoss", BtoA_GLoss)
+                    tf.summary.scalar("{}Loss".format(cycle_consistency_loss), cycle_loss)
+                    tf.summary.scalar("Identity_mapping_Loss", Identity_mapping_Loss)
+            else:
+                with tf.name_scope("visualizer"):
+                    tf.summary.scalar("AtoBDLoss", AtoB_DLoss)
+                    tf.summary.scalar("AtoBGLoss", AtoB_GLoss)
+                    tf.summary.scalar("BtoADLoss", BtoA_DLoss)
+                    tf.summary.scalar("BtoAGLoss", BtoA_GLoss)
+                    tf.summary.scalar("{}Loss".format(cycle_consistency_loss), cycle_loss)
 
             summary_operation = tf.summary.merge_all()
             '''

@@ -113,15 +113,12 @@ def neuralstyle(model_file_path="", epoch=None, show_period=None, optimizer_sele
         with tf.variable_scope("noise_shared_variables") as scope:
             noise_variable = tf.get_variable("noise_image", initializer=noise_image.astype(np.float32),
                                              dtype=tf.float32)
-            tf.summary.image("noise_image", noise_variable, max_outputs=3)
             # or scope.reuse_variables()
 
         with tf.name_scope("content"):
             content_placeholder = tf.placeholder(tf.float32, shape=content_img.shape)
-            tf.summary.image("content_image", content_placeholder, max_outputs=3)
         with tf.name_scope("style"):
             style_placeholder = tf.placeholder(tf.float32, shape=style_img.shape)
-            tf.summary.image("style_image", style_placeholder, max_outputs=3)
 
         # download URL : http://www.vlfeat.org/matconvnet/models/imagenet-vgg-verydeep-19.mat
         if os.path.exists(model_file_path):
@@ -148,7 +145,11 @@ def neuralstyle(model_file_path="", epoch=None, show_period=None, optimizer_sele
         with tf.name_scope("trainer"):
             global_step = tf.Variable(0, name="global_step", trainable=False, dtype=tf.int32)
             train_operation = Trainer(loss, global_step)
+
         with tf.name_scope("tensorboard"):
+            tf.summary.image("noise_image", noise_variable, max_outputs=3)
+            tf.summary.image("content_image", content_placeholder, max_outputs=3)
+            tf.summary.image("style_image", style_placeholder, max_outputs=3)
             summary_operation = tf.summary.merge_all()
 
     config = tf.ConfigProto(log_device_placement=False, allow_soft_placement=True)

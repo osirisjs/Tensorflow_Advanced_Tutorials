@@ -126,7 +126,7 @@ symbolic 언어인 텐서플로에서는 연산그래프가 고정되어버리�
 # TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
 # TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
 # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-pix2pix.model(TEST=True, TFRecord=True, filter_size=32, AtoB=False, DB_name="facades",
+pix2pix.model(TEST=False, TFRecord=True, filter_size=16, AtoB=False, DB_name="facades",
               norm_selection ="BN", #IN - instance normalizaiton , BN -> batch normalization, NOTHING
               distance_loss="L1",
               distance_loss_weight=100, optimizer_selection="Adam",
