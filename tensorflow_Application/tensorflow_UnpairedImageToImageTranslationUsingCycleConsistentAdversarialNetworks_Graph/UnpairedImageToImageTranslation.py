@@ -322,10 +322,9 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                         im_BtoA_GeneratorWithA = generator(images=A, name="BtoA_generator")
 
             with tf.name_scope("visualizer"):
-                tf.summary.image("Origin_Aimage", A, max_outputs=3)
-                tf.summary.image("Origin_Bimage", B, max_outputs=3)
-                tf.summary.image("AtoBImage", AtoB_gene, max_outputs=3)
-                tf.summary.image("BtoAImage", BtoA_gene, max_outputs=3)
+                stacked = tf.concat([A, AtoB_gene, B, BtoA_gene], axis=2)
+                # 순서 -> Origin_Aimage, Origin_Bimage, AtoBImage, BtoAImage
+                tf.summary.image("stacked", stacked, max_outputs=3)
 
             AtoB_varD = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/AtoB_Discriminator')
 
