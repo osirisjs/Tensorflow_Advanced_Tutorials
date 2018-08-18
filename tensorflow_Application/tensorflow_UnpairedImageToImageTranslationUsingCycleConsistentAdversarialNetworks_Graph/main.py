@@ -12,7 +12,7 @@ optimizers_ selection = "Adam" or "RMSP" or "SGD"
 AtoB_generator, BtoA_generator 는 residual net 을 사용한다. -  9 blocks 
 discriminator의 구조는 PatchGAN 70X70을 사용한다. 
 -논문 내용과 거의 똑같이 구현했다. - 저자가 논문에는 Generator 마지막 layer에 instance norm을 쓰라고 했는데,
-정작 자신의 코드에는 없어서 나도 뺐다.
+정작 자신의 코드에는 사용하지 않아 나도 그렇게 했다. 또한 데이터 Augmentation 효과를 의해 random Crop 알고리즘을 적용했다.(random crop을 랜덤한 크기로 적용했다.)
 '''
 
 '''
@@ -65,30 +65,30 @@ for i, GL in enumerate(GPU_List):
     else:
         print(" " + num + ",", end="")
 
-# DB_name = "horse2zebra" 만...
 # 256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다
 # TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
 # TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
-# optimizers_ selection = "Adam" or "RMSP" or "SGD"
-cycleGAN.model(TEST=False, DB_name="horse2zebra", use_TFRecord=True,
-               filter_size=16,
-               norm_selection="BN",  # IN - instance normalizaiton , BN -> batch normalization, NOTHING
-               cycle_consistency_loss="L1",
-               cycle_consistency_loss_weight=10,
-               optimizer_selection="Adam", beta1=0.5, beta2=0.999,  # for Adam optimizer
-               decay=0.999, momentum=0.9,  # for RMSProp optimizer
-               use_identity_mapping=False,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용 - 우선은 False
-               image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
-               image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지? 논문에선 50개 사용했다고 나옴.
-               learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1,
-               weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
-               learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
-               inference_size=(256, 256),  # TEST=True 일 떄, inference할 크기는 256 x 256 이상이어야 한다.
-               # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수 - 논문에서는 Test = Training
-               # 후에 moving_variable을 사용할 수도 있을 경우를 대비하여 만들어 놓은 변수 Test=False일 때
-               using_moving_variable=False,  # TEST=True 일때, Moving Average를 사용할건지 말건지 선택하는 변수 -> 보통 사용안함.
-               only_draw_graph=False, # TEST=False 일 때, 그래프만 그리고 종료할지 말지
-               show_translated_image=True,  # TEST=True 일 때변환 된 이미지를 보여줄지 말지
-               # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다.(폴더 2개 이름 -> AtoB_translated_image , BtoA_translated_image )
-               save_path="translated_image",  # TEST=True 일 때 변환된 이미지가 저장될 폴더
-               weights_to_numpy = False)  # TEST=True 일 때 가중치를 npy 파일로 저장할지 말지
+cycleGAN.model(
+    DB_name="horse2zebra",  # DB_name 은 "horse2zebra"에만 대비되어 있다.
+    TEST=True,  # TEST=False -> Training or TEST=True -> TEST
+    TFRecord=False,  # TFRecord=True -> TFRecord파일로 저장한후 사용하는 방식 사용 or TFRecord=False -> 파일에서 읽어오는 방식 사용
+    filter_size=32,  # generator와 discriminator의 처음 layer의 filter 크기
+    norm_selection="BN",  # IN - instance normalizaiton , BN -> batch normalization, NOTHING
+    cycle_consistency_loss="L1",  # cycle loss -> L1 or L2
+    cycle_consistency_loss_weight=10,  # cycle loss으 가중치
+    optimizer_selection="Adam",  # optimizers_ selection = "Adam" or "RMSP" or "SGD"
+    beta1=0.5, beta2=0.999,  # for Adam optimizer
+    decay=0.999, momentum=0.9,  # for RMSProp optimizer
+    use_identity_mapping=False,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용 - 우선은 False
+    image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
+    image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지? 논문에선 50개 사용
+    learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1,
+    weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
+    learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
+    inference_size=(256, 256),  # TEST=True 일 떄, inference할 크기는 256 x 256 이상이어야 한다.
+    using_moving_variable=False,  # TEST=True 일때, Moving Average를 Inference에 사용할지 말지 결정하는 변수
+    only_draw_graph=False,  # TEST=False 일 때, 그래프만 그리고 종료할지 말지
+    show_translated_image=True,  # TEST=True 일 때변환 된 이미지를 보여줄지 말지
+    # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다.(폴더 2개 이름 -> AtoB_translated_image , BtoA_translated_image )
+    save_path="translated_image",  # TEST=True 일 때 변환된 이미지가 저장될 폴더
+    weights_to_numpy=False)  # TEST=True 일 때 가중치를 npy 파일로 저장할지 말지

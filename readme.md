@@ -59,9 +59,9 @@
             * [***Image To Image Translation With Conditional Adversarial Networks***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph)
                 * 어떤 도메인의 이미지의 다른 도메인의 이미지로의 변환이라는 거룩한 목적을 위해 고안된 네트워크입니다. ConditionalGAN 과 UNET을 사용하여 네트워크 구성 합니다.
                 * 네트워크 구조 및 학습 방법은 논문에서 제시한 내용과 거의 같습니다.(Discriminator 구조인 PatchGAN 의 크기는 70X70 입니다. - [ReceptiveField 계산법](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/blob/master/tensorflow_ModelWithFixedLengthDataset/tensorflow_ConvolutionNeuralNetwork/ReceptiveField_inspection/rf.py)
-                * 데이터 전처리 방법
-                    * 데이터 전처리를 위해 TFRecord 형식으로 데이터를 저장하고  tf.data.TFRecordDataset 를 사용했습니다.
-                        * 왜 TFRecord 방식으로만 데이터 전처리를 한 이유가 궁금하시다면, [main.py](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/blob/master/tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/main.py)의 주석을 읽어보시길 바랍니다.
+                * 2가지의 데이터 전처리 방법  
+                    1. 효율적인 데이터 전처리를 위해 tf.data.Dataset을 사용할 수 있습니다.(tf.data.Dataset로 처리된 데이터를 그래프 구조 안에 포함시킵니다.)
+                    2. 더 효율적인 데이터 전처리를 위해 TFRecord 형식으로 데이터를 저장하고  tf.data.TFRecordDataset 를 사용할 수 있습니다.
                 * tf.train.Saver().export_meta_graph API 와 tf.train.import_meta_graph API를 사용하여 Training, Test 코드를 각각 실행합니다.(그래프파일인 meta파일을 저장하여 Test시 불러옵니다.)
                 * 256x256 크기 이상의 서로 다른 크기의 이미지들을 동시에 학습 할 수 있습니다.
                     * 256x256 크기의 이미지로 학습한 생성 네트워크에 512x512 크기의 이미지를 입력으로 넣어 성능을 평가하기 위한 기능입니다. 다양한 크기의 이미지를 동시에 학습하는 것도 가능합니다. ( 관련 내용 : [Image To Image Translation With Conditional Adversarial Networks Using edges2shoes Dataset 논문의 7p 참고](https://arxiv.org/pdf/1611.07004.pdf))

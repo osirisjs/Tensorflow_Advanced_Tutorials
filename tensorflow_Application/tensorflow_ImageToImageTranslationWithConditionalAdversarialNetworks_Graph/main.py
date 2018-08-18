@@ -6,11 +6,8 @@ import ImageToImageTranslation as pix2pix
 1. 설명
 데이터셋 다운로드는 - https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/ 에서 <데이터셋> 을 내려 받자. 
 논문에서 추천하는 hyperparameter 는 200 epoch, 1 ~ 10 batch size 정도, beta1 = 0.5, beta2=0.999, lr=0.0002
-
 입력 크기 : <256x256x3>
 출력 크기 : <256x256x3>
-optimizers_ selection = "Adam" or "RMSP" or "SGD"
-batch_size = 1 -> instance norm, batch_size > 1 -> batch_norm
 저자코드 - https://github.com/phillipi/pix2pix/blob/master/models.lua
 generator는 unet을 사용한다.
 discriminator의 구조는 PatchGAN 70X70을 사용한다. 
@@ -27,7 +24,7 @@ and has been demonstrated to be effective at image
 generation tasks [53]. In our experiments, we use batch
 sizes between 1 and 10 depending on the experiment
 
--논문 내용과 똑같이 구현했다.
+논문 내용과 거의 똑같이 구현했다. + random crop을 랜덤한 크기로 적용했다.
 
 2. loss에 대한 옵션
 distance_loss = 'L1' 일 경우 , generator에서 나오는 출력과 실제 출력값을 비교하는 L1 loss를 생성
@@ -42,17 +39,6 @@ This discriminator slides across the generated image, convolutionally,
 trying to classify if each overlapping 70x70 patch is real or fake. 
 This results in a 30x30 grid of classifier outputs, 
 each corresponding to a different patch in the generated image.
-'''
-
-'''
-DB_name 은 아래에서 하나 고르자
-1. "cityscapes" - 요것만 segmentation -> image 생성이다.
-2. "facades"
-3. "maps"
-
-AtoB -> A : image,  B : segmentation
-AtoB = True  -> image -> segmentation
-AtoB = False -> segmentation -> image
 '''
 
 '''
@@ -105,43 +91,38 @@ for i, GL in enumerate(GPU_List):
     else:
         print(" " + num + ",", end="")
 
-''' 
-256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다. - 이것을 구현하는데 생각보다 시간이 오래 걸렸다.
-데이터가 쌍으로 존재하다보니 반반으로 나눠야 한다. 심지어 다양한 크기의 데이터가 쌍이다. 그래프는 입 출력 등의 모양만 알고있는 채로 그려진다.
-자기가 알아서 나눌수가 없다. 무조건 정보를 줘야한다. 즉 그래프는 나누는 포인트정보가 필요하다.
-이게 사실 pytorch, gluon과 같은 imperative 언어였다면, 실행하면서 계산이 가능하므로 생각할 필요도 없는 문젠데, 
-symbolic 언어인 텐서플로에서는 연산그래프가 고정되어버리기 때문에 복잡하다.
-(numpy로 Dataset을 구현 하고, placeholder에 feed dict 으로 넣어줬으면, 금방 끝났을 일이었지만, 텐서플로에 대한 이해가 조금 더 깊어졌다.)
-
-내가 생각한 총 3가지 방법이 있었다. 
-첫번째, tf.data.Dataset을 batch, shuffle등의 전처리 기능으로만 쓰고, sess.run()으로 실행한 후 numpy로 그림을 나눠줘서 학습하는 방법 
- - imperative 방식과 다를게 없다. 또한 텐서플로를 제대로 사용하지 않는 것임!!! 
- - 이럴꺼면 numpy로 
-
-두번째 DB에 대해 나누는 포인트 정보를 가지고 있는 List파일을 만들어서, tf.data.Dataset.from_tensor_slices에서 같이 불러오는 방법 
- - 비교적 텐서플로답게 사용하는 것이긴 하지만 최선은 아니다. 
- 
-세번째 방법 TFRecord 이용하는 방식 -> TFRecord로 DB를 쓸 때 내가 원하는 정보를 포함해서 쓸 수 있고, 내가 원하는 정보를 불러오는게 가능하다. 이게 바로 텐서플로다.'''
-
+'''
+DB_name 은 아래에서 하나 고르자
+1. "cityscapes"
+2. "facades"
+3. "maps"
+AtoB -> A : image,  B : segmentation
+AtoB = True  -> image -> segmentation
+AtoB = False -> segmentation -> image
+'''
+# 256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다
 # TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
 # TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
 # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-pix2pix.model(TEST=False, TFRecord=True, filter_size=16, AtoB=False, DB_name="facades",
-              norm_selection ="BN", #IN - instance normalizaiton , BN -> batch normalization, NOTHING
-              distance_loss="L1",
-              distance_loss_weight=100, optimizer_selection="Adam",
+pix2pix.model(DB_name="facades",
+              TEST=False,  # TEST=False -> Training or TEST=True -> TEST
+              # 대량의 데이터일 경우 TFRecord=True가 더 빠르다.
+              TFRecord=True,  # TFRecord=True -> TFRecord파일로 저장한후 사용하는 방식 사용 or TFRecord=False -> 파일에서 읽어오는 방식 사용
+              AtoB=False,  # 데이터 순서 변경(ex) AtoB=True : image -> segmentation / AtoB=False : segmetation -> image)
+              filter_size=32,  # generator와 discriminator의 처음 layer의 filter 크기
+              norm_selection="BN",  # IN - instance normalizaiton , BN -> batch normalization, NOTHING
+              Dropout_rate=0.5,  # generator의 Dropout 비율
+              distance_loss="L1",  # L2 or NOTHING
+              distance_loss_weight=100,  # distance_loss의 가중치
+              optimizer_selection="Adam",  # optimizers_ selection = "Adam" or "RMSP" or "SGD"
               beta1=0.5, beta2=0.999,  # for Adam optimizer
               decay=0.999, momentum=0.9,  # for RMSProp optimizer
-              # batch_size는 1~10사이로 하자
-              image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
+              image_pool=False,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
               image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
-              learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1, Dropout_rate=0.5,
-              inference_size=(256, 256),  # TEST=True 일 떄, inference할 크기는 256 x 256 이상이어야 한다.
-              # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수 - 논문에서는 Test = Training
-              # 후에 moving_variable을 사용할 수도 있을 경우를 대비하여 만들어 놓은 변수 Test=False일 때
-              using_moving_variable=False,  # TEST=True 일때, Moving Average를 사용할건지 말건지 선택하는 변수 -> 보통 사용안함.
-              # 아래의 변수가 True이면 그래프만 그리고 종료,
-              only_draw_graph=False, # TEST=False 일 떄, 그래프만 그리고 종료할지 말지
-              show_translated_image=True,  # TEST=True 일 때변환 된 이미지를 보여줄지 말지
-              weights_to_numpy=True,  # TEST=True 일 때 가중치를 npy 파일로 저장할지 말지
+              learning_rate=0.0002, training_epochs=2, batch_size=2, display_step=1,
+              inference_size=(512, 512),  # TEST=True 일때, inference할 크기는 256 x 256 이상이어야 한다.
+              using_moving_variable=False,  # TEST=True 일때, Moving Average를 Inference에 사용할지 말지 결정하는 변수
+              only_draw_graph=False,  # TEST=False 일 때 only_draw_graph=True이면 그래프만 그리고 종료한다.
+              show_translated_image=True,  # TEST=True 일 때 변환된 이미지를 보여줄지 말지
+              weights_to_numpy=False,  # TEST=True 일 때 가중치를 npy 파일로 저장할지 말지
               save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더

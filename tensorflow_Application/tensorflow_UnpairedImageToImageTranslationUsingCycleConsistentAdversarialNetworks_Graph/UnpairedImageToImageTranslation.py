@@ -16,35 +16,41 @@ def visualize(model_name="CycleGAN", named_images=None, save_path=None):
     print("<<< {}_{}.png saved in {} folder >>>".format(model_name, named_images[0], save_path))
 
 
-def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistency_loss="L1",
-          filter_size=32,
-          norm_selection="BN",
-          cycle_consistency_loss_weight=10,
-          optimizer_selection="Adam", beta1=0.9, beta2=0.999,
-          decay=0.999, momentum=0.9,
-          use_identity_mapping=True,
-          image_pool=True,
-          image_pool_size=50,
-          learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
-          weight_decay_epoch=100,
-          learning_rate_decay=0.99,
-          inference_size=(256, 256),
-          using_moving_variable=False,
-          only_draw_graph=False,
-          show_translated_image=True,
-          save_path="translated_image",
-          weights_to_numpy=False):
+def model(
+    DB_name="horse2zebra",
+    TEST=False,
+    TFRecord=True,
+    filter_size=8,
+    norm_selection="BN",
+    cycle_consistency_loss="L1",
+    cycle_consistency_loss_weight=10,
+    optimizer_selection="Adam",
+    beta1=0.5, beta2=0.999,
+    decay=0.999, momentum=0.9,
+    use_identity_mapping=False,
+    image_pool=True,
+    image_pool_size=50,
+    learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1,
+    weight_decay_epoch=100,
+    learning_rate_decay=0.99,
+    inference_size=(256, 256),
+    using_moving_variable=False,
+    only_draw_graph=False,
+    show_translated_image=True,
+    save_path="translated_image",
+    weights_to_numpy=False):
     print("<<< CycleGAN >>>")
 
-    model_name = DB_name
+    model_name = str(filter_size)
+    model_name += DB_name
 
     if cycle_consistency_loss == "L1":
-        model_name += "L1cl"  # L1 cycle consistency loss
+        model_name += "L1"  # L1 cycle consistency loss
     else:
-        model_name += "L2cl"  # L1 cycle consistency loss
+        model_name += "L2"  # L1 cycle consistency loss
 
     if use_identity_mapping:
-        model_name += "im"  # identity mapping loss
+        model_name += "IML"  # identity mapping loss
 
     if norm_selection == "BN":
         model_name = model_name + "BN"
@@ -282,8 +288,8 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
             # lr = tf.placeholder(dtype=tf.float32)
             # 데이터 전처리
             with tf.name_scope("Dataset"):
-                dataset = Dataset(DB_name=DB_name, batch_size=batch_size, use_TFRecord=use_TFRecord,
-                                  use_TrainDataset=True)
+                dataset = Dataset(DB_name=DB_name, batch_size=batch_size, TFRecord=TFRecord,
+                                  use_TrainDataset=not TEST)
                 A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length = dataset.iterator()
 
                 # 알고리즘
@@ -321,18 +327,27 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                         im_AtoB_GeneratorWithB = generator(images=B, name="AtoB_generator")
                         im_BtoA_GeneratorWithA = generator(images=A, name="BtoA_generator")
 
-            with tf.name_scope("visualizer"):
+            with tf.name_scope("visualizer_each"):
+                tf.summary.image("A", A, max_outputs=1)
+                tf.summary.image("AtoB_gene", AtoB_gene, max_outputs=1)
+                tf.summary.image("B", B, max_outputs=1)
+                tf.summary.image("BtoA_gene", BtoA_gene, max_outputs=1)
+
+            with tf.name_scope("visualizer_stacked"):
                 stacked = tf.concat([A, AtoB_gene, B, BtoA_gene], axis=2)
                 # 순서 -> Origin_Aimage, Origin_Bimage, AtoBImage, BtoAImage
                 tf.summary.image("stacked", stacked, max_outputs=3)
 
+            # 학습할 AtoB-Discriminator 변수 지정
             AtoB_varD = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/AtoB_Discriminator')
 
+            # 학습할 AtoB-Generator 변수 지정
             AtoB_varG = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/AtoB_generator')
 
+            # 학습할 BtoA-Discriminator 변수 지정
             BtoA_varD = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/BtoA_Discriminator')
 
-            # set으로 중복 제거 하고, 다시 list로 바꾼다.
+            # 학습할 BtoA-Generator 변수 지정
             BtoA_varG = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/BtoA_generator')
 
             # optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
@@ -371,7 +386,6 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                     cycle_loss = tf.losses.mean_squared_error(BackA, A) + tf.losses.mean_squared_error(BackB, B)
                     AtoB_GLoss += tf.multiply(cycle_loss, cycle_consistency_loss_weight)
                     BtoA_GLoss += tf.multiply(cycle_loss, cycle_consistency_loss_weight)
-                tf.summary.scalar("{}Loss".format(cycle_consistency_loss), cycle_loss)
 
             # Identity mapping -> input과 output의 컬러 구성을 보존하기 위해 쓴다고 함(논문에서는 painting -> photo DB로 학습할 때 씀)
             if use_identity_mapping:
@@ -391,7 +405,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 BtoA_G_train_op = training(BtoA_GLoss, BtoA_varG, scope='shared_variables/BtoA_generator')
 
             if use_identity_mapping:
-                with tf.name_scope("visualizer"):
+                with tf.name_scope("LOSS"):
                     tf.summary.scalar("AtoBDLoss", AtoB_DLoss)
                     tf.summary.scalar("AtoBGLoss", AtoB_GLoss)
                     tf.summary.scalar("BtoADLoss", BtoA_DLoss)
@@ -534,10 +548,10 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                         BtoA_LossD += (BtoA_D_Loss / total_batch)
                         BtoA_LossG += (BtoA_G_Loss / total_batch)
 
-                        AtoB_sigmoidD += (AtoB_Dreal_simgoid / total_batch)
-                        AtoB_sigmoidG += (AtoB_Dgene_simgoid / total_batch)
-                        BtoA_sigmoidD += (BtoA_Dreal_simgoid / total_batch)
-                        BtoA_sigmoidG += (BtoA_Dgene_simgoid / total_batch)
+                        AtoB_sigmoidD += (np.mean(AtoB_Dreal_simgoid, axis=(1, 2, 3)) / total_batch)
+                        AtoB_sigmoidG += (np.mean(AtoB_Dgene_simgoid, axis=(1, 2, 3)) / total_batch)
+                        BtoA_sigmoidD += (np.mean(BtoA_Dreal_simgoid, axis=(1, 2, 3)) / total_batch)
+                        BtoA_sigmoidG += (np.mean(BtoA_Dgene_simgoid, axis=(1, 2, 3)) / total_batch)
 
                         if norm_selection == "BN":
                             summary_str = sess.run(summary_operation, feed_dict={BN_FLAG: True})
@@ -560,7 +574,6 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                     if epoch % display_step == 0:
 
                         save_all_model_path = os.path.join(model_name, 'All')
-                        # saver_generator.export_meta_graph 에서 경로가 생성되지만, 혹시모를 오류에 대비해서!!!
                         save_generator_model_path = os.path.join(model_name, 'Generator')
 
                         if not os.path.exists(save_all_model_path):
@@ -605,7 +618,7 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                 A, B, AtoB_gene, BtoA_gene = tf.get_collection('way')
 
             # Test Dataset 가져오기
-            dataset = Dataset(DB_name=DB_name, use_TFRecord=use_TFRecord,
+            dataset = Dataset(DB_name=DB_name, TFRecord=TFRecord,
                               use_TrainDataset=not TEST, inference_size=inference_size)
             A_iterator, A_next_batch, A_length, B_iterator, B_next_batch, B_length = dataset.iterator()
             A_tensor, B_tensor = A_next_batch, B_next_batch
@@ -647,6 +660,8 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
                         else:
                             AtoB_translated_image, BtoA_translated_image = sess.run([AtoB_gene, BtoA_gene],
                                                                                     feed_dict={A: A_numpy, B: B_numpy})
+
+                        # 순서 : 입력, 생성
                         visualize(model_name="AtoB" + model_name,
                                   named_images=[i, A_numpy[0], AtoB_translated_image[0]],
                                   save_path="AtoB" + save_path)
@@ -693,26 +708,31 @@ def model(TEST=False, DB_name="horse2zebra", use_TFRecord=True, cycle_consistenc
 
 
 if __name__ == "__main__":
-    model(TEST=False, DB_name="horse2zebra", use_TFRecord=True,
-          filter_size=16,
-          norm_selection="BN",  # IN - instance normalizaiton , BN -> batch normalization, NOTHING
-          cycle_consistency_loss="L1",
-          cycle_consistency_loss_weight=10,
-          optimizer_selection="Adam", beta1=0.5, beta2=0.999,  # for Adam optimizer
-          decay=0.999, momentum=0.9,  # for RMSProp optimizer
-          use_identity_mapping=False,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용 - 우선은 False
-          image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
-          image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지? 논문에선 50개 사용했다고 나옴.
-          learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1,
-          weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
-          learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
-          inference_size=(256, 256),  # TEST=True 일 떄, inference할 크기는 256 x 256 이상이어야 한다.
-          # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수 - 논문에서는 Test = Training
-          # 후에 moving_variable을 사용할 수도 있을 경우를 대비하여 만들어 놓은 변수 Test=False일 때
-          using_moving_variable=False,  # TEST=True 일때, Moving Average를 사용할건지 말건지 선택하는 변수 -> 보통 사용안함.
-          only_draw_graph=False,  # TEST=False 일 떄, 그래프만 그리고 종료할지 말지
-          show_translated_image=True,  # TEST=True 일 때변환 된 이미지를 보여줄지 말지
-          # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다.(폴더 2개 이름 -> AtoB_translated_image , BtoA_translated_image )
-          save_path="translated_image",  # TEST=True 일 때 변환된 이미지가 저장될 폴더
-          weights_to_numpy=False)  # TEST=True 일 때 가중치를 npy 파일로 저장할지 말지
+    # 256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다
+    # TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
+    # TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
+    model(
+        DB_name="horse2zebra",  # DB_name 은 "horse2zebra"에만 대비되어 있다.
+        TEST=False,  # TEST=False -> Training or TEST=True -> TEST
+        TFRecord=True,  # TFRecord=True -> TFRecord파일로 저장한후 사용하는 방식 사용 or TFRecord=False -> 파일에서 읽어오는 방식 사용
+        filter_size=8,  # generator와 discriminator의 처음 layer의 filter 크기
+        norm_selection="BN",  # IN - instance normalizaiton , BN -> batch normalization, NOTHING
+        cycle_consistency_loss="L1",  # cycle loss -> L1 or L2
+        cycle_consistency_loss_weight=10,  # cycle loss으 가중치
+        optimizer_selection="Adam",  # optimizers_ selection = "Adam" or "RMSP" or "SGD"
+        beta1=0.5, beta2=0.999,  # for Adam optimizer
+        decay=0.999, momentum=0.9,  # for RMSProp optimizer
+        use_identity_mapping=False,  # 논문에서는 painting -> photo DB 로 네트워크를 학습할 때 사용 - 우선은 False
+        image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
+        image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지? 논문에선 50개 사용
+        learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1,
+        weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
+        learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
+        inference_size=(256, 256),  # TEST=True 일 떄, inference할 크기는 256 x 256 이상이어야 한다.
+        using_moving_variable=False,  # TEST=True 일때, Moving Average를 Inference에 사용할지 말지 결정하는 변수
+        only_draw_graph=False,  # TEST=False 일 때, 그래프만 그리고 종료할지 말지
+        show_translated_image=True,  # TEST=True 일 때변환 된 이미지를 보여줄지 말지
+        # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다.(폴더 2개 이름 -> AtoB_translated_image , BtoA_translated_image )
+        save_path="translated_image",  # TEST=True 일 때 변환된 이미지가 저장될 폴더
+        weights_to_numpy=False)  # TEST=True 일 때 가중치를 npy 파일로 저장할지 말지
     print("model imported")

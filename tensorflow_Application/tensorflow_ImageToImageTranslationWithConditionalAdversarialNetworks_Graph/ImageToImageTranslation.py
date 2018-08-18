@@ -16,38 +16,43 @@ def visualize(model_name="Pix2PixConditionalGAN", named_images=None, save_path=N
     print("<<< {}_{}.png saved in {} folder >>>".format(model_name, named_images[0], save_path))
 
 
-def model(TEST=False, TFRecord=True, filter_size=64, AtoB=True, DB_name="facades",
+def model(DB_name="facades",
+          TEST=False,
+          TFRecord=True,
+          AtoB=False,
+          filter_size=32,
           norm_selection="BN",
+          Dropout_rate=0.5,
           distance_loss="L1",
-          distance_loss_weight=100, optimizer_selection="Adam",
+          distance_loss_weight=100,
+          optimizer_selection="Adam",
           beta1=0.5, beta2=0.999,
           decay=0.999, momentum=0.9,
-          image_pool=True,
+          image_pool=False,
           image_pool_size=50,
-          learning_rate=0.0002, training_epochs=200, batch_size=1, display_step=1, Dropout_rate=0.5,
-          inference_size=(256, 256),
+          learning_rate=0.0002, training_epochs=2, batch_size=2, display_step=1,
+          inference_size=(512, 512),
           using_moving_variable=False,
           only_draw_graph=False,
-          show_translated_image=False,
+          show_translated_image=True,
           weights_to_numpy=False,
           save_path="translated_image"):
+    model_name = str(filter_size)
+
+    if AtoB:
+        model_name += "AtoB"
+    else:
+        model_name += "BtoA"
+    model_name += DB_name
+
     if distance_loss == "L1":
         print("<<< target generative GAN with L1 loss >>>")
-        model_name = "Pix2PixL1loss"
+        model_name += "L1"
     elif distance_loss == "L2":
         print("<<< target generative GAN with L1 loss >>>")
-        model_name = "Pix2PixL2loss"
+        model_name += "L2"
     else:
         print("<<< target generative GAN >>>")
-        model_name = "Pix2PixGAN"
-
-    # DB 이름도 추가
-    if AtoB:
-        model_name = "AtoB" + model_name
-    else:
-        model_name = "BtoA" + model_name
-
-    model_name = DB_name + model_name
 
     if norm_selection == "BN":
         model_name = model_name + "BN"
@@ -305,14 +310,13 @@ def model(TEST=False, TFRecord=True, filter_size=64, AtoB=True, DB_name="facades
 
             # 데이터 전처리
             with tf.name_scope("Dataset"):
-                dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TrainDataset=True,
+                dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TrainDataset=not TEST,
                                   TFRecord=TFRecord)
                 iterator, next_batch, data_length = dataset.iterator()
 
                 # 알고리즘
                 x = next_batch[0]
                 target = next_batch[1]
-
 
             with tf.variable_scope("shared_variables", reuse=tf.AUTO_REUSE) as scope:
                 with tf.name_scope("Generator"):
@@ -322,8 +326,9 @@ def model(TEST=False, TFRecord=True, filter_size=64, AtoB=True, DB_name="facades
                     # scope.reuse_variables()
                     D_gene, sigmoid_D_gene = discriminator(images=G, condition=x)
 
+            # 학습할 Discriminator 변수 지정
             var_D = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/Discriminator')
-
+            # 학습할 Generator 변수 지정
             var_G = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/Generator')
 
             # optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
@@ -343,7 +348,6 @@ def model(TEST=False, TFRecord=True, filter_size=64, AtoB=True, DB_name="facades
                 # for generator
                 G_Loss = min_max_loss(logits=D_gene, labels=tf.ones_like(D_gene))
 
-
             if distance_loss == "L1":
                 with tf.name_scope("{}_loss".format(distance_loss)):
                     dis_loss = tf.losses.absolute_difference(target, G)
@@ -360,9 +364,15 @@ def model(TEST=False, TFRecord=True, filter_size=64, AtoB=True, DB_name="facades
             with tf.name_scope("Generator_trainer"):
                 G_train_op = training(G_Loss, var_G, scope='shared_variables/Generator')
 
+            with tf.name_scope("Visualizer_each"):
+                tf.summary.image("x", x, max_outputs=1)
+                tf.summary.image("target", target, max_outputs=1)
+                tf.summary.image("G", G, max_outputs=1)
+
             # tensorboard에 띄우기
-            with tf.name_scope("Visualizer"):
-                stacked_image = tf.concat([G,target,x],axis=2)
+            with tf.name_scope("Visualizer_stacked"):
+                # 순서 : 입력, 타깃, 생성
+                stacked_image = tf.concat([x, target, G], axis=2)
                 tf.summary.image("stacked", stacked_image, max_outputs=3)
 
             with tf.name_scope("Loss"):
@@ -532,7 +542,7 @@ def model(TEST=False, TFRecord=True, filter_size=64, AtoB=True, DB_name="facades
                 x, G = tf.get_collection('way')
 
             # Test Dataset 가져오기
-            dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TrainDataset=False,
+            dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TrainDataset=not TEST,
                               inference_size=inference_size, TFRecord=TFRecord)
             iterator, next_batch, data_length = dataset.iterator()
 
@@ -566,6 +576,7 @@ def model(TEST=False, TFRecord=True, filter_size=64, AtoB=True, DB_name="facades
                         else:
                             translated_image = sess.run(G, feed_dict={x: x_numpy})
 
+                        # 순서 : 입력, 타깃, 생성
                         visualize(model_name=model_name,
                                   named_images=[i, x_numpy[0], target_numpy[0], translated_image[0]],
                                   save_path=save_path)
@@ -609,24 +620,40 @@ def model(TEST=False, TFRecord=True, filter_size=64, AtoB=True, DB_name="facades
 
 if __name__ == "__main__":
 
-    model(TEST=True, TFRecord=True, filter_size=64, AtoB=False, DB_name="facades",
+    '''
+    DB_name 은 아래에서 하나 고르자
+    1. "cityscapes"
+    2. "facades"
+    3. "maps"
+    AtoB -> A : image,  B : segmentation
+    AtoB = True  -> image -> segmentation
+    AtoB = False -> segmentation -> image
+    '''
+    # 256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다
+    # TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
+    # TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
+    # optimizers_ selection = "Adam" or "RMSP" or "SGD"
+    model(DB_name="facades",
+          TEST=False,  # TEST=False -> Training or TEST=True -> TEST
+          # 대량의 데이터일 경우 TFRecord=True가 더 빠르다.
+          TFRecord=True,  # TFRecord=True -> TFRecord파일로 저장한후 사용하는 방식 사용 or TFRecord=False -> 파일에서 읽어오는 방식 사용
+          AtoB=False,  # 데이터 순서 변경(ex) AtoB=True : image -> segmentation / AtoB=False : segmetation -> image)
+          filter_size=32,  # generator와 discriminator의 처음 layer의 filter 크기
           norm_selection="BN",  # IN - instance normalizaiton , BN -> batch normalization, NOTHING
-          distance_loss="L1",
-          distance_loss_weight=100, optimizer_selection="Adam",
+          Dropout_rate=0.5,  # generator의 Dropout 비율
+          distance_loss="L1",  # L2 or NOTHING
+          distance_loss_weight=100,  # distance_loss의 가중치
+          optimizer_selection="Adam",  # optimizers_ selection = "Adam" or "RMSP" or "SGD"
           beta1=0.5, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
-          # batch_size는 1~10사이로 하자
-          image_pool=True,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
+          image_pool=False,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
           image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
-          learning_rate=0.0002, training_epochs=1, batch_size=2, display_step=1, Dropout_rate=0.5,
-          inference_size=(256, 256),  # TEST=True 일 때 inference 해 볼 크기
-          # using_moving_variable - 이동 평균, 이동 분산을 사용할지 말지 결정하는 변수 - 논문에서는 Test = Training
-          # 후에 moving_variable을 사용할 수도 있을 경우를 대비하여 만들어 놓은 변수 Test=False일 때
-          using_moving_variable=False,  # TEST=True 일때, Moving Average를 사용할건지 말건지 선택하는 변수 -> 보통 사용안함.
-          # 아래의 변수가 True이면 그래프만 그리고 종료,
-          only_draw_graph=False,  # TEST=False 일 떄, 그래프만 그리고 종료할지 말지
-          show_translated_image=True,  # TEST=True 일 때변환 된 이미지를 보여줄지 말지
-          weights_to_numpy=True,  # TEST=True 일 때 가중치를 npy 파일로 저장할지 말지
+          learning_rate=0.0002, training_epochs=2, batch_size=2, display_step=1,
+          inference_size=(512, 512),  # TEST=True 일때, inference할 크기는 256 x 256 이상이어야 한다.
+          using_moving_variable=False,  # TEST=True 일때, Moving Average를 Inference에 사용할지 말지 결정하는 변수
+          only_draw_graph=False,  # TEST=False 일 때 only_draw_graph=True이면 그래프만 그리고 종료한다.
+          show_translated_image=True,  # TEST=True 일 때 변환된 이미지를 보여줄지 말지
+          weights_to_numpy=False,  # TEST=True 일 때 가중치를 npy 파일로 저장할지 말지
           save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더
 else:
     print("model imported")
