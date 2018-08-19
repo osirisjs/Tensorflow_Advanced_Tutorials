@@ -189,7 +189,7 @@ class Dataset(object):
 
         # 이미지를 읽는다.
         tensor_name = tf.read_file(image)
-        tensor_image = tf.image.decode_image(tensor_name)
+        tensor_image = tf.image.decode_image(tensor_name, channels=3)
         # tf.image.decode_image는 shape 정보를 반환하지 못하므로, 아래의 코드를 꼭 작성해야한다.
         tensor_image.set_shape([None, None, 3])
         iL, iR = tf.split(tf.cast(tensor_image, tf.float32), 2, axis=1)

@@ -107,20 +107,21 @@ AtoB = False -> segmentation -> image
 pix2pix.model(DB_name="facades",
               TEST=False,  # TEST=False -> Training or TEST=True -> TEST
               # 대량의 데이터일 경우 TFRecord=True가 더 빠르다.
-              TFRecord=True,  # TFRecord=True -> TFRecord파일로 저장한후 사용하는 방식 사용 or TFRecord=False -> 파일에서 읽어오는 방식 사용
+              TFRecord=False,  # TFRecord=True -> TFRecord파일로 저장한후 사용하는 방식 사용 or TFRecord=False -> 파일에서 읽어오는 방식 사용
               AtoB=False,  # 데이터 순서 변경(ex) AtoB=True : image -> segmentation / AtoB=False : segmetation -> image)
+              Inputsize_limit=(256, 256),  # 입력되어야 하는 최소 사이즈를 내가 지정 - (256,256) 으로 하자
               filter_size=32,  # generator와 discriminator의 처음 layer의 filter 크기
               norm_selection="BN",  # IN - instance normalizaiton , BN -> batch normalization, NOTHING
               Dropout_rate=0.5,  # generator의 Dropout 비율
-              distance_loss="L1",  # L2 or NOTHING
+              distance_loss=" ",  # L2 or NOTHING
               distance_loss_weight=100,  # distance_loss의 가중치
               optimizer_selection="Adam",  # optimizers_ selection = "Adam" or "RMSP" or "SGD"
               beta1=0.5, beta2=0.999,  # for Adam optimizer
               decay=0.999, momentum=0.9,  # for RMSProp optimizer
               image_pool=False,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
               image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
-              learning_rate=0.0002, training_epochs=2, batch_size=2, display_step=1,
-              inference_size=(512, 512),  # TEST=True 일때, inference 할 수 있는 최소의 크기를 256 x 256으로 크기 제한을 뒀다.
+              learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1,
+              inference_size=(256, 256),  # TEST=True 일때, inference 할 수 있는 최소의 크기를 256 x 256으로 크기 제한을 뒀다.
               using_moving_variable=False,  # TEST=True 일때, Moving Average를 Inference에 사용할지 말지 결정하는 변수
               only_draw_graph=False,  # TEST=False 일 때 only_draw_graph=True이면 그래프만 그리고 종료한다.
               show_translated_image=True,  # TEST=True 일 때 변환된 이미지를 보여줄지 말지

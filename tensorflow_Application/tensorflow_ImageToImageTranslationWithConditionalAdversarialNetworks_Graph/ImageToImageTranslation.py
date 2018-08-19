@@ -20,6 +20,7 @@ def model(DB_name="facades",
           TEST=False,
           TFRecord=True,
           AtoB=False,
+          Inputsize_limit=(256, 256),
           filter_size=32,
           norm_selection="BN",
           Dropout_rate=0.5,
@@ -49,7 +50,7 @@ def model(DB_name="facades",
         print("<<< target generative GAN with L1 loss >>>")
         model_name += "L1"
     elif distance_loss == "L2":
-        print("<<< target generative GAN with L1 loss >>>")
+        print("<<< target generative GAN with L2 loss >>>")
         model_name += "L2"
     else:
         print("<<< target generative GAN >>>")
@@ -351,18 +352,19 @@ def model(DB_name="facades",
             if distance_loss == "L1":
                 with tf.name_scope("{}_loss".format(distance_loss)):
                     dis_loss = tf.losses.absolute_difference(target, G)
-                    G_Loss += tf.multiply(dis_loss, distance_loss_weight)
+                    Gdis_Loss = G_Loss + tf.multiply(dis_loss, distance_loss_weight)
             elif distance_loss == "L2":
                 with tf.name_scope("{}_loss".format(distance_loss)):
                     dis_loss = tf.losses.mean_squared_error(target, G)
-                    G_Loss += tf.multiply(dis_loss, distance_loss_weight)
-            else:
-                dis_loss = tf.constant(value=0, dtype=tf.float32)
+                    Gdis_Loss = G_Loss + tf.multiply(dis_loss, distance_loss_weight)
 
             with tf.name_scope("Discriminator_trainer"):
                 D_train_op = training(D_Loss, var_D, scope='shared_variables/Discriminator')
             with tf.name_scope("Generator_trainer"):
-                G_train_op = training(G_Loss, var_G, scope='shared_variables/Generator')
+                if distance_loss == "L1" or distance_loss == "L2":
+                    G_train_op = training(Gdis_Loss, var_G, scope='shared_variables/Generator')
+                else:
+                    G_train_op = training(G_Loss, var_G, scope='shared_variables/Generator')
 
             with tf.name_scope("Visualizer_each"):
                 tf.summary.image("x", x, max_outputs=1)
@@ -378,7 +380,8 @@ def model(DB_name="facades",
             with tf.name_scope("Loss"):
                 tf.summary.scalar("DLoss", D_Loss)
                 tf.summary.scalar("GLoss", G_Loss)
-                tf.summary.scalar("{}Loss".format(distance_loss), dis_loss)
+                if distance_loss == "L1" or distance_loss == "L2":
+                    tf.summary.scalar("{}Loss".format(distance_loss), dis_loss)
 
             summary_operation = tf.summary.merge_all()
 
@@ -432,28 +435,36 @@ def model(DB_name="facades",
 
                     Loss_D = 0
                     Loss_G = 0
-                    Loss_Distance = 0
-
+                    if distance_loss == "L1" or distance_loss == "L2":
+                        Loss_Distance = 0
                     # 아래의 두 변수가 각각 0.5 씩의 값을 갖는게 가장 이상적이다.
                     sigmoid_D = 0
                     sigmoid_G = 0
 
                     total_batch = int(data_length / batch_size)
                     for i in range(total_batch):
-                        # 입력 이미지가 256 x 256 이하이면, exit()
+                        # 입력 이미지가 Inputsize_limit[0] x Inputsize_limit[1] 이하이면, exit()
                         temp = sess.run(x)
-                        if temp.shape[1] < 256 or temp.shape[2] < 256:
-                            print("<<< 입력된 이미지 크기는 {}x{} 입니다. >>>".format(temp.shape[1], temp.shape[2]))
-                            print("<<< 입력되는 이미지 크기는 256x256 보다 크거나 같아야 합니다. >>>")
+                        if temp.shape[1] < Inputsize_limit[0] or temp.shape[2] < Inputsize_limit[1]:
+                            print("<<< 입력된 이미지 크기는 {} x {} 입니다. >>>".format(temp.shape[1], temp.shape[2]))
+                            print("<<< 입력되는 이미지 크기는 {} x {} 보다 크거나 같아야 합니다. >>>".format(Inputsize_limit[0],
+                                                                                        Inputsize_limit[1]))
                             print("<<< 강제 종료 합니다. >>>")
                             exit(0)
-
                         if norm_selection == "BN":
-                            _, Generator_Loss, Distance_Loss, D_gene_simgoid = sess.run(
-                                [G_train_op, G_Loss, dis_loss, sigmoid_D_gene], feed_dict={BN_FLAG: True})
+                            if distance_loss == "L1" or distance_loss == "L2":
+                                _, Generator_Loss, Distance_Loss, D_gene_simgoid = sess.run(
+                                    [G_train_op, G_Loss, dis_loss, sigmoid_D_gene], feed_dict={BN_FLAG: True})
+                            else:
+                                _, Generator_Loss, D_gene_simgoid = sess.run(
+                                    [G_train_op, G_Loss, sigmoid_D_gene], feed_dict={BN_FLAG: True})
                         else:
-                            _, Generator_Loss, Distance_Loss, D_gene_simgoid = sess.run(
-                                [G_train_op, G_Loss, dis_loss, sigmoid_D_gene])
+                            if distance_loss == "L1" or distance_loss == "L2":
+                                _, Generator_Loss, Distance_Loss, D_gene_simgoid = sess.run(
+                                    [G_train_op, G_Loss, dis_loss, sigmoid_D_gene])
+                            else:
+                                _, Generator_Loss, D_gene_simgoid = sess.run(
+                                    [G_train_op, G_Loss, sigmoid_D_gene])
 
                         # image_pool 변수 사용할 때(단 batch_size=1 일 경우만), Discriminator Update
                         if image_pool and batch_size == 1:
@@ -471,7 +482,8 @@ def model(DB_name="facades",
 
                         Loss_D += (Discriminator_Loss / total_batch)
                         Loss_G += (Generator_Loss / total_batch)
-                        Loss_Distance += (Distance_Loss / total_batch)
+                        if distance_loss == "L1" or distance_loss == "L2":
+                            Loss_Distance += (Distance_Loss / total_batch)
                         sigmoid_D += np.mean(D_real_simgoid, axis=(1, 2, 3)) / total_batch
                         sigmoid_G += np.mean(D_gene_simgoid, axis=(1, 2, 3)) / total_batch
                         print("<<< {} epoch : {} batch running of {} total batch... >>>".format(epoch, i, total_batch))
@@ -564,10 +576,11 @@ def model(DB_name="facades",
                 if show_translated_image:
                     for i in range(data_length):
                         x_numpy, target_numpy = sess.run(next_batch)
-                        # 입력 이미지가 256 x 256 이하이면, exit()
-                        if x_numpy.shape[1] < 256 or x_numpy.shape[2] < 256:
-                            print("<<< 입력된 이미지 크기는 {}x{} 입니다. >>>".format(x_numpy.shape[1], x_numpy.shape[2]))
-                            print("<<< 입력되는 이미지 크기는 256x256 보다 크거나 같아야 합니다. >>>")
+                        # 입력 이미지가 Inputsize_limit[0] xInputsize_limit[1] 이하이면, exit()
+                        if x_numpy.shape[1] < Inputsize_limit[0] or x_numpy.shape[2] < Inputsize_limit[1]:
+                            print("<<< 입력된 이미지 크기는 {} x {} 입니다. >>>".format(x_numpy.shape[1], x_numpy.shape[2]))
+                            print("<<< 입력되는 이미지 크기는 {} x {} 보다 크거나 같아야 합니다. >>>".format(Inputsize_limit[0],
+                                                                                        Inputsize_limit[1]))
                             print("<<< 강제 종료 합니다. >>>")
                             exit(0)
 
@@ -619,7 +632,6 @@ def model(DB_name="facades",
 
 
 if __name__ == "__main__":
-
     '''
     DB_name 은 아래에서 하나 고르자
     1. "cityscapes"
@@ -629,7 +641,7 @@ if __name__ == "__main__":
     AtoB = True  -> image -> segmentation
     AtoB = False -> segmentation -> image
     '''
-    # 256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다.(256 X 256으로 크기 제한을 뒀다.)
+    # 256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다.(256X256으로 크기 제한을 뒀다.)
     # TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
     # TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
@@ -638,6 +650,7 @@ if __name__ == "__main__":
           # 대량의 데이터일 경우 TFRecord=True가 더 빠르다.
           TFRecord=True,  # TFRecord=True -> TFRecord파일로 저장한후 사용하는 방식 사용 or TFRecord=False -> 파일에서 읽어오는 방식 사용
           AtoB=False,  # 데이터 순서 변경(ex) AtoB=True : image -> segmentation / AtoB=False : segmetation -> image)
+          Inputsize_limit=(256, 256),  # 입력되어야 하는 최소 사이즈를 내가 지정 - (256,256) 으로 하자
           filter_size=32,  # generator와 discriminator의 처음 layer의 filter 크기
           norm_selection="BN",  # IN - instance normalizaiton , BN -> batch normalization, NOTHING
           Dropout_rate=0.5,  # generator의 Dropout 비율
@@ -649,12 +662,11 @@ if __name__ == "__main__":
           image_pool=False,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
           image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
           learning_rate=0.0002, training_epochs=2, batch_size=2, display_step=1,
-          inference_size=(512, 512),  # TEST=True 일때, inference 할 수 있는 최소의 크기를 256 x 256으로 크기 제한을 뒀다.
+          inference_size=(256, 256),  # TEST=True 일때, inference 할 수 있는 최소의 크기를 256 x 256으로 크기 제한을 뒀다.
           using_moving_variable=False,  # TEST=True 일때, Moving Average를 Inference에 사용할지 말지 결정하는 변수
           only_draw_graph=False,  # TEST=False 일 때 only_draw_graph=True이면 그래프만 그리고 종료한다.
           show_translated_image=True,  # TEST=True 일 때 변환된 이미지를 보여줄지 말지
           weights_to_numpy=False,  # TEST=True 일 때 가중치를 npy 파일로 저장할지 말지
           save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더
-
 else:
     print("model imported")

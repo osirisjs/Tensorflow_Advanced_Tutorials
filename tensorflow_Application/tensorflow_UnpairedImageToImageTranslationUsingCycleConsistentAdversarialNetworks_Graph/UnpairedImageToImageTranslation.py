@@ -17,28 +17,29 @@ def visualize(model_name="CycleGAN", named_images=None, save_path=None):
 
 
 def model(
-    DB_name="horse2zebra",
-    TEST=False,
-    TFRecord=True,
-    filter_size=8,
-    norm_selection="BN",
-    cycle_consistency_loss="L1",
-    cycle_consistency_loss_weight=10,
-    optimizer_selection="Adam",
-    beta1=0.5, beta2=0.999,
-    decay=0.999, momentum=0.9,
-    use_identity_mapping=False,
-    image_pool=True,
-    image_pool_size=50,
-    learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1,
-    weight_decay_epoch=100,
-    learning_rate_decay=0.99,
-    inference_size=(256, 256),
-    using_moving_variable=False,
-    only_draw_graph=False,
-    show_translated_image=True,
-    save_path="translated_image",
-    weights_to_numpy=False):
+        DB_name="horse2zebra",
+        TEST=False,
+        TFRecord=True,
+        Inputsize_limit=(256, 256),
+        filter_size=8,
+        norm_selection="BN",
+        cycle_consistency_loss="L1",
+        cycle_consistency_loss_weight=10,
+        optimizer_selection="Adam",
+        beta1=0.5, beta2=0.999,
+        decay=0.999, momentum=0.9,
+        use_identity_mapping=False,
+        image_pool=True,
+        image_pool_size=50,
+        learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1,
+        weight_decay_epoch=100,
+        learning_rate_decay=0.99,
+        inference_size=(256, 256),
+        using_moving_variable=False,
+        only_draw_graph=False,
+        show_translated_image=True,
+        save_path="translated_image",
+        weights_to_numpy=False):
     print("<<< CycleGAN >>>")
 
     model_name = str(filter_size)
@@ -146,7 +147,7 @@ def model(
                     conv2d(padded_images, weight_shape=(7, 7, 3, filter_size), bias_shape=(filter_size),
                            norm_selection=norm_selection,
                            strides=[1, 1, 1, 1], padding="VALID"))
-                # result shape = (batch_size, 256, 256, 64)
+                # result shape = (batch_size, 256, 256, 32)
             with tf.variable_scope("conv2"):
                 conv2 = tf.nn.relu(
                     conv2d(conv1, weight_shape=(3, 3, filter_size, filter_size * 2), bias_shape=(filter_size * 2),
@@ -497,8 +498,9 @@ def model(
                     for i in range(total_batch):
 
                         # 입력 이미지가 256 x 256 이하이면, exit()
-                        temp = sess.run(A)
-                        if temp.shape[1] < 256 or temp.shape[2] < 256:
+                        temp1, temp2 = sess.run([A, B])
+                        if temp1.shape[1] < Inputsize_limit[0] or temp1.shape[2] < Inputsize_limit[1] or temp2.shape[
+                            1] < Inputsize_limit[0] or temp2.shape[2] < Inputsize_limit[1]:
                             print("입력된 이미지 크기는 {}x{} 입니다.".format(temp.shape[1], temp.shape[2]))
                             print("입력되는 이미지 크기는 256x256 보다 크거나 같아야 합니다.")
                             print("강제 종료 합니다.")
@@ -646,8 +648,9 @@ def model(
                         A_numpy, B_numpy = sess.run(
                             [A_tensor, B_tensor])  # 이런식으로 하는 것은 상당히 비효율적 -> tf.data.Dataset 에 더익숙해지고자!!!
                         # 입력 이미지가 256 x 256 이하이면, exit()
-                        if A_numpy.shape[1] < 256 or A_numpy.shape[2] < 256 or B_numpy.shape[1] < 256 or B_numpy.shape[
-                            2] < 256:
+                        if A_numpy.shape[1] < Inputsize_limit[0] or A_numpy.shape[2] < Inputsize_limit[1] or \
+                                B_numpy.shape[1] < Inputsize_limit[0] or B_numpy.shape[
+                            2] < Inputsize_limit[1]:
                             print("<<< 입력된 이미지 크기는 {}x{} 입니다. >>>".format(A_numpy.shape[1], A_numpy.shape[2]))
                             print("<<< 입력되는 이미지 크기는 256x256 보다 크거나 같아야 합니다. >>>")
                             print("<<< 강제 종료 합니다. >>>")
@@ -714,8 +717,9 @@ if __name__ == "__main__":
     model(
         DB_name="horse2zebra",  # DB_name 은 "horse2zebra"에만 대비되어 있다.
         TEST=False,  # TEST=False -> Training or TEST=True -> TEST
-        TFRecord=True,  # TFRecord=True -> TFRecord파일로 저장한후 사용하는 방식 사용 or TFRecord=False -> 파일에서 읽어오는 방식 사용
-        filter_size=8,  # generator와 discriminator의 처음 layer의 filter 크기
+        TFRecord=False,  # TFRecord=True -> TFRecord파일로 저장한후 사용하는 방식 사용 or TFRecord=False -> 파일에서 읽어오는 방식 사용
+        Inputsize_limit=(256, 256),  # 입력되어야 하는 최소 사이즈를 내가 지정 - (256,256) 으로 하자
+        filter_size=32,  # generator와 discriminator의 처음 layer의 filter 크기
         norm_selection="BN",  # IN - instance normalizaiton , BN -> batch normalization, NOTHING
         cycle_consistency_loss="L1",  # cycle loss -> L1 or L2
         cycle_consistency_loss_weight=10,  # cycle loss으 가중치
@@ -735,4 +739,5 @@ if __name__ == "__main__":
         # 학습 완료 후 변환된 이미지가 저장될 폴더 2개가 생성 된다.(폴더 2개 이름 -> AtoB_translated_image , BtoA_translated_image )
         save_path="translated_image",  # TEST=True 일 때 변환된 이미지가 저장될 폴더
         weights_to_numpy=False)  # TEST=True 일 때 가중치를 npy 파일로 저장할지 말지
+else:
     print("model imported")

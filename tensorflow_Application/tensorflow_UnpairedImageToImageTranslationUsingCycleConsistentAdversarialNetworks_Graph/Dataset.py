@@ -181,7 +181,7 @@ class Dataset(object):
 
         # 이미지를 읽는다
         img = tf.read_file(image)
-        img = tf.image.decode_image(img)
+        img = tf.image.decode_image(img, channels=3) # 채널을 꼭 지정해야한다. -> 안하니 오류가 발생한다.
         # tf.image.decode_image는 shape 정보를 반환하지 못하므로, 아래의 코드를 꼭 작성해야한다.
         img.set_shape([None, None, 3])
         img_cast = tf.cast(img, tf.float32)
@@ -262,6 +262,7 @@ class Dataset(object):
 
     # TFRecord를 만들기 위해 이미지를 불러올때 쓴다.
     def load_image(self, address):
+
         img = cv2.imread(address)
 
         # TEST = True 일 때
@@ -340,7 +341,6 @@ class Dataset(object):
         A_dataset = tf.data.Dataset.from_tensor_slices(random_file_path_Alist_Tensor)
         B_dataset = tf.data.Dataset.from_tensor_slices(random_file_path_Blist_Tensor)
 
-        print("### The image must have the 'jpg' format. ###")
         A_dataset = A_dataset.map(self._image_preprocessingOfBasic)
         B_dataset = B_dataset.map(self._image_preprocessingOfBasic)
         '''
