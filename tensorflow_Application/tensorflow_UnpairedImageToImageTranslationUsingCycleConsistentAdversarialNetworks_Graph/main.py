@@ -65,7 +65,7 @@ for i, GL in enumerate(GPU_List):
     else:
         print(" " + num + ",", end="")
 
-# 256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다
+# 256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다.(256 X 256으로 크기 제한을 뒀다.)
 # TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
 # TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
 cycleGAN.model(
@@ -85,7 +85,7 @@ cycleGAN.model(
     learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1,
     weight_decay_epoch=100,  # 몇 epoch 뒤에 learning_rate를 줄일지
     learning_rate_decay=0.99,  # learning_rate를 얼마나 줄일지
-    inference_size=(256, 256),  # TEST=True 일 떄, inference할 크기는 256 x 256 이상이어야 한다.
+    inference_size=(512, 512),  # TEST=True 일때, inference 할 수 있는 최소의 크기를 256 x 256으로 크기 제한을 뒀다.
     using_moving_variable=False,  # TEST=True 일때, Moving Average를 Inference에 사용할지 말지 결정하는 변수
     only_draw_graph=False,  # TEST=False 일 때, 그래프만 그리고 종료할지 말지
     show_translated_image=True,  # TEST=True 일 때변환 된 이미지를 보여줄지 말지

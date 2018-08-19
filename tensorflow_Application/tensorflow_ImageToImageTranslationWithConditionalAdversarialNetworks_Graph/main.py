@@ -100,7 +100,7 @@ AtoB -> A : image,  B : segmentation
 AtoB = True  -> image -> segmentation
 AtoB = False -> segmentation -> image
 '''
-# 256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다
+# 256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다.(256X256으로 크기 제한을 뒀다.)
 # TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
 # TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
 # optimizers_ selection = "Adam" or "RMSP" or "SGD"
@@ -120,7 +120,7 @@ pix2pix.model(DB_name="facades",
               image_pool=False,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
               image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
               learning_rate=0.0002, training_epochs=2, batch_size=2, display_step=1,
-              inference_size=(512, 512),  # TEST=True 일때, inference할 크기는 256 x 256 이상이어야 한다.
+              inference_size=(512, 512),  # TEST=True 일때, inference 할 수 있는 최소의 크기를 256 x 256으로 크기 제한을 뒀다.
               using_moving_variable=False,  # TEST=True 일때, Moving Average를 Inference에 사용할지 말지 결정하는 변수
               only_draw_graph=False,  # TEST=False 일 때 only_draw_graph=True이면 그래프만 그리고 종료한다.
               show_translated_image=True,  # TEST=True 일 때 변환된 이미지를 보여줄지 말지
