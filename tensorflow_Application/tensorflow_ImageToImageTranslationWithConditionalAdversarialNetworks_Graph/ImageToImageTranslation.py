@@ -554,7 +554,7 @@ def model(DB_name="facades",
                 x, G = tf.get_collection('way')
 
             # Test Dataset 가져오기
-            dataset = Dataset(DB_name=DB_name, AtoB=AtoB, batch_size=batch_size, use_TrainDataset=not TEST,
+            dataset = Dataset(DB_name=DB_name, AtoB=AtoB, use_TrainDataset=not TEST,
                               inference_size=inference_size, TFRecord=TFRecord)
             iterator, next_batch, data_length = dataset.iterator()
 
