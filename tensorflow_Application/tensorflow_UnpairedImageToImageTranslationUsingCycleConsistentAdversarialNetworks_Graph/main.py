@@ -66,7 +66,8 @@ for i, GL in enumerate(GPU_List):
         print(" " + num + ",", end="")
 
 # 256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다.(256 X 256으로 크기 제한을 뒀다.)
-# -> 단 batch_size = 일 때만 가능하다. - batch_size>=2 일때 여러사이즈의 이미지를 동시에 학습 하고 싶다면, 각각 따로 사이즈별로 Dataset을 생성 후 학습시키면 된다.
+# -> 단 batch_size =  1 일 때만 가능하다. - batch_size>=2 일때 여러사이즈의 이미지를 동시에 학습 하고 싶다면, 각각 따로 사이즈별로 Dataset을 생성 후 학습시키면 된다.
+# pix2pix GAN이나, Cycle gan이나 데이터셋 자체가 같은 크기의 이미지를 다루므로, 위 설명을 무시해도 된다.
 # TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
 # TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
 cycleGAN.model(
@@ -74,7 +75,7 @@ cycleGAN.model(
     TEST=False,  # TEST=False -> Training or TEST=True -> TEST
     TFRecord=True,  # TFRecord=True -> TFRecord파일로 저장한후 사용하는 방식 사용 or TFRecord=False -> 파일에서 읽어오는 방식 사용
     Inputsize_limit=(256, 256),  # 입력되어야 하는 최소 사이즈를 내가 지정 - (256,256) 으로 하자
-    filter_size=16,  # generator와 discriminator의 처음 layer의 filter 크기
+    filter_size=32,  # generator와 discriminator의 처음 layer의 filter 크기
     norm_selection="BN",  # IN - instance normalizaiton , BN -> batch normalization, NOTHING
     cycle_consistency_loss="L1",  # cycle loss -> L1 or L2
     cycle_consistency_loss_weight=10,  # cycle loss으 가중치

@@ -100,8 +100,9 @@ AtoB -> A : image,  B : segmentation
 AtoB = True  -> image -> segmentation
 AtoB = False -> segmentation -> image
 '''
-# 256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다.(256X256으로 크기 제한을 뒀다.)
-# -> 단 batch_size = 일 때만 가능하다. - batch_size>=2 일때 여러사이즈의 이미지를 동시에 학습 하고 싶다면, 각각 따로 사이즈별로 Dataset을 생성 후 학습시키면 된다.
+# 256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다.(256 X 256으로 크기 제한을 뒀다.)
+# -> 단 batch_size =  1 일 때만 가능하다. - batch_size>=2 일때 여러사이즈의 이미지를 동시에 학습 하고 싶다면, 각각 따로 사이즈별로 Dataset을 생성 후 학습시키면 된다.
+# pix2pix GAN이나, Cycle gan이나 데이터셋 자체가 같은 크기의 이미지를 다루므로, 위 설명을 무시해도 된다.
 # TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
 # TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
 # optimizers_ selection = "Adam" or "RMSP" or "SGD"
