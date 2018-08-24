@@ -673,7 +673,7 @@ if __name__ == "__main__":
           Inputsize_limit=(256, 256),  # 입력되어야 하는 최소 사이즈를 내가 지정 - (256,256) 으로 하자
           filter_size=32,  # generator와 discriminator의 처음 layer의 filter 크기
           norm_selection="BN",  # IN - instance normalizaiton , BN -> batch normalization, NOTHING
-          regularizer="L1",  # L1 or L2 정규화 -> 오버피팅 막기 위함
+          regularizer=" ",  # L1 or L2 정규화 -> 오버피팅 막기 위함
           scale=0.0001,  # L1 or L2 정규화 weight
           Dropout_rate=0.5,  # generator의 Dropout 비율
           distance_loss=" ",  # L2 or NOTHING

@@ -95,7 +95,7 @@
 * IDE : `pycharm Community Edition 2018.1.2`
     
 >## **코드 실행에 필요한 파이썬 모듈** 
-* Tensorflow-1.9.0
+* Tensorflow-1.10
 * numpy, collections, pandas
 * matplotlib, scikit-learn, opencv-python, scipy, copy
 * tqdm, os, glob, shutil, urllib, zipfile, tarfile
