@@ -77,6 +77,8 @@ cycleGAN.model(
     Inputsize_limit=(256, 256),  # 입력되어야 하는 최소 사이즈를 내가 지정 - (256,256) 으로 하자
     filter_size=32,  # generator와 discriminator의 처음 layer의 filter 크기
     norm_selection="BN",  # IN - instance normalizaiton , BN -> batch normalization, NOTHING
+    regularizer="L1",  # L1 or L2 정규화 -> 오버피팅 막기 위함
+    scale=0.0001,  # L1 or L2 정규화 weight
     cycle_consistency_loss="L1",  # cycle loss -> L1 or L2
     cycle_consistency_loss_weight=10,  # cycle loss으 가중치
     optimizer_selection="Adam",  # optimizers_ selection = "Adam" or "RMSP" or "SGD"

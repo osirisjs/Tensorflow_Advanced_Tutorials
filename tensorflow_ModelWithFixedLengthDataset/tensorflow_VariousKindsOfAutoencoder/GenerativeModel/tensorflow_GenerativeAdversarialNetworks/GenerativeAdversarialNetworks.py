@@ -25,7 +25,7 @@ def show_image(model_name, generated_image, column_size=10, row_size=10):
 
 def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distance_loss_weight=1,
           optimizer_selection="Adam", learning_rate=0.001, training_epochs=100,
-          batch_size=128, display_step=10, batch_norm=True):
+          batch_size=128, display_step=10, batch_norm=True, regularization='L1', scale=0.0001):
     mnist = input_data.read_data_sets("", one_hot=True)
 
     if targeting == False:
@@ -45,36 +45,53 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
 
     if batch_norm == True:
         model_name = "BN" + model_name
+    else:
+        if regularization == "L1" or regularization == "L2":
+            model_name = "reg" + regularization + model_name
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
             shutil.rmtree("tensorboard/{}".format(model_name))
 
-    def layer(input, weight_shape, bias_shape):
+    def final_layer(input, weight_shape, bias_shape):
+
         weight_init = tf.random_normal_initializer(stddev=0.01)
         bias_init = tf.random_normal_initializer(stddev=0.01)
+        weight_decay = tf.constant(scale, dtype=tf.float32)
+        if regularization == "L1":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+        elif regularization == "L2":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        else:
+            w = tf.get_variable("w", weight_shape, initializer=weight_init)
+        b = tf.get_variable("b", bias_shape, initializer=bias_init)
+
+        return tf.matmul(input, w) + b
+
+    def layer(input, weight_shape, bias_shape):
+
+        weight_init = tf.truncated_normal_initializer(stddev=0.02)
+        bias_init = tf.truncated_normal_initializer(stddev=0.02)
         if batch_norm:
             w = tf.get_variable("w", weight_shape, initializer=weight_init)
         else:
-            weight_decay = tf.constant(0.000001, dtype=tf.float32)
-            w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+            weight_decay = tf.constant(scale, dtype=tf.float32)
+            if regularization == "L1":
+                w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                    regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+            elif regularization == "L2":
+                w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                    regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+            else:
+                w = tf.get_variable("w", weight_shape, initializer=weight_init)
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
 
         if batch_norm:
             return tf.layers.batch_normalization(tf.matmul(input, w) + b, training=not TEST)
         else:
             return tf.matmul(input, w) + b
-
-    def fullylayer(input, weight_shape, bias_shape):
-        weight_init = tf.random_normal_initializer(stddev=0.01)
-        bias_init = tf.random_normal_initializer(stddev=0.01)
-        weight_decay = tf.constant(0.000001, dtype=tf.float32)
-        w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
-        b = tf.get_variable("b", bias_shape, initializer=bias_init)
-
-        return tf.matmul(input, w) + b
 
     def generator(noise=None, target=None):
         if targeting:
@@ -85,7 +102,7 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
             with tf.variable_scope("fully2"):
                 fully_2 = tf.nn.leaky_relu(layer(fully_1, [256, 512], [512]))
             with tf.variable_scope("output"):
-                output = tf.nn.sigmoid(fullylayer(fully_2, [512, 784], [784]))
+                output = tf.nn.sigmoid(final_layer(fully_2, [512, 784], [784]))
 
         return output
 
@@ -98,7 +115,7 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
             with tf.variable_scope("fully2"):
                 fully_2 = tf.nn.leaky_relu(layer(fully_1, [500, 100], [100]))
             with tf.variable_scope("output"):
-                output = fullylayer(fully_2, [100, 1], [1])
+                output = final_layer(fully_2, [100, 1], [1])
         return output, tf.nn.sigmoid(output)
 
     def training(cost, var_list, scope=None):
@@ -108,8 +125,9 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
         #scope를 써줘야 한다. - 그냥 tf.get_collection(tf.GraphKeys.UPDATE_OPS) 이렇게 써버리면 
         shared_variables 아래에 있는 변수들을 다 업데이트 하므로 scope를 지정해줘야한다.
         '''
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope=scope)
-        with tf.control_dependencies(update_ops):
+        if not batch_norm:
+            cost = tf.add_n([cost] + tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope=scope))
+        with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope=scope)):
             if optimizer_selection == "Adam":
                 optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
             elif optimizer_selection == "RMSP":
@@ -285,10 +303,13 @@ if __name__ == "__main__":
     targeting = True 일 때 -> distance_loss = 'L2' 일 경우 , generator에서 나오는 출력과 실제 출력값을 비교하는 L2 loss를 생성
     targeting = True 일 때 -> distamce_loss = None 일 경우 , 추가적인 loss 없음
     '''
-    model(TEST=True, noise_size=128, targeting=True, distance_loss="L2", distance_loss_weight=1,
-          optimizer_selection="Adam", learning_rate=0.0002, training_epochs=100,
+    # batch normalization은 Hidden Layer에만 추가합니다. 또한 활성화 함수전에 적용합니다.
+    # regularization -> batch_norm = False 일때, L2 or L1 or nothing
+    model(TEST=True, noise_size=128, targeting=True, distance_loss="L1",
+          distance_loss_weight=1, \
+          optimizer_selection="Adam", learning_rate=0.0002, training_epochs=50,
           batch_size=128,
-          display_step=1, batch_norm=False)
+          display_step=1, regularization='L2', scale=0.0001)
 
 else:
     print("model imported")

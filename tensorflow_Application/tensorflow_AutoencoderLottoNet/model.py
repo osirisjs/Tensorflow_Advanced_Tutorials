@@ -29,8 +29,9 @@ def DataLoader(batch_size=None):
 
 def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training_epochs=10000, batch_size=50,
           display_step=1,
-          previous_first_prize_number=None, number_of_prediction=3):
+          previous_first_prize_number=None, number_of_prediction=3, regularization='L2', scale=0.0001):
     model_name = "LottoNet"
+    model_name = model_name + "reg" + regularization
 
     if TEST == False:
         if os.path.exists("tensorboard"):
@@ -39,9 +40,15 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
     def layer(input, weight_shape, bias_shape):
         weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
         bias_init = tf.zeros_initializer()
-        weight_decay = tf.constant(0.000001, dtype=tf.float32)
-        w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                            regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        weight_decay = tf.constant(scale, dtype=tf.float32)
+        if regularization == "L1":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+        elif regularization == "L2":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        else:
+            w = tf.get_variable("w", weight_shape, initializer=weight_init)
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
         return tf.matmul(input, w) + b
 
@@ -206,9 +213,11 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
 
 if __name__ == "__main__":
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-    model(TEST=True, optimizer_selection="Adam", learning_rate=0.0009, training_epochs=60000, batch_size=50,
+    model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training_epochs=100000, batch_size=256,
           display_step=100,
           # 전 회차 당첨번호 6자리 입력
-          previous_first_prize_number=[8, 11, 19, 21, 36, 45])
+          # 반드시 이차원 배열로 선언
+          previous_first_prize_number=[[2, 21, 28, 38, 42, 45]], number_of_prediction=5, regularization='L2',
+          scale=0.0001)
 else:
     print("model imported")

@@ -6,27 +6,39 @@ from tensorflow.examples.tutorials.mnist import input_data
 from tqdm import tqdm
 
 
-def model(TEST=True, model_name="CNN", optimizer_selection="Adam", learning_rate=0.001, training_epochs=100,
-          batch_size=128, display_step=10, is_training=True, batch_norm=True):
+def model(TEST=False, optimizer_selection="Adam", learning_rate=0.001, training_epochs=10,
+          batch_size=256, display_step=1, batch_norm=False, regularization='L1', scale=0.0001):
     mnist = input_data.read_data_sets("", one_hot=True)
 
+    model_name = "CNN"
     if batch_norm == True:
-        model_name = "batch_norm_" + model_name
+        model_name = "BN" + model_name
+    else:
+        if regularization == "L1" or regularization == "L2":
+            model_name = "reg" + regularization + model_name
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
             shutil.rmtree("tensorboard/{}".format(model_name))
 
     # stride? -> [1, 2, 2, 1] = [one image, width, height, one channel]
-    def generalconv2d(input, weight_shape='', bias_shape='', strides=[1, 1, 1, 1], padding="VALID"):
+    def final_conv2d(input, weight_shape='', bias_shape='', strides=[1, 1, 1, 1], padding="VALID"):
+
         # weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
         weight_init = tf.truncated_normal_initializer(stddev=0.02)
         bias_init = tf.constant_initializer(value=0)
-        weight_decay = tf.constant(0.0001, dtype=tf.float32)
-        w = tf.get_variable("w", weight_shape, initializer=weight_init,
+        weight_decay = tf.constant(scale, dtype=tf.float32)
+        if regularization == "L1":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+        elif regularization == "L2":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
                                 regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        else:
+            w = tf.get_variable("w", weight_shape, initializer=weight_init)
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
         conv_out = tf.nn.conv2d(input, w, strides=strides, padding=padding)
+
         return tf.nn.bias_add(conv_out, b)
 
     # stride? -> [1, 2, 2, 1] = [one image, width, height, one channel]
@@ -37,9 +49,15 @@ def model(TEST=True, model_name="CNN", optimizer_selection="Adam", learning_rate
         if batch_norm:
             w = tf.get_variable("w", weight_shape, initializer=weight_init)
         else:
-            weight_decay = tf.constant(0.0001, dtype=tf.float32)
-            w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+            weight_decay = tf.constant(scale, dtype=tf.float32)
+            if regularization == "L1":
+                w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                    regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+            elif regularization == "L2":
+                w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                    regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+            else:
+                w = tf.get_variable("w", weight_shape, initializer=weight_init)
 
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
         conv_out = tf.nn.conv2d(input, w, strides=strides, padding=padding)
@@ -76,7 +94,8 @@ def model(TEST=True, model_name="CNN", optimizer_selection="Adam", learning_rate
                 conv2d(pool_2, weight_shape=[4, 4, 48, 72], bias_shape=[72], strides=[1, 1, 1, 1], padding="VALID"))
             # result -> batcj_size, 1, 1 ,36
         with tf.variable_scope("conv_4"):
-            output = generalconv2d(conv_3, weight_shape=[1, 1, 72, 10], bias_shape=[10], strides=[1, 1, 1, 1], padding="VALID")
+            output = final_conv2d(conv_3, weight_shape=[1, 1, 72, 10], bias_shape=[10], strides=[1, 1, 1, 1],
+                                  padding="VALID")
         return tf.reshape(output, (-1, 10))
 
     def loss(output, y):
@@ -86,8 +105,9 @@ def model(TEST=True, model_name="CNN", optimizer_selection="Adam", learning_rate
 
     def training(cost, global_step):
         tf.summary.scalar("cost", cost)
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        with tf.control_dependencies(update_ops):
+        if not batch_norm:
+            cost = tf.add_n([cost] + tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
+        with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
             if optimizer_selection == "Adam":
                 optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
             elif optimizer_selection == "RMSP":
@@ -182,7 +202,9 @@ def model(TEST=True, model_name="CNN", optimizer_selection="Adam", learning_rate
 
 if __name__ == "__main__":
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-    model(TEST=False, model_name="CNN", optimizer_selection="Adam", learning_rate=0.001, training_epochs=10,
-          batch_size=512, display_step=1, batch_norm=True)
+    # batch normalization은 Hidden Layer에만 추가합니다. 또한 활성화 함수전에 적용합니다.
+    # regularization -> batch_norm = False 일때, L2 or L1 or nothing
+    model(TEST=True, optimizer_selection="Adam", learning_rate=0.001, training_epochs=10,
+          batch_size=256, display_step=1, batch_norm=True, regularization='L2', scale=0.0001)
 else:
     print("model imported")

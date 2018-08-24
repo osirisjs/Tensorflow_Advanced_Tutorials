@@ -1,5 +1,5 @@
 from tensorflow.python.client import device_lib
-
+#import os
 import ImageToImageTranslation as pix2pix
 
 '''
@@ -107,13 +107,15 @@ AtoB = False -> segmentation -> image
 # TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
 # optimizers_ selection = "Adam" or "RMSP" or "SGD"
 pix2pix.model(DB_name="facades",
-              TEST=False,  # TEST=False -> Training or TEST=True -> TEST
+              TEST=True,  # TEST=False -> Training or TEST=True -> TEST
               # 대량의 데이터일 경우 TFRecord=True가 더 빠르다.
               TFRecord=True,  # TFRecord=True -> TFRecord파일로 저장한후 사용하는 방식 사용 or TFRecord=False -> 파일에서 읽어오는 방식 사용
               AtoB=False,  # 데이터 순서 변경(ex) AtoB=True : image -> segmentation / AtoB=False : segmetation -> image)
               Inputsize_limit=(256, 256),  # 입력되어야 하는 최소 사이즈를 내가 지정 - (256,256) 으로 하자
               filter_size=32,  # generator와 discriminator의 처음 layer의 filter 크기
               norm_selection="BN",  # IN - instance normalizaiton , BN -> batch normalization, NOTHING
+              regularizer=" ", # L1 or L2 정규화 -> 오버피팅 막기 위함
+              scale=0.0001, # L1 or L2 정규화 weight
               Dropout_rate=0.5,  # generator의 Dropout 비율
               distance_loss=" ",  # L2 or NOTHING
               distance_loss_weight=100,  # distance_loss의 가중치

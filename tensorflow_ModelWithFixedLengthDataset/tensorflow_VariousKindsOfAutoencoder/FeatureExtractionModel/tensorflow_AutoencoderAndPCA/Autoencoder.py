@@ -9,37 +9,55 @@ from tqdm import tqdm
 
 import PCA
 
-def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", optimizer_selection="Adam",
+
+def model(TEST=True, Comparison_with_PCA=True, optimizer_selection="Adam", model_name="Autoencoder",
           learning_rate=0.001, training_epochs=100,
-          batch_size=128, display_step=10, batch_norm=True):
+          batch_size=128, display_step=10, batch_norm=True, regularization='L1', scale=0.0001):
     mnist = input_data.read_data_sets("", one_hot=False)
 
     if batch_norm == True:
         model_name = "BN" + model_name
+    else:
+        if regularization == "L1" or regularization == "L2":
+            model_name = regularization + model_name
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
             shutil.rmtree("tensorboard/{}".format(model_name))
 
-    def fullylayer(input, weight_shape, bias_shape):
+    def final_layer(input, weight_shape, bias_shape):
+
         weight_init = tf.random_normal_initializer(stddev=0.01)
         bias_init = tf.random_normal_initializer(stddev=0.01)
-        weight_decay = tf.constant(0.000001, dtype=tf.float32)
-        w = tf.get_variable("w", weight_shape, initializer=weight_init,
+        weight_decay = tf.constant(scale, dtype=tf.float32)
+        if regularization == "L1":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+        elif regularization == "L2":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
                                 regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        else:
+            w = tf.get_variable("w", weight_shape, initializer=weight_init)
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
 
         return tf.matmul(input, w) + b
 
     def layer(input, weight_shape, bias_shape):
-        weight_init = tf.random_normal_initializer(stddev=0.01)
-        bias_init = tf.random_normal_initializer(stddev=0.01)
+
+        weight_init = tf.truncated_normal_initializer(stddev=0.02)
+        bias_init = tf.truncated_normal_initializer(stddev=0.02)
         if batch_norm:
             w = tf.get_variable("w", weight_shape, initializer=weight_init)
         else:
-            weight_decay = tf.constant(0.0001, dtype=tf.float32)
-            w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+            weight_decay = tf.constant(scale, dtype=tf.float32)
+            if regularization == "L1":
+                w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                    regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+            elif regularization == "L2":
+                w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                    regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+            else:
+                w = tf.get_variable("w", weight_shape, initializer=weight_init)
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
 
         if batch_norm:
@@ -49,14 +67,21 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", optimiz
 
     # stride? -> [1, 2, 2, 1] = [one image, width, height, one channel]
     def conv2d(input, weight_shape='', bias_shape='', strides=[1, 1, 1, 1], padding="VALID"):
-        weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
+        # weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
+        weight_init = tf.truncated_normal_initializer(stddev=0.02)
         bias_init = tf.constant_initializer(value=0)
         if batch_norm:
             w = tf.get_variable("w", weight_shape, initializer=weight_init)
         else:
-            weight_decay = tf.constant(0.0001, dtype=tf.float32)
-            w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+            weight_decay = tf.constant(scale, dtype=tf.float32)
+            if regularization == "L1":
+                w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                    regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+            elif regularization == "L2":
+                w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                    regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+            else:
+                w = tf.get_variable("w", weight_shape, initializer=weight_init)
 
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
         conv_out = tf.nn.conv2d(input, w, strides=strides, padding=padding)
@@ -66,12 +91,20 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", optimiz
         else:
             return tf.nn.bias_add(conv_out, b)
 
-    def generalconv2d_transpose(input, output_shape='', weight_shape='', bias_shape='', strides=[1, 1, 1, 1], padding="VALID"):
+    def final_transpose_conv2d(input, output_shape='', weight_shape='', bias_shape='', strides=[1, 1, 1, 1],
+                               padding="VALID"):
         weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
         bias_init = tf.constant_initializer(value=0)
-        weight_decay = tf.constant(0.0001, dtype=tf.float32)
-        w = tf.get_variable("w", weight_shape, initializer=weight_init,
+        weight_decay = tf.constant(scale, dtype=tf.float32)
+        if regularization == "L1":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+        elif regularization == "L2":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
                                 regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        else:
+            w = tf.get_variable("w", weight_shape, initializer=weight_init)
+
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
 
         conv_out = tf.nn.conv2d_transpose(input, w, output_shape=output_shape, strides=strides, padding=padding)
@@ -83,9 +116,16 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", optimiz
         if batch_norm:
             w = tf.get_variable("w", weight_shape, initializer=weight_init)
         else:
-            weight_decay = tf.constant(0.0001, dtype=tf.float32)
-            w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+            weight_decay = tf.constant(scale, dtype=tf.float32)
+            if regularization == "L1":
+                w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                    regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+            elif regularization == "L2":
+                w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                    regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+            else:
+                w = tf.get_variable("w", weight_shape, initializer=weight_init)
+
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
 
         conv_out = tf.nn.conv2d_transpose(input, w, output_shape=output_shape, strides=strides, padding=padding)
@@ -95,7 +135,7 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", optimiz
             return tf.nn.bias_add(conv_out, b)
 
     def inference(x):
-        if model_name == "Autoencoder" or model_name == "BNAutoencoder":
+        if model_name == "Autoencoder" or model_name == "BNAutoencoder" or model_name == "L1Autoencoder" or model_name == "L2Autoencoder":
             with tf.variable_scope("encoder"):
                 with tf.variable_scope("fully1"):
                     fully_1 = tf.nn.leaky_relu(layer(tf.reshape(x, (-1, 784)), [784, 256], [256]))
@@ -114,10 +154,10 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", optimiz
                 with tf.variable_scope("fully3"):
                     fully_6 = tf.nn.leaky_relu(layer(fully_5, [128, 256], [256]))
                 with tf.variable_scope("output"):
-                    decoder_output = tf.nn.sigmoid(fullylayer(fully_6, [256, 784], [784]))
+                    decoder_output = tf.nn.sigmoid(final_layer(fully_6, [256, 784], [784]))
             return encoder_output, decoder_output
 
-        elif model_name == 'Convolution_Autoencoder' or model_name == "BNConvolution_Autoencoder":
+        elif model_name == 'Convolution_Autoencoder' or model_name == "BNConvolution_Autoencoder" or model_name == 'L1Convolution_Autoencoder' or model_name == "L2Convolution_Autoencoder":
             with tf.variable_scope("encoder"):
                 with tf.variable_scope("conv_1"):
                     conv_1 = tf.nn.leaky_relu(
@@ -193,9 +233,9 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", optimiz
 
                 with tf.variable_scope("output"):
                     decoder_output = tf.nn.sigmoid(
-                        generalconv2d_transpose(conv_12, output_shape=tf.shape(x), weight_shape=[5, 5, 1, 32],
-                                         bias_shape=[1],
-                                         strides=[1, 1, 1, 1], padding="VALID"))
+                        final_transpose_conv2d(conv_12, output_shape=tf.shape(x), weight_shape=[5, 5, 1, 32],
+                                               bias_shape=[1],
+                                               strides=[1, 1, 1, 1], padding="VALID"))
                     # result -> batch_size, 28, 28, 1
             return encoder_output, decoder_output
 
@@ -204,9 +244,9 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", optimiz
             tf.summary.image('input_image', tf.reshape(x, [-1, 28, 28, 1]), max_outputs=10)
             tf.summary.image('output_image', tf.reshape(output, [-1, 28, 28, 1]), max_outputs=10)
 
-            if model_name == 'Convolution_Autoencoder' or model_name == "BNConvolution_Autoencoder":
+            if model_name == 'Convolution_Autoencoder' or model_name == "BNConvolution_Autoencoder" or model_name == 'L1Convolution_Autoencoder' or model_name == "L2Convolution_Autoencoder":
                 l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(output, x)), axis=[1, 2, 3]))
-            elif model_name == "Autoencoder" or model_name == "BNAutoencoder":
+            elif model_name == "Autoencoder" or model_name == "BNAutoencoder" or model_name == "L1Autoencoder" or model_name == "L2Autoencoder":
                 l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(output, tf.reshape(x, (-1, 784)))), axis=1))
 
             val_loss = tf.reduce_mean(l2)
@@ -214,17 +254,18 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", optimiz
             return val_loss
 
     def loss(output, x):
-        if model_name == 'Convolution_Autoencoder' or model_name == "BNConvolution_Autoencoder":
+        if model_name == 'Convolution_Autoencoder' or model_name == "BNConvolution_Autoencoder" or model_name == 'L1Convolution_Autoencoder' or model_name == "L2Convolution_Autoencoder":
             l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(output, x)), axis=[1, 2, 3]))
-        elif model_name == "Autoencoder" or model_name == "BNAutoencoder":
+        elif model_name == "Autoencoder" or model_name == "BNAutoencoder" or model_name == "L1Autoencoder" or model_name == "L2Autoencoder":
             l2 = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(output, tf.reshape(x, (-1, 784)))), axis=1))
         train_loss = tf.reduce_mean(l2)
         return train_loss
 
     def training(cost, global_step):
         tf.summary.scalar("train_cost", cost)
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        with tf.control_dependencies(update_ops):
+        if not batch_norm:
+            cost = tf.add_n([cost] + tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
+        with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
             if optimizer_selection == "Adam":
                 optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
             elif optimizer_selection == "RMSP":
@@ -330,19 +371,31 @@ def model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder", optimiz
             if model_name == "Autoencoder":
                 plt.savefig("PCA vs Autoencoder.png", dpi=300)
             elif model_name == "BNAutoencoder":
-                plt.savefig("PCA vs batch_Autoencoder.png", dpi=300)
+                plt.savefig("PCA vs batchAutoencoder.png", dpi=300)
+            elif model_name == "L1Autoencoder":
+                plt.savefig("PCA vs L1Autoencoder.png", dpi=300)
+            elif model_name == "L2Autoencoder":
+                plt.savefig("PCA vs L2Autoencoder.png", dpi=300)
+
             elif model_name == "Convolution_Autoencoder":
                 plt.savefig("PCA vs ConvAutoencoder.png", dpi=300)
             elif model_name == "BNConvolution_Autoencoder":
-                plt.savefig("PCA vs batchConvAutoencoder.png", dpi=300)
+                plt.savefig("PCA vs BNConvAutoencoder.png", dpi=300)
+            elif model_name == "L1Autoencoder":
+                plt.savefig("PCA vs L1Autoencoder.png", dpi=300)
+            elif model_name == "L2Convolution_Autoencoder":
+                plt.savefig("PCA vs L2ConvAutoencoder.png", dpi=300)
             plt.show()
 
 
 if __name__ == "__main__":
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
     # model_name = "Convolution_Autoencoder" or "Autoencoder"
-    model(TEST=True, Comparison_with_PCA=True, model_name="Autoencoder",
-          optimizer_selection="Adam", learning_rate=0.001, training_epochs=200, batch_size=512,
-          display_step=1, batch_norm=True)
+    # batch normalization은 Hidden Layer에만 추가합니다. 또한 활성화 함수전에 적용합니다.
+    # regularization -> batch_norm = False 일때, L2 or L1 or nothing
+    model(TEST=False, Comparison_with_PCA=True, optimizer_selection="Adam", model_name="Autoencoder",
+          learning_rate=0.001,
+          training_epochs=1, batch_size=512,
+          display_step=1, batch_norm=False, regularization=' ', scale=0.0001)
 else:
     print("model imported")

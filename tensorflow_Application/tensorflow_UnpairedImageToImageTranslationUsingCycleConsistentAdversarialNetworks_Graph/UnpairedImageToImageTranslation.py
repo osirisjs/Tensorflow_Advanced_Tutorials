@@ -23,6 +23,8 @@ def model(
         Inputsize_limit=(256, 256),
         filter_size=8,
         norm_selection="BN",
+        regularizer="L1",
+        scale=0.0001,
         cycle_consistency_loss="L1",
         cycle_consistency_loss_weight=10,
         optimizer_selection="Adam",
@@ -62,19 +64,30 @@ def model(
         norm_selection = "IN"
         model_name = model_name[:-2] + "IN"
 
+    if regularizer == "L1" or regularizer =="L2":
+        model_name =  model_name + "reg" + regularizer
+
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
             shutil.rmtree("tensorboard/{}".format(model_name))
 
+    # stride? -> [1, 2, 2, 1] = [one image, width, height, one channel]
     def conv2d(input, weight_shape=None, bias_shape=None, norm_selection=None,
                strides=[1, 1, 1, 1], padding="VALID"):
 
+        # weight_init = tf.contrib.layers.xavier_initializer(uniform=False)
         weight_init = tf.random_normal_initializer(mean=0.0, stddev=0.02)
         bias_init = tf.constant_initializer(value=0)
 
-        weight_decay = tf.constant(0, dtype=tf.float32)
-        w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                            regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        weight_decay = tf.constant(scale, dtype=tf.float32)
+        if regularizer == "L1":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+        elif regularizer == "L2":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        else:
+            w = tf.get_variable("w", weight_shape, initializer=weight_init)
 
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
         conv_out = tf.nn.conv2d(input, w, strides=strides, padding=padding)
@@ -92,12 +105,45 @@ def model(
 
         weight_init = tf.random_normal_initializer(mean=0.0, stddev=0.02)
         bias_init = tf.constant_initializer(value=0)
-        weight_decay = tf.constant(0, dtype=tf.float32)
 
-        w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                            regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        weight_decay = tf.constant(scale, dtype=tf.float32)
+        if regularizer == "L1":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+        elif regularizer == "L2":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        else:
+            w = tf.get_variable("w", weight_shape, initializer=weight_init)
+
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
+        conv_out = tf.nn.conv2d_transpose(input, w, output_shape=output_shape, strides=strides, padding=padding)
 
+        # batch_norm을 적용하면 bias를 안써도 된다곤 하지만, 나는 썼다.
+        if norm_selection == "BN":
+            return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=BN_FLAG)
+        elif norm_selection == "IN":
+            return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
+        else:
+            return tf.nn.bias_add(conv_out, b)
+
+    def conv2d_transpose(input, output_shape=None, weight_shape=None, bias_shape=None, norm_selection=None,
+                         strides=[1, 1, 1, 1], padding="VALID"):
+
+        weight_init = tf.random_normal_initializer(mean=0.0, stddev=0.02)
+        bias_init = tf.constant_initializer(value=0)
+
+        weight_decay = tf.constant(scale, dtype=tf.float32)
+        if regularizer == "L1":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+        elif regularizer == "L2":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        else:
+            w = tf.get_variable("w", weight_shape, initializer=weight_init)
+
+        b = tf.get_variable("b", bias_shape, initializer=bias_init)
         conv_out = tf.nn.conv2d_transpose(input, w, output_shape=output_shape, strides=strides, padding=padding)
 
         # batch_norm을 적용하면 bias를 안써도 된다곤 하지만, 나는 썼다.
@@ -246,8 +292,10 @@ def model(
 
     def training(cost, var_list, scope=None):
 
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope=scope)
-        with tf.control_dependencies(update_ops):
+        if regularizer=="L1" or regularizer=="L2":
+            cost = tf.add_n([cost] + tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope=scope))
+
+        with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope=scope)):
             if optimizer_selection == "Adam":
                 optimizer = tf.train.AdamOptimizer(learning_rate=lr, beta1=beta1, beta2=beta2)
             elif optimizer_selection == "RMSP":
@@ -712,15 +760,19 @@ def model(
 
 if __name__ == "__main__":
     # 256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다.(256 X 256으로 크기 제한을 뒀다.)
+    # -> 단 batch_size =  1 일 때만 가능하다. - batch_size>=2 일때 여러사이즈의 이미지를 동시에 학습 하고 싶다면, 각각 따로 사이즈별로 Dataset을 생성 후 학습시키면 된다.
+    # pix2pix GAN이나, Cycle gan이나 데이터셋 자체가 같은 크기의 이미지를 다루므로, 위 설명을 무시해도 된다.
     # TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
     # TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
     model(
         DB_name="horse2zebra",  # DB_name 은 "horse2zebra"에만 대비되어 있다.
         TEST=False,  # TEST=False -> Training or TEST=True -> TEST
-        TFRecord=False,  # TFRecord=True -> TFRecord파일로 저장한후 사용하는 방식 사용 or TFRecord=False -> 파일에서 읽어오는 방식 사용
+        TFRecord=True,  # TFRecord=True -> TFRecord파일로 저장한후 사용하는 방식 사용 or TFRecord=False -> 파일에서 읽어오는 방식 사용
         Inputsize_limit=(256, 256),  # 입력되어야 하는 최소 사이즈를 내가 지정 - (256,256) 으로 하자
         filter_size=32,  # generator와 discriminator의 처음 layer의 filter 크기
         norm_selection="BN",  # IN - instance normalizaiton , BN -> batch normalization, NOTHING
+        regularizer="L1",  # L1 or L2 정규화 -> 오버피팅 막기 위함
+        scale=0.0001,  # L1 or L2 정규화 weight
         cycle_consistency_loss="L1",  # cycle loss -> L1 or L2
         cycle_consistency_loss_weight=10,  # cycle loss으 가중치
         optimizer_selection="Adam",  # optimizers_ selection = "Adam" or "RMSP" or "SGD"

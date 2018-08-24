@@ -23,6 +23,8 @@ def model(DB_name="facades",
           Inputsize_limit=(256, 256),
           filter_size=32,
           norm_selection="BN",
+          regularizer="L1",
+          scale=0.0001,
           Dropout_rate=0.5,
           distance_loss="L1",
           distance_loss_weight=100,
@@ -64,6 +66,9 @@ def model(DB_name="facades",
         norm_selection = "IN"
         model_name = model_name[:-2] + "IN"
 
+    if regularizer == "L1" or regularizer =="L2":
+        model_name =  model_name + "reg" + regularizer
+
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
             shutil.rmtree("tensorboard/{}".format(model_name))
@@ -76,9 +81,15 @@ def model(DB_name="facades",
         weight_init = tf.random_normal_initializer(mean=0.0, stddev=0.02)
         bias_init = tf.constant_initializer(value=0)
 
-        weight_decay = tf.constant(0, dtype=tf.float32)
-        w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                            regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        weight_decay = tf.constant(scale, dtype=tf.float32)
+        if regularizer == "L1":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+        elif regularizer == "L2":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        else:
+            w = tf.get_variable("w", weight_shape, initializer=weight_init)
 
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
         conv_out = tf.nn.conv2d(input, w, strides=strides, padding=padding)
@@ -96,12 +107,18 @@ def model(DB_name="facades",
 
         weight_init = tf.random_normal_initializer(mean=0.0, stddev=0.02)
         bias_init = tf.constant_initializer(value=0)
-        weight_decay = tf.constant(0, dtype=tf.float32)
 
-        w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                            regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        weight_decay = tf.constant(scale, dtype=tf.float32)
+        if regularizer == "L1":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+        elif regularizer == "L2":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        else:
+            w = tf.get_variable("w", weight_shape, initializer=weight_init)
+
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
-
         conv_out = tf.nn.conv2d_transpose(input, w, output_shape=output_shape, strides=strides, padding=padding)
 
         # batch_norm을 적용하면 bias를 안써도 된다곤 하지만, 나는 썼다.
@@ -286,8 +303,9 @@ def model(DB_name="facades",
 
     def training(cost, var_list, scope=None):
 
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope=scope)
-        with tf.control_dependencies(update_ops):
+        if regularizer=="L1" or regularizer=="L2":
+            cost = tf.add_n([cost] + tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope=scope))
+        with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope=scope)):
             if optimizer_selection == "Adam":
                 optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=beta1, beta2=beta2)
             elif optimizer_selection == "RMSP":
@@ -547,7 +565,7 @@ def model(DB_name="facades",
             if saver == None:
                 print("<<< meta 파일을 읽을 수 없습니다. >>>")
                 exit(0)
-
+            print(JG.get_operations())
             if norm_selection == "BN":
                 x, G, BN_FLAG = tf.get_collection('way')
             else:
@@ -641,7 +659,9 @@ if __name__ == "__main__":
     AtoB = True  -> image -> segmentation
     AtoB = False -> segmentation -> image
     '''
-    # 256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다.(256X256으로 크기 제한을 뒀다.)
+    # 256x256 크기 이상의 다양한 크기의 이미지를 동시 학습 하는 것이 가능하다.(256 X 256으로 크기 제한을 뒀다.)
+    # -> 단 batch_size =  1 일 때만 가능하다. - batch_size>=2 일때 여러사이즈의 이미지를 동시에 학습 하고 싶다면, 각각 따로 사이즈별로 Dataset을 생성 후 학습시키면 된다.
+    # pix2pix GAN이나, Cycle gan이나 데이터셋 자체가 같은 크기의 이미지를 다루므로, 위 설명을 무시해도 된다.
     # TEST=False 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
     # TEST=True 시 입력 이미지의 크기가 256x256 미만이면 강제 종료한다.
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
@@ -653,20 +673,23 @@ if __name__ == "__main__":
           Inputsize_limit=(256, 256),  # 입력되어야 하는 최소 사이즈를 내가 지정 - (256,256) 으로 하자
           filter_size=32,  # generator와 discriminator의 처음 layer의 filter 크기
           norm_selection="BN",  # IN - instance normalizaiton , BN -> batch normalization, NOTHING
+          regularizer="L1",  # L1 or L2 정규화 -> 오버피팅 막기 위함
+          scale=0.0001,  # L1 or L2 정규화 weight
           Dropout_rate=0.5,  # generator의 Dropout 비율
-          distance_loss="L1",  # L2 or NOTHING
+          distance_loss=" ",  # L2 or NOTHING
           distance_loss_weight=100,  # distance_loss의 가중치
           optimizer_selection="Adam",  # optimizers_ selection = "Adam" or "RMSP" or "SGD"
           beta1=0.5, beta2=0.999,  # for Adam optimizer
           decay=0.999, momentum=0.9,  # for RMSProp optimizer
           image_pool=False,  # discriminator 업데이트시 이전에 generator로 부터 생성된 이미지의 사용 여부
           image_pool_size=50,  # image_pool=True 라면 몇개를 사용 할지?
-          learning_rate=0.0002, training_epochs=2, batch_size=2, display_step=1,
+          learning_rate=0.0002, training_epochs=1, batch_size=1, display_step=1,
           inference_size=(256, 256),  # TEST=True 일때, inference 할 수 있는 최소의 크기를 256 x 256으로 크기 제한을 뒀다.
           using_moving_variable=False,  # TEST=True 일때, Moving Average를 Inference에 사용할지 말지 결정하는 변수
           only_draw_graph=False,  # TEST=False 일 때 only_draw_graph=True이면 그래프만 그리고 종료한다.
           show_translated_image=True,  # TEST=True 일 때 변환된 이미지를 보여줄지 말지
           weights_to_numpy=False,  # TEST=True 일 때 가중치를 npy 파일로 저장할지 말지
           save_path="translated_image")  # TEST=True 일 때 변환된 이미지가 저장될 폴더
+
 else:
     print("model imported")
