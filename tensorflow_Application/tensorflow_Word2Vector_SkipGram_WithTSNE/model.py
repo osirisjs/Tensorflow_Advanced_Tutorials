@@ -21,7 +21,7 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
     if weight_sharing:
         model_name = "ws" + model_name
 
-    model_name = model_name + '_v' +str(vocabulary_size) + '_e' + str(embedding_size)
+    model_name = model_name + '_v' + str(vocabulary_size) + '_e' + str(embedding_size)
 
     dp = data_preprocessing(url='http://mattmahoney.net/dc/',
                             filename='text8.zip',
@@ -59,12 +59,14 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
 
     def training(cost, global_step):
         tf.summary.scalar("cost", cost)
+        lr = tf.train.exponential_decay(learning_rate=learning_rate, global_step=global_step, decay_steps=50000,
+                                        decay_rate=0.99, staircase=True)
         if optimizer_selection == "Adam":
-            optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+            optimizer = tf.train.AdamOptimizer(learning_rate=lr)
         elif optimizer_selection == "RMSP":
-            optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate)
+            optimizer = tf.train.RMSPropOptimizer(learning_rate=lr)
         elif optimizer_selection == "SGD":
-            optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+            optimizer = tf.train.GradientDescentOptimizer(learning_rate=lr)
         train_operation = optimizer.minimize(cost, global_step=global_step)
         return train_operation
 
@@ -184,7 +186,7 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
                 e_matrix, nce_weight = tf.get_collection('way')
                 if weight_selection == "encoder":
                     embedding_matrix = e_matrix
-                elif weight_selection =="decoder":
+                elif weight_selection == "decoder":
                     embedding_matrix = nce_weight
                 else:
                     print("weight_selcetion = 'encoder' or weight_selcetion = 'decoder' 만 가능합니다")
@@ -263,6 +265,7 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
                                      va='bottom')
                     figure.savefig("Word2Vec_Using_TSNE.png", dpi=300)
                     plt.show()
+
 
 if __name__ == "__main__":
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"

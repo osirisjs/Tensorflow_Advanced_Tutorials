@@ -2,15 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ee3c2ca7-d14d-4305-a34a-0e7b93bf999b" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/../../readme.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../readme.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_AutoencoderLottoNet/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_AutoencoderLottoNet/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_AutoencoderLottoNet/model.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_AutoencoderLottoNet/model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/ImageToImageTranslation.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph/ImageToImageTranslation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/UnpairedImageToImageTranslation.py" beforeDir="false" afterPath="$PROJECT_DIR$/../tensorflow_UnpairedImageToImageTranslationUsingCycleConsistentAdversarialNetworks_Graph/UnpairedImageToImageTranslation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Word2Vec_Using_TSNE.png" beforeDir="false" afterPath="$PROJECT_DIR$/Word2Vec_Using_TSNE.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/model.py" beforeDir="false" afterPath="$PROJECT_DIR$/model.py" afterDir="false" />
     </list>
@@ -24,51 +15,63 @@
     <session id="-1249822543">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="5" />
+          <entry key="project.closed" value="6" />
           <entry key="project.open.time.0" value="2" />
-          <entry key="project.open.time.3" value="2" />
+          <entry key="project.open.time.3" value="3" />
           <entry key="project.open.time.4" value="1" />
-          <entry key="project.opened" value="5" />
+          <entry key="project.opened" value="6" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="py" value="1020" />
+          <entry key="py" value="1141" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Python" value="1020" />
+          <entry key="Python" value="1141" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="py" value="12" />
+          <entry key="py" value="16" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="Python" value="12" />
+          <entry key="Python" value="16" />
         </counts>
       </usages-collector>
     </session>
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="521">
-              <caret line="11" column="44" selection-start-line="11" selection-start-column="44" selection-end-line="11" selection-end-column="44" />
+            <state relative-caret-position="175">
+              <caret line="5" column="18" selection-start-line="5" selection-start-column="18" selection-end-line="5" selection-end-column="18" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/data_preprocessing.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="21">
+              <caret line="97" column="55" selection-start-line="97" selection-start-column="55" selection-end-line="97" selection-end-column="55" />
+              <folding>
+                <element signature="e#0#18#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/model.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-169">
-              <caret line="181" column="61" selection-start-line="181" selection-start-column="61" selection-end-line="181" selection-end-column="61" />
+            <state relative-caret-position="194">
+              <caret line="63" column="41" selection-start-line="63" selection-start-column="41" selection-end-line="63" selection-end-column="41" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -87,7 +90,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>matrix</find>
       <find>e_matrix</find>
       <find>avg_cost</find>
       <find>tf</find>
@@ -116,6 +118,8 @@
       <find>noise_contrastive_loss</find>
       <find>num_sampled</find>
       <find>weight_selection</find>
+      <find>staircase</find>
+      <find>global_step</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -133,9 +137,9 @@
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="400" />
-    <option name="y" value="82" />
-    <option name="width" value="974" />
+    <option name="x" value="477" />
+    <option name="y" value="123" />
+    <option name="width" value="1122" />
     <option name="height" value="1047" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
@@ -144,6 +148,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -151,16 +156,10 @@
               <item name="tensorflow_Word2Vector_SkipGram_WithTSNE" type="b2602c69:ProjectViewProjectNode" />
               <item name="tensorflow_Word2Vector_SkipGram_WithTSNE" type="462c0819:PsiDirectoryNode" />
             </path>
-            <path>
-              <item name="tensorflow_Word2Vector_SkipGram_WithTSNE" type="b2602c69:ProjectViewProjectNode" />
-              <item name="tensorflow_Word2Vector_SkipGram_WithTSNE" type="462c0819:PsiDirectoryNode" />
-              <item name="model" type="462c0819:PsiDirectoryNode" />
-            </path>
           </expand>
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -254,7 +253,7 @@
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.44191095" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.3615635" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.5" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -416,9 +415,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="230">
           <caret line="70" column="48" lean-forward="true" selection-start-line="70" selection-start-column="48" selection-end-line="70" selection-end-column="48" />
-          <folding>
-            <element signature="e#0#47#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -426,9 +422,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="339">
           <caret line="773" column="22" selection-start-line="773" selection-start-column="22" selection-end-line="773" selection-end-column="22" />
-          <folding>
-            <element signature="e#0#13#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -453,23 +446,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/training/saver.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="33">
-          <caret line="1683" column="6" selection-start-line="1683" selection-start-column="6" selection-end-line="1683" selection-end-column="6" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/data_preprocessing.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1261">
-          <caret line="84" lean-forward="true" selection-start-line="84" selection-end-line="84" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/framework/ops.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="254">
@@ -477,20 +453,51 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/model.py">
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/summary/writer/writer.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-169">
-          <caret line="181" column="61" selection-start-line="181" selection-start-column="61" selection-end-line="181" selection-end-column="61" />
-          <folding>
-            <element signature="e#0#11#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="210">
+          <caret line="99" column="6" selection-start-line="99" selection-start-column="6" selection-end-line="99" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/training/saver.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-39">
+          <caret line="1553" column="6" selection-start-line="1553" selection-start-column="6" selection-end-line="1553" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/training/learning_rate_decay.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="217">
+          <caret line="33" column="22" selection-start-line="33" selection-start-column="22" selection-end-line="33" selection-end-column="22" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="521">
-          <caret line="11" column="44" selection-start-line="11" selection-start-column="44" selection-end-line="11" selection-end-column="44" />
+        <state relative-caret-position="175">
+          <caret line="5" column="18" selection-start-line="5" selection-start-column="18" selection-end-line="5" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/data_preprocessing.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="21">
+          <caret line="97" column="55" selection-start-line="97" selection-start-column="55" selection-end-line="97" selection-end-column="55" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/model.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="194">
+          <caret line="63" column="41" selection-start-line="63" selection-start-column="41" selection-end-line="63" selection-end-column="41" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
