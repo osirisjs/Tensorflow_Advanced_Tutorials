@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from sklearn.manifold import TSNE
+from tensorflow.contrib.tensorboard.plugins import projector
 from tqdm import tqdm
 
 from data_preprocessing import data_preprocessing
@@ -59,6 +60,9 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
 
     def training(cost, global_step):
         tf.summary.scalar("cost", cost)
+        '''아래와 같이 API를 사용하여 Learning rate를 줄일수 있는데, global step에 의존적이다.
+        API를 사용하지 않고, placeholder or variable or constant로 지정해놓고, 나중에 값을 넣어주는 방법이 더 나은듯?
+        '''
         lr = tf.train.exponential_decay(learning_rate=learning_rate, global_step=global_step, decay_steps=50000,
                                         decay_rate=0.99, staircase=True)
         if optimizer_selection == "Adam":
@@ -135,6 +139,21 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
                 batches_per_epoch = int(
                     (dp.vocabulary_size * num_skips) / batch_size)  # Number of batches per epoch of training
                 summary_writer = tf.summary.FileWriter(os.path.join("tensorboard", model_name), sess.graph)
+
+                with open(os.path.join("tensorboard", model_name, "metadata.tsv"), "w") as md:
+                    md.write('Word\tIndex\n')
+                    for k, v in dp.dictionary.items():
+                        md.write("{}\t{}\n".format(k, v))
+
+                #임베딩 시각화 하기
+                # from tensorflow.contrib.tensorboard.plugins import projector 이 꼭 필요하다!
+                config = projector.ProjectorConfig()
+                embedding = config.embeddings.add()
+                embedding.tensor_name = e_matrix.name # encoder의 weight로만 그린다.
+                # 임베딩 벡터를 연관 레이블 or 이미지와 연결
+                embedding.metadata_path = os.path.join("tensorboard", model_name, "metadata.tsv")
+                projector.visualize_embeddings(summary_writer, config)
+
                 for epoch in tqdm(range(training_epochs)):
                     avg_cost = 0.
                     for minibatch in range(batches_per_epoch):  # # Number of batches per epoch of training
