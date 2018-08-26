@@ -55,6 +55,7 @@
                 * 내 사진을 예술 작품으로 바꿔주는 유명한 논문인 "A Neural Algorithm of Artistic Style" 의 구현 입니다.
             * [***Word2Vector SkipGram With TSNE***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_Word2Vector_SkipGram_WithTSNE)
                 * 아무런 관계가 없는 것처럼 표현(one-hot encoding)된 단어들을 낮은 차원의 벡터로 표현함과 동시에 단어간의 관계를 표현하는 방법입니다. Word2Vector에는 CBOW모델과 Skip-Gram 모델이 있습니다. 여기서는 Skip-Gram 모델을 구현합니다.
+                * tf.train.Saver().export_meta_graph API 와 tf.train.import_meta_graph API를 사용하여 Training, Test 코드를 각각 실행합니다.(그래프파일인 meta파일을 저장하여 Test시 불러옵니다.)
 
             * [***Image To Image Translation With Conditional Adversarial Networks***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph)
                 * 어떤 도메인의 이미지의 다른 도메인의 이미지로의 변환이라는 거룩한 목적을 위해 고안된 네트워크입니다. ConditionalGAN 과 UNET을 사용하여 네트워크 구성 합니다.
@@ -96,7 +97,7 @@
     
 >## **코드 실행에 필요한 파이썬 모듈** 
 * Tensorflow-1.10
-* numpy, collections, pandas
+* numpy, collections, pandas, random
 * matplotlib, scikit-learn, opencv-python, scipy, copy
 * tqdm, os, glob, shutil, urllib, zipfile, tarfile
 

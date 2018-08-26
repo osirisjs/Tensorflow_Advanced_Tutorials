@@ -111,7 +111,7 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
                 summary_operation = tf.summary.merge_all()
 
             '''
-            WHY? 아래 3줄의 코드를 적어 주지 않고, 학습을 하게되면, TEST부분에서 tf.train.import_meta_graph를 사용할 때 오류가 난다. 
+            WHY? 아래 3줄의 코드를 적어 주지 않고, 학습을 하게되면, TEST부분에서 tf.train.import_meta_graph를 사용할 때 오류가 발생한다. 
             -> 단순히 그래프를 가져오고 가중치를 복원하는 것만으로는 안된다. 세션을 실행할때 인수로 사용할 변수에 대한 
             추가 접근을 제공하지 않기 때문에 아래와 같이 저장을 해놓은 뒤 TEST 시에 불러와서 다시 사용 해야한다.
             '''
@@ -161,16 +161,17 @@ def model(TEST=False, optimizer_selection="Adam", learning_rate=0.0009, training
         # print(tf.get_default_graph()) #기본그래프이다.
         JG = tf.Graph()  # 내 그래프로 설정한다.- 혹시라도 나중에 여러 그래프를 사용할 경우를 대비
         with JG.as_default():  # as_default()는 JG를 기본그래프로 설정한다.
-            '''
-            WHY? 아래 3줄의 코드를 적어 주지 않으면 오류가 난다. 
-            -> 단순히 그래프를 가져오고 가중치를 복원하는 것만으로는 안된다. 세션을 실행할때 인수로 사용할 변수에 대한 
-            추가 접근을 제공하지 않기 때문에 아래와 같이 get_colltection으로 입,출력 변수들을 불러와서 다시 사용 해야 한다.
-            '''
+
             saver = tf.train.import_meta_graph(meta_path[0], clear_devices=True)  # meta graph 읽어오기
             if saver == None:
                 print("<<< meta 파일을 읽을 수 없습니다. >>>")
                 exit(0)
 
+            '''
+            WHY? 아래 2줄의 코드를 적어 주지 않으면 오류가 발생한다. 
+            -> 단순히 그래프를 가져오고 가중치를 복원하는 것만으로는 안된다. 세션을 실행할때 인수로 사용할 변수에 대한 
+            추가 접근을 제공하지 않기 때문에 아래와 같이 get_colltection으로 입,출력 변수들을 불러와서 다시 사용 해야 한다.
+            '''
             x = tf.get_collection('x')[0]
             output = tf.get_collection('output')[0]
 
