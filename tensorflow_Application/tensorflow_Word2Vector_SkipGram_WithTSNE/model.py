@@ -8,9 +8,7 @@ import tensorflow as tf
 from sklearn.manifold import TSNE
 from tensorflow.contrib.tensorboard.plugins import projector
 from tqdm import tqdm
-
 from data_preprocessing import data_preprocessing
-
 
 def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="encoder",  # encoder or decoder
              vocabulary_size=30000, tSNE_plot=500, similarity_number=8,
@@ -30,8 +28,9 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
                             vocabulary_size=vocabulary_size)
 
     if TEST == False:
-        if os.path.exists("tensorboard/{}".format(model_name)):
-            shutil.rmtree("tensorboard/{}".format(model_name))
+        tensorboard_path=glob.glob(os.path.join("model",model_name)+"/events.*")
+        if tensorboard_path !=[] and os.path.exists(tensorboard_path[0]):
+            os.remove(tensorboard_path[0])
 
     def embedding_layer(embedding_shape=None, train_inputs=None):
         with tf.variable_scope("embedding"):
@@ -104,8 +103,8 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
 
             with tf.name_scope("trainer"):
                 train_operation = training(cost, global_step)
-            with tf.name_scope("tensorboard"):
-                summary_operation = tf.summary.merge_all()
+                
+            summary_operation = tf.summary.merge_all()
 
             '''
             WHY? 아래 2줄의 코드를 적어 주지 않고, 학습을 하게되면, TEST부분에서 tf.train.import_meta_graph를 사용할 때 오류가 난다. 
@@ -130,7 +129,7 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
             with tf.Session(graph=JG_Graph, config=config) as sess:
                 print("initializing!!!")
                 sess.run(tf.global_variables_initializer())
-                ckpt = tf.train.get_checkpoint_state(os.path.join('model', model_name))
+                ckpt = tf.train.get_checkpoint_state(os.path.join("model", model_name))
 
                 if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
                     print("Restore {} checkpoint!!!".format(os.path.basename(ckpt.model_checkpoint_path)))
@@ -138,20 +137,34 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
 
                 batches_per_epoch = int(
                     (dp.vocabulary_size * num_skips) / batch_size)  # Number of batches per epoch of training
-                summary_writer = tf.summary.FileWriter(os.path.join("tensorboard", model_name), sess.graph)
 
-                with open(os.path.join("tensorboard", model_name, "metadata.tsv"), "w") as md:
+                '''
+                embedding 시각화 할 때 주의할점!!!
+                tensorboard가 저장된 위치와 가중치 파라미터의 위치가 같아야된다. 가중치를 불러와서 사용한다.
+                '''
+                summary_writer = tf.summary.FileWriter(os.path.join("model", model_name), sess.graph)
+                with open(os.path.join("model", model_name, "metadata.tsv"), "w") as md:
                     md.write('Word\tIndex\n')
                     for k, v in dp.dictionary.items():
-                        md.write("{}\t{}\n".format(k, v))
+                        md.write("{}\t{}\n".format(k, v)) # word , index
 
                 #임베딩 시각화 하기
                 # from tensorflow.contrib.tensorboard.plugins import projector 이 꼭 필요하다!
                 config = projector.ProjectorConfig()
-                embedding = config.embeddings.add()
-                embedding.tensor_name = e_matrix.name # encoder의 weight로만 그린다.
-                # 임베딩 벡터를 연관 레이블 or 이미지와 연결
-                embedding.metadata_path = os.path.join("tensorboard", model_name, "metadata.tsv")
+                if weight_sharing:
+                    embedding_encoder = config.embeddings.add()
+                    embedding_encoder.tensor_name = e_matrix.name  # encoder의 weight로만 그린다.
+                    embedding_encoder.metadata_path = os.path.abspath(
+                        os.path.join("model", model_name, "metadata.tsv"))  # 절대값을 써주는게 좋음
+                else:
+                    embedding_encoder = config.embeddings.add()
+                    embedding_decoder = config.embeddings.add()
+                    embedding_encoder.tensor_name= e_matrix.name # encoder의 weight로만 그린다.
+                    embedding_decoder.tensor_name= nce_weight.name # encoder의 weight로만 그린다.
+                    # 임베딩 벡터를 연관 레이블 or 이미지와 연결
+                    embedding_encoder.metadata_path = os.path.abspath(os.path.join("model", model_name, "metadata.tsv")) #절대값을 써주는게 좋음
+                    embedding_decoder.metadata_path = os.path.abspath(os.path.join("model", model_name, "metadata.tsv")) #절대값을 써주는게 좋음
+
                 projector.visualize_embeddings(summary_writer, config)
 
                 for epoch in tqdm(range(training_epochs)):
@@ -168,7 +181,7 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
                     if epoch % display_step == 0:
                         summary_str = sess.run(summary_operation, feed_dict=feed_dict)
                         summary_writer.add_summary(summary_str, global_step=sess.run(global_step))
-                        save_path = os.path.join('model', model_name)
+                        save_path = os.path.join("model", model_name)
                         if not os.path.exists(save_path):
                             os.makedirs(save_path)
                         saver.save(sess, save_path + "/", global_step=sess.run(global_step),
