@@ -155,15 +155,15 @@ def Word2Vec(TEST=True, tSNE=True, model_name="Word2Vec", weight_selection="enco
                     embedding_encoder = config.embeddings.add()
                     embedding_encoder.tensor_name = e_matrix.name  # encoder의 weight로만 그린다.
                     embedding_encoder.metadata_path = os.path.abspath(
-                        os.path.join("model", model_name, "metadata.tsv"))  # 절대값을 써주는게 좋음
+                        os.path.join("model", model_name, "metadata.tsv"))  # 절대경로를 써주는게 좋음
                 else:
                     embedding_encoder = config.embeddings.add()
                     embedding_decoder = config.embeddings.add()
                     embedding_encoder.tensor_name= e_matrix.name # encoder의 weight로만 그린다.
                     embedding_decoder.tensor_name= nce_weight.name # encoder의 weight로만 그린다.
                     # 임베딩 벡터를 연관 레이블 or 이미지와 연결
-                    embedding_encoder.metadata_path = os.path.abspath(os.path.join("model", model_name, "metadata.tsv")) #절대값을 써주는게 좋음
-                    embedding_decoder.metadata_path = os.path.abspath(os.path.join("model", model_name, "metadata.tsv")) #절대값을 써주는게 좋음
+                    embedding_encoder.metadata_path = os.path.abspath(os.path.join("model", model_name, "metadata.tsv")) #절대경로를 써주는게 좋음
+                    embedding_decoder.metadata_path = os.path.abspath(os.path.join("model", model_name, "metadata.tsv")) #절대경로를 써주는게 좋음
 
                 projector.visualize_embeddings(summary_writer, config)
 

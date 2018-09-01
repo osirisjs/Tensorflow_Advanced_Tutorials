@@ -44,6 +44,12 @@
                 * [***Basic and Conditional Variational Autoencoder***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_ModelWithFixedLengthDataset/tensorflow_VariousKindsOfAutoencoder/GenerativeModel/tensorflow_VariationalAutoencoder)
                     * Autoencoder를 생성모델로 사용합니다. 짧게 줄여 VAE라고 합니다. 중간층의 평균과 분산에 따라 무작위로 데이터를 생성하는 VAE 와 중간층의 평균과 분산에 target정보를 주어 원하는 데이터를 생성하는 VAE 입니다.
          * **Application**
+            * [***MNIST 이미지 데이터 Tensorboard로 시각화 하기***]()
+                ```
+                주의 : Tensorboard event 파일과 weight 파일은 같은 경로에 있어야 합니다. 
+                ```
+                * Tensorboard Embedding Visualization을 사용하는 방법을 소개합니다.
+                * T-SNE, PCA 와 같은 차원 축소 알고리즘을 이용해서 [***MNIST 이미지 데이터***](),  [***Word2Vector***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/blob/master/tensorflow_Application/tensorflow_Word2Vector_SkipGram_WithTSNE/model.py) 등을 시각화 할 수 있습니다.
 
             * [***LottoNet***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_AutoencoderLottoNet)
                 * 로또 당첨의 꿈을 이루고자 전방향 신경망을 사용해 단순히 로또 번호를 예측하는 코드입니다.
