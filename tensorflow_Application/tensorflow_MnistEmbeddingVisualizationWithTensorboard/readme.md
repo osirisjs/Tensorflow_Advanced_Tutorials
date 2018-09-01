@@ -6,4 +6,4 @@
 
 * Tensorboard MNIST Embedding
 
-    <img src="tensor.png" height = "300px" width="600px"/> 
+    <img src="tensorboard.png" height = "200px" width="400px"/> 
