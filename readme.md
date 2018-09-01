@@ -44,12 +44,11 @@
                 * [***Basic and Conditional Variational Autoencoder***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_ModelWithFixedLengthDataset/tensorflow_VariousKindsOfAutoencoder/GenerativeModel/tensorflow_VariationalAutoencoder)
                     * Autoencoder를 생성모델로 사용합니다. 짧게 줄여 VAE라고 합니다. 중간층의 평균과 분산에 따라 무작위로 데이터를 생성하는 VAE 와 중간층의 평균과 분산에 target정보를 주어 원하는 데이터를 생성하는 VAE 입니다.
          * **Application**
-            * [***MNIST 이미지 데이터 Tensorboard로 시각화 하기***]()
+            * [***Tensorboard Embedding Visualization***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_MnistEmbeddingVisualizationWithTensorboard)
                 ```
                 주의 : Tensorboard event 파일과 weight 파일은 같은 경로에 있어야 합니다. 
                 ```
-                * Tensorboard Embedding Visualization을 사용하는 방법을 소개합니다.
-                * T-SNE, PCA 와 같은 차원 축소 알고리즘을 이용해서 [***MNIST 이미지 데이터***](),  [***Word2Vector***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/blob/master/tensorflow_Application/tensorflow_Word2Vector_SkipGram_WithTSNE/model.py) 등을 시각화 할 수 있습니다.
+                * Tensorboard Embedding에서 지원하는 PCA, T-SNE와 같은 차원 축소 알고리즘으로 다양한 데이터들을 시각화 할 수 있습니다. 여기서는 MNIST 데이터를 시각화 합니다.
 
             * [***LottoNet***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_AutoencoderLottoNet)
                 * 로또 당첨의 꿈을 이루고자 전방향 신경망을 사용해 단순히 로또 번호를 예측하는 코드입니다.
@@ -62,6 +61,7 @@
             * [***Word2Vector SkipGram With TSNE***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_Word2Vector_SkipGram_WithTSNE)
                 * 아무런 관계가 없는 것처럼 표현(one-hot encoding)된 단어들을 낮은 차원의 벡터로 표현함과 동시에 단어간의 관계를 표현하는 방법입니다. Word2Vector에는 CBOW모델과 Skip-Gram 모델이 있습니다. 여기서는 Skip-Gram 모델을 구현합니다.
                 * tf.train.Saver().export_meta_graph API 와 tf.train.import_meta_graph API를 사용하여 Training, Test 코드를 각각 실행합니다.(그래프파일인 meta파일을 저장하여 Test시 불러옵니다.)
+                * Tensorboard Embedding에서 지원하는 PCA, T-SNE와 같은 차원 축소 알고리즘으로 Embedding된 단어들의 관계를 시각화 해봅니다.
 
             * [***Image To Image Translation With Conditional Adversarial Networks***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_ImageToImageTranslationWithConditionalAdversarialNetworks_Graph)
                 * 어떤 도메인의 이미지의 다른 도메인의 이미지로의 변환이라는 거룩한 목적을 위해 고안된 네트워크입니다. ConditionalGAN 과 UNET을 사용하여 네트워크 구성 합니다.
