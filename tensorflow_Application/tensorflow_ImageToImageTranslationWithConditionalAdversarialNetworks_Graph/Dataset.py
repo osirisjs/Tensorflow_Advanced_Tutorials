@@ -358,7 +358,8 @@ class Dataset(object):
         if not os.path.isfile(self.TFRecord_path):  # TFRecord 파일이 존재하지 않은 경우
             print("<<< Making {} >>>".format(os.path.basename(self.TFRecord_path)))
             with tf.python_io.TFRecordWriter(self.TFRecord_path) as writer:  # TFRecord로 쓰자
-                random.shuffle(self.file_path_list)
+                if self.use_TrainDataset:
+                    random.shuffle(self.file_path_list)
                 for image_address in tqdm(self.file_path_list):
                     img_left, img_right = self.load_image(image_address)
                     '''넘파이 배열의 값을 바이트 스트링으로 변환한다.
@@ -390,7 +391,10 @@ class Dataset(object):
         # TFRecordDataset()사용해서 읽어오기
         dataset = tf.data.TFRecordDataset(self.TFRecord_path)
         dataset = dataset.map(self._image_preprocessingOfTFRecord)
-        dataset = dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
+        if self.use_TrainDataset:
+            dataset = dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
+        else:
+            dataset = dataset.repeat().batch(self.batch_size)
         # 사실 여기서 dataset.make_one_shot_iterator()을 사용해도 된다.
         iterator = dataset.make_initializable_iterator()
         # tf.python_io.tf_record_iterator는 무엇인가 ? TFRecord 파일에서 레코드를 읽을 수 있는 iterator이다.
@@ -400,8 +404,13 @@ class Dataset(object):
     def Using_TFBasicDataset(self):
 
         length = len(self.file_path_list)
-        random_file_path_list_Tensor = tf.random_shuffle(tf.constant(self.file_path_list))  # tensor에 데이터셋 리스트를 담기
-        dataset = tf.data.Dataset.from_tensor_slices(random_file_path_list_Tensor)
+
+        if self.use_TrainDataset:
+            random_file_path_list_Tensor = tf.random_shuffle(tf.constant(self.file_path_list))  # tensor에 데이터셋 리스트를 담기
+            dataset = tf.data.Dataset.from_tensor_slices(random_file_path_list_Tensor)
+        else:
+            dataset = tf.data.Dataset.from_tensor_slices(tf.constant(self.file_path_list))
+
         dataset = dataset.map(self._image_preprocessingOfBasic)
         '''
         buffer_size: A `tf.int64` scalar `tf.Tensor`, representing the
@@ -419,7 +428,10 @@ class Dataset(object):
         문제점2 -> 한번 섞고 말아버린다. -> buffer_size를 자기 컴퓨터의 메모리에 맞게 최대한으로 써보자.
         '''
         # dataset = dataset.shuffle(buffer_size=1).repeat().batch(self.batch_size)
-        dataset = dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
+        if self.use_TrainDataset:
+            dataset = dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
+        else:
+            dataset = dataset.repeat().batch(self.batch_size)
         '''
         위에서 tf.random_shuffle을 쓰고 아래의 make_one_shot_iterator()을 쓰면 오류가 발생한다. - stateful 관련 오류가 뜨는데, 추 후 해결 되겠지...
         이유가 궁금하다면 아래의 웹사이트를 참고하자.
