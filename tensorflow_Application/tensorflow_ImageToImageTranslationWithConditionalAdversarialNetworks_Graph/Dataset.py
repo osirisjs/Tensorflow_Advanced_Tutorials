@@ -480,8 +480,6 @@ class ImagePool(object):
             self.image_count += 1
             return image
 
-        # copy에 대한 내용은 본 프로젝트의 copy_example.py를 참고!!!
-        # np.random.rand()는 0~1 사이의 무작위 값을 출력한다.
         if np.random.rand() > 0.5:
             index = np.random.randint(low=0, high=self.image_pool_size, size=None)
             past_image = self.image_appender[index]
