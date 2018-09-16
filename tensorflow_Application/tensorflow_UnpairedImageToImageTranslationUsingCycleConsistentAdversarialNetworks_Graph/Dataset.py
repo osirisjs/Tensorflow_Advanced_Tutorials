@@ -17,8 +17,8 @@ https://people.eecs.berkeley.edu/~taesung_park/CycleGAN/datasets/horse2zebra.zip
 많은 것을 지원해주는 텐서플로우 API 만을 이용해서 만들 경우 코드가 굉장히 짧아지면서 빠르다.
 하지만, 공부해야할 것이 꽤 많다. TFRecord, tf.data.Dataset API, tf.image API 등등 여러가지를 알아야 한다.
 
-##################내가 생각하는 데이터 전처리기를 만드는 총 4가지 방법################# 
-#총 4가지 방법이 있는 것 같다. 
+##################내가 생각하는 데이터 전처리기를 만드는 총 3가지 방법################# 
+#총 3가지 방법이 있는 것 같다. 
 1. numpy로 만들어서 feed_dict하는 방법 - feed_dict 자체가 파이런 런타임에서 텐서플로 런타임에서 데이터를 단일 스레드로 복사해서
 이로인해 지연이 발생하고 속도가 느려진다.
 
@@ -27,8 +27,6 @@ https://people.eecs.berkeley.edu/~taesung_park/CycleGAN/datasets/horse2zebra.zip
 
 3. tf.data.TFRecordDataset를 사용하여 TRRecord(이진 파일, 직렬화된 입력 데이터)라는 텐서플로우 표준 파일형식으로 저장된 파일을 불러온 다음
   그래프에 올려버리는 방법 - 아래의 두번째 방법
-
-4. 멀티스레드 사용방법 - 이것은 공부가 더 필요할듯 하다. - tf.data.TFRecordDataset과 결합하는 방법이 있나?
 
 <첫번째 방법>은 원래의 데이터파일을 불러와서 학습 한다.
 <두번째 방법>은 TFRecord(텐서플로우의 표준 파일 형식)으로 원래의 데이터를 저장한뒤 불러와서 학습하는 방식이다.
