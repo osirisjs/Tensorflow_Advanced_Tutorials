@@ -90,9 +90,8 @@
 
              * [***Semantic Image segmentation model using the latest algorithm***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_Semantic_Image_segmentation_model_using_the_latest_algorithm)
                  * 진행중
-                 * 최신 알고리즘들을 사용한 Semantic Segmentation 모델을 만들어 봅니다.
-                 * Atrous Convolution, Depthwise Separable Convolution, Atrous Spatial Pyramid Poolings, Xception module등을 다 사용해 저만의 Segmentation 모델을 만듭니다.
-                * cityscapes 데이터셋을 사용합니다.
+                 * 최신 알고리즘들을 사용한 저만의 Semantic Segmentation 모델을 만들어 봅니다.
+                 * Atrous Convolution, Depthwise Separable Convolution, Atrous Spatial Pyramid Poolings, Xception module 등의 최신 기법을 사용합니다.
 
     * ### **Reinforcement Learning**
         * ASAP - 관련 책들을 읽어보자
