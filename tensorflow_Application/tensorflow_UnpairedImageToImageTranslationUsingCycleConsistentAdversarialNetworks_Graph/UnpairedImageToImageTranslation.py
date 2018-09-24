@@ -127,33 +127,6 @@ def model(
         else:
             return tf.nn.bias_add(conv_out, b)
 
-    def conv2d_transpose(input, output_shape=None, weight_shape=None, bias_shape=None, norm_selection=None,
-                         strides=[1, 1, 1, 1], padding="VALID"):
-
-        weight_init = tf.random_normal_initializer(mean=0.0, stddev=0.02)
-        bias_init = tf.constant_initializer(value=0)
-
-        weight_decay = tf.constant(scale, dtype=tf.float32)
-        if regularizer == "L1":
-            w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                                regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
-        elif regularizer == "L2":
-            w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
-        else:
-            w = tf.get_variable("w", weight_shape, initializer=weight_init)
-
-        b = tf.get_variable("b", bias_shape, initializer=bias_init)
-        conv_out = tf.nn.conv2d_transpose(input, w, output_shape=output_shape, strides=strides, padding=padding)
-
-        # batch_norm을 적용하면 bias를 안써도 된다곤 하지만, 나는 썼다.
-        if norm_selection == "BN":
-            return tf.layers.batch_normalization(tf.nn.bias_add(conv_out, b), training=BN_FLAG)
-        elif norm_selection == "IN":
-            return tf.contrib.layers.instance_norm(tf.nn.bias_add(conv_out, b))
-        else:
-            return tf.nn.bias_add(conv_out, b)
-
     def residual_block(x):
 
         y = tf.pad(x, [[0, 0], [1, 1], [1, 1], [0, 0]], "REFLECT")
