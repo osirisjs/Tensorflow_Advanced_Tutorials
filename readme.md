@@ -88,16 +88,6 @@
                 * 256x256 크기 이상의 서로 다른 크기의 이미지들을 동시에 학습 할 수 있습니다.
                     * 256x256 크기의 이미지로 학습한 생성 네트워크에 512x512 크기의 이미지를 입력으로 넣어 성능을 평가하기 위한 기능입니다. 다양한 크기의 이미지를 동시에 학습하는 것도 가능합니다. ( 관련 내용 : [Image To Image Translation With Conditional Adversarial Networks Using edges2shoes Dataset 논문의 7p 참고](https://arxiv.org/pdf/1611.07004.pdf))
 
-             * [***Semantic Image segmentation model using the latest algorithm***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_Application/tensorflow_Semantic_Image_segmentation_model_using_the_latest_algorithm)
-                 * 진행중
-                 * 최신 알고리즘들을 사용한 저만의 Semantic Segmentation 모델을 만들어 봅니다.
-                 * Atrous Convolution, Depthwise Separable Convolution, Atrous Spatial Pyramid Poolings, Xception module 등의 최신 기법을 사용합니다.
-
-    * ### **Reinforcement Learning**
-        * ASAP - 관련 책들을 읽어보자
-
-
-
 >## **개발 환경**
 * os : ```window 10.1 64bit``` 
 * python version(`3.6.4`) : `anaconda3 4.4.10` 
