@@ -88,6 +88,15 @@
                 * 256x256 크기 이상의 서로 다른 크기의 이미지들을 동시에 학습 할 수 있습니다.
                     * 256x256 크기의 이미지로 학습한 생성 네트워크에 512x512 크기의 이미지를 입력으로 넣어 성능을 평가하기 위한 기능입니다. 다양한 크기의 이미지를 동시에 학습하는 것도 가능합니다. ( 관련 내용 : [Image To Image Translation With Conditional Adversarial Networks Using edges2shoes Dataset 논문의 7p 참고](https://arxiv.org/pdf/1611.07004.pdf))
 
+        * ### **Reinforcement Learning from Hands-On ML**
+            * [CartPole]() 
+                * 카트 위에 놓인 막대가 넘어지지 않도록 왼쪽 또는 오른쪽으로 가속시키는 2D 시뮬레이션
+                * 정책 그라디언트(Policy Gradinet)를 사용한 방법
+                * 일단 에피소드를 몇 번 진행해보고 이를 평균내어 학습 
+                    * 몬테카를로 정책 그라디언트(Monte Carlo Policy Gradient) 라고도 함
+            * [MsPacman]()
+                * 심층 Q-네트워크(Deep Q-networks)를 사용한 방법
+
 >## **개발 환경**
 * os : ```window 10.1 64bit``` 
 * python version(`3.6.4`) : `anaconda3 4.4.10` 

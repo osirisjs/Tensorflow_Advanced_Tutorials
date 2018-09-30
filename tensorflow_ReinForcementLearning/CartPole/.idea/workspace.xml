@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="784070d3-2501-4804-9490-b5c298560a48" name="Default Changelist" comment="" />
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FUSProjectUsageTrigger">
+    <session id="-417956931">
+      <usages-collector id="statistics.lifecycle.project">
+        <counts>
+          <entry key="project.closed" value="6" />
+          <entry key="project.open.time.2" value="2" />
+          <entry key="project.open.time.3" value="2" />
+          <entry key="project.open.time.4" value="1" />
+          <entry key="project.open.time.5" value="1" />
+          <entry key="project.open.time.6" value="1" />
+          <entry key="project.opened" value="7" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.open">
+        <counts>
+          <entry key="checkpoint" value="1" />
+          <entry key="py" value="32" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.open">
+        <counts>
+          <entry key="PLAIN_TEXT" value="1" />
+          <entry key="Python" value="32" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.edit">
+        <counts>
+          <entry key="py" value="6347" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.edit">
+        <counts>
+          <entry key="Python" value="6347" />
+        </counts>
+      </usages-collector>
+    </session>
+  </component>
+  <component name="FileEditorManager">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/main.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="78">
+              <caret line="2" column="29" selection-start-line="2" selection-start-column="29" selection-end-line="2" selection-end-column="29" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/CartPole.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-653">
+              <caret line="124" column="72" selection-start-line="124" selection-start-column="72" selection-end-line="124" selection-end-column="72" />
+              <folding>
+                <element signature="e#0#9#0" expanded="true" />
+                <marker date="1538342289885" expanded="true" signature="669:670" ph="..." />
+                <marker date="1538342289885" expanded="true" signature="1838:2220" ph="..." />
+                <marker date="1538342289885" expanded="true" signature="2389:8231" ph="..." />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>inputs</find>
+      <find>save_path</find>
+      <find>x</find>
+      <find>self.game_step</find>
+    </findStrings>
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/model.py" />
+        <option value="$PROJECT_DIR$/../Heightof4wayToHeightof8way.py" />
+        <option value="$PROJECT_DIR$/CartPole.py" />
+        <option value="$PROJECT_DIR$/main.py" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="707" />
+    <option name="y" value="219" />
+    <option name="width" value="1105" />
+    <option name="height" value="1100" />
+  </component>
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="Scope" />
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="ReinforcementLearning" type="b2602c69:ProjectViewProjectNode" />
+              <item name="ReinforcementLearning" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+    </panes>
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager" selected="Python.main">
+    <configuration name="CartPole" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="ReinforcementLearning" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/CartPole.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="ReinforcementLearning" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.CartPole" />
+      <item itemvalue="Python.main" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.main" />
+        <item itemvalue="Python.CartPole" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="784070d3-2501-4804-9490-b5c298560a48" name="Default Changelist" comment="" />
+      <created>1536509053723</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1536509053723</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
+    <layout>
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.17123288" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.49457702" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.39978093" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Version Control" order="7" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Terminal" order="8" />
+      <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
+      <window_info anchor="bottom" id="Python Console" order="10" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+    </layout>
+  </component>
+  <component name="VcsContentAnnotationSettings">
+    <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/model.py" />
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/gym/envs/classic_control/rendering.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="140">
+          <caret line="142" selection-start-line="142" selection-end-line="142" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/pyglet/window/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="140">
+          <caret line="769" selection-start-line="769" selection-end-line="769" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/gym/envs/registration.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="103">
+          <caret line="165" column="4" selection-start-line="165" selection-start-column="4" selection-end-line="165" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.PyCharmCE2018.2/system/python_stubs/-313451744/numpy/core/multiarray.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="160">
+          <caret line="561" column="31" selection-start-line="561" selection-start-column="25" selection-end-line="561" selection-end-column="31" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/ops/variables.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="182">
+          <caret line="1600" column="4" selection-start-line="1600" selection-start-column="4" selection-end-line="1600" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/layers/core.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="110">
+          <caret line="188" column="16" selection-start-line="188" selection-start-column="16" selection-end-line="188" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.PyCharmCE2018.2/system/python_stubs/-313451744/builtins.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="146">
+          <caret line="4167" column="8" selection-start-line="4167" selection-start-column="8" selection-end-line="4167" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/ops/array_ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="117">
+          <caret line="1693" column="4" selection-start-line="1693" selection-start-column="4" selection-end-line="1693" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/keras/engine/base_layer.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1433">
+          <caret line="1407" column="25" lean-forward="true" selection-start-line="1407" selection-start-column="25" selection-end-line="1407" selection-end-column="25" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/ops/random_ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-63">
+          <caret line="323" column="4" selection-start-line="323" selection-start-column="4" selection-end-line="323" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/gym/wrappers/time_limit.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="155">
+          <caret line="28" column="8" selection-start-line="28" selection-start-column="8" selection-end-line="28" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/gym/core.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="155">
+          <caret line="282" column="8" selection-start-line="282" selection-start-column="8" selection-end-line="282" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/ops/gen_nn_ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="61">
+          <caret line="3002" column="4" selection-start-line="3002" selection-start-column="4" selection-end-line="3002" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/PGWeight/checkpoint">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/training/saver.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-384">
+          <caret line="1521" column="6" selection-start-line="1521" selection-start-column="6" selection-end-line="1521" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/h5py/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="163">
+          <caret line="35" selection-start-line="35" selection-end-line="35" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/ProgramData/Anaconda3/Lib/site-packages/tensorflow/python/ops/nn_impl.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="357">
+          <caret line="120" column="61" selection-start-line="120" selection-start-column="61" selection-end-line="120" selection-end-column="61" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../HH_SIGMOID/Heightof4wayToHeightof8way.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="379">
+          <caret line="1029" selection-start-line="1029" selection-end-line="1029" selection-end-column="108" />
+          <folding>
+            <element signature="e#0#13#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../Heightof4wayToHeightof8way.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="209">
+          <caret line="1028" column="66" selection-start-line="1028" selection-start-column="66" selection-end-line="1028" selection-end-column="66" />
+          <folding>
+            <element signature="e#0#13#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="78">
+          <caret line="2" column="29" selection-start-line="2" selection-start-column="29" selection-end-line="2" selection-end-column="29" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CartPole.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-653">
+          <caret line="124" column="72" selection-start-line="124" selection-start-column="72" selection-end-line="124" selection-end-column="72" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+            <marker date="1538342289885" expanded="true" signature="669:670" ph="..." />
+            <marker date="1538342289885" expanded="true" signature="1838:2220" ph="..." />
+            <marker date="1538342289885" expanded="true" signature="2389:8231" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>
