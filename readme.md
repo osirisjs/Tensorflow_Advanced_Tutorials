@@ -90,12 +90,11 @@
 
         * ### **Reinforcement Learning from Hands-On ML**
             * [***CartPole***](https://github.com/JONGGON/Tensorflow_Advanced_Tutorials/tree/master/tensorflow_ReinForcementLearning/CartPole) 
-                * 카트 위에 놓인 막대가 넘어지지 않도록 왼쪽 또는 오른쪽으로 가속시키는 2D 시뮬레이션
-                * 정책 그라디언트(Policy Gradinet)를 사용한 방법
-                * 일단 에피소드를 몇 번 진행해보고 이를 평균내어 학습 
-                    * 몬테카를로 정책 그라디언트(Monte Carlo Policy Gradient) 라고도 함
+                * 카트 위에 놓인 막대가 넘어지지 않도록 왼쪽 또는 오른쪽으로 가속시키는 2D 시뮬레이션입니다.
+                * 일단 에피소드를 몇 번 진행해보고 이를 평균내어 학습합니다.
+                    * 몬테카를로 정책 그라디언트(Monte Carlo Policy Gradient) 방법입니다.
             * [***MsPacman***]()
-                * 심층 Q-네트워크(Deep Q-networks)를 사용한 방법
+                * 심층 Q-네트워크(Deep Q-networks)를 사용한 방법입니다.
 
 >## **개발 환경**
 * os : ```window 10.1 64bit``` 
