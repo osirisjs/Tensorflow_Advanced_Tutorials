@@ -109,7 +109,7 @@ AtoB = False -> segmentation -> image
 pix2pix.model(DB_name="facades",
               TEST=True,  # TEST=False -> Training or TEST=True -> TEST
               # 대량의 데이터일 경우 TFRecord=True가 더 빠르다.
-              TFRecord=True,  # TFRecord=True -> TFRecord파일로 저장한후 사용하는 방식 사용 or TFRecord=False -> 파일에서 읽어오는 방식 사용
+              TFRecord=False,  # TFRecord=True -> TFRecord파일로 저장한후 사용하는 방식 사용 or TFRecord=False -> 파일에서 읽어오는 방식 사용
               AtoB=False,  # 데이터 순서 변경(ex) AtoB=True : image -> segmentation / AtoB=False : segmetation -> image)
               Inputsize_limit=(256, 256),  # 입력되어야 하는 최소 사이즈를 내가 지정 - (256,256) 으로 하자
               filter_size=32,  # generator와 discriminator의 처음 layer의 filter 크기

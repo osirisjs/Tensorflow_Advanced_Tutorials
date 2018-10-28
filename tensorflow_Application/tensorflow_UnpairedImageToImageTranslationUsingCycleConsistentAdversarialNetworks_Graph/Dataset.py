@@ -317,15 +317,15 @@ class Dataset(object):
         # 4. TFRecordDataset()사용해서 읽어오기
         A_dataset = tf.data.TFRecordDataset(self.TFRecord_Apath)
         B_dataset = tf.data.TFRecordDataset(self.TFRecord_Bpath)
-        A_dataset = A_dataset.map(self._image_preprocessingOfTFRecord)
-        B_dataset = B_dataset.map(self._image_preprocessingOfTFRecord)
+        A_dataset = A_dataset.map(self._image_preprocessingOfTFRecord, num_parallel_calls=10)
+        B_dataset = B_dataset.map(self._image_preprocessingOfTFRecord, num_parallel_calls=10)
 
         if self.use_TrainDataset:
-            A_dataset = A_dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
-            B_dataset = B_dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
+            A_dataset = A_dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size).prefetch(self.batch_size)
+            B_dataset = B_dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size).prefetch(self.batch_size)
         else:
-            A_dataset = A_dataset.repeat().batch(self.batch_size)
-            B_dataset = B_dataset.repeat().batch(self.batch_size)
+            A_dataset = A_dataset.repeat().batch(self.batch_size).prefetch(self.batch_size)
+            B_dataset = B_dataset.repeat().batch(self.batch_size).prefetch(self.batch_size)
 
         # Using_TFBasicDataset와 형태를 맞추기 위함이다. -> 사실 여기선 dataset.make_one_shot_iterator()을 사용해도 된다.
         A_iterator = A_dataset.make_initializable_iterator()
@@ -349,8 +349,8 @@ class Dataset(object):
             A_dataset = tf.data.Dataset.from_tensor_slices(tf.constant(self.file_path_Alist))
             B_dataset = tf.data.Dataset.from_tensor_slices(tf.constant(self.file_path_Blist))
 
-        A_dataset = A_dataset.map(self._image_preprocessingOfBasic)
-        B_dataset = B_dataset.map(self._image_preprocessingOfBasic)
+        A_dataset = A_dataset.map(self._image_preprocessingOfBasic, num_parallel_calls=10)
+        B_dataset = B_dataset.map(self._image_preprocessingOfBasic, num_parallel_calls=10)
         '''
         buffer_size: A `tf.int64` scalar `tf.Tensor`, representing the
         number of elements from this dataset from which the new
@@ -368,11 +368,11 @@ class Dataset(object):
         '''
         # dataset = dataset.shuffle(buffer_size=1).repeat().batch(self.batch_size)
         if self.use_TrainDataset:
-            A_dataset = A_dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
-            B_dataset = B_dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
+            A_dataset = A_dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size).prefetch(self.batch_size)
+            B_dataset = B_dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size).prefetch(self.batch_size)
         else:
-            A_dataset = A_dataset.repeat().batch(self.batch_size)
-            B_dataset = B_dataset.repeat().batch(self.batch_size)
+            A_dataset = A_dataset.repeat().batch(self.batch_size).prefetch(self.batch_size)
+            B_dataset = B_dataset.repeat().batch(self.batch_size).prefetch(self.batch_size)
 
         '''
         위에서 tf.random_shuffle을 쓰고 아래의 make_one_shot_iterator()을 쓰면 오류가 발생한다. - stateful 관련 오류가 뜨는데, 추 후 해결 되겠지...

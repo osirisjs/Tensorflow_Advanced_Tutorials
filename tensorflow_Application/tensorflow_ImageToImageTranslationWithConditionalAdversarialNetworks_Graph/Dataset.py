@@ -388,11 +388,11 @@ class Dataset(object):
 
         # TFRecordDataset()사용해서 읽어오기
         dataset = tf.data.TFRecordDataset(self.TFRecord_path)
-        dataset = dataset.map(self._image_preprocessingOfTFRecord)
+        dataset = dataset.map(self._image_preprocessingOfTFRecord, num_parallel_calls=10)
         if self.use_TrainDataset:
-            dataset = dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
+            dataset = dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size).prefetch(self.batch_size)
         else:
-            dataset = dataset.repeat().batch(self.batch_size)
+            dataset = dataset.repeat().batch(self.batch_size).prefetch(self.batch_size)
         # 사실 여기서 dataset.make_one_shot_iterator()을 사용해도 된다.
         iterator = dataset.make_initializable_iterator()
         # tf.python_io.tf_record_iterator는 무엇인가 ? TFRecord 파일에서 레코드를 읽을 수 있는 iterator이다.
@@ -409,7 +409,7 @@ class Dataset(object):
         else:
             dataset = tf.data.Dataset.from_tensor_slices(tf.constant(self.file_path_list))
 
-        dataset = dataset.map(self._image_preprocessingOfBasic)
+        dataset = dataset.map(self._image_preprocessingOfBasic, num_parallel_calls=10)
         '''
         buffer_size: A `tf.int64` scalar `tf.Tensor`, representing the
         number of elements from this dataset from which the new
@@ -427,9 +427,9 @@ class Dataset(object):
         '''
         # dataset = dataset.shuffle(buffer_size=1).repeat().batch(self.batch_size)
         if self.use_TrainDataset:
-            dataset = dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size)
+            dataset = dataset.shuffle(buffer_size=1000).repeat().batch(self.batch_size).prefetch(self.batch_size)
         else:
-            dataset = dataset.repeat().batch(self.batch_size)
+            dataset = dataset.repeat().batch(self.batch_size).prefetch(self.batch_size)
         '''
         위에서 tf.random_shuffle을 쓰고 아래의 make_one_shot_iterator()을 쓰면 오류가 발생한다. - stateful 관련 오류가 뜨는데, 추 후 해결 되겠지...
         이유가 궁금하다면 아래의 웹사이트를 참고하자.
