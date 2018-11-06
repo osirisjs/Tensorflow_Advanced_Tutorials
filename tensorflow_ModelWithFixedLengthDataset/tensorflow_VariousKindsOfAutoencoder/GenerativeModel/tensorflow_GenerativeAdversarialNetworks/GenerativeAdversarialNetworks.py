@@ -25,7 +25,7 @@ def show_image(model_name, generated_image, column_size=10, row_size=10):
 
 def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distance_loss_weight=1,
           optimizer_selection="Adam", learning_rate=0.001, training_epochs=100,
-          batch_size=128, display_step=10, batch_norm=True):
+          batch_size=128, display_step=10, batch_norm=True, regularization='L1', scale=0.0001):
     mnist = input_data.read_data_sets("", one_hot=True)
 
     if targeting == False:
@@ -35,30 +35,57 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
     else:
         if distance_loss == "L1":
             print("target generative GAN with L1 loss")
-            model_name = "ConditionalGAN_WithL1loss"
+            model_name = "CGANL1"
         elif distance_loss == "L2":
-            print("target generative GAN with L1 loss")
-            model_name = "ConditionalGAN_WithL2loss"
+            print("target generative GAN with L2 loss")
+            model_name = "CGANL2"
         else:
             print("target generative GAN")
-            model_name = "ConditionalGAN"
+            model_name = "CGAN"
 
     if batch_norm == True:
-        model_name = "batchnorm" + model_name
+        model_name = "BN" + model_name
+    else:
+        if regularization == "L1" or regularization == "L2":
+            model_name = "reg" + regularization + model_name
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
             shutil.rmtree("tensorboard/{}".format(model_name))
 
-    def layer(input, weight_shape, bias_shape):
+    def final_layer(input, weight_shape, bias_shape):
+
         weight_init = tf.random_normal_initializer(stddev=0.01)
         bias_init = tf.random_normal_initializer(stddev=0.01)
+        weight_decay = tf.constant(scale, dtype=tf.float32)
+        if regularization == "L1":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+        elif regularization == "L2":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        else:
+            w = tf.get_variable("w", weight_shape, initializer=weight_init)
+        b = tf.get_variable("b", bias_shape, initializer=bias_init)
+
+        return tf.matmul(input, w) + b
+
+    def layer(input, weight_shape, bias_shape):
+
+        weight_init = tf.truncated_normal_initializer(stddev=0.02)
+        bias_init = tf.truncated_normal_initializer(stddev=0.02)
         if batch_norm:
             w = tf.get_variable("w", weight_shape, initializer=weight_init)
         else:
-            weight_decay = tf.constant(0.000001, dtype=tf.float32)
-            w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+            weight_decay = tf.constant(scale, dtype=tf.float32)
+            if regularization == "L1":
+                w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                    regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+            elif regularization == "L2":
+                w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                    regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+            else:
+                w = tf.get_variable("w", weight_shape, initializer=weight_init)
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
 
         if batch_norm:
@@ -71,11 +98,11 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
             noise = tf.concat([noise, target], axis=1)
         with tf.variable_scope("generator"):
             with tf.variable_scope("fully1"):
-                fully_1 = tf.nn.relu(layer(noise, [np.shape(noise)[1], 256], [256]))
+                fully_1 = tf.nn.leaky_relu(layer(noise, [np.shape(noise)[1], 256], [256]))
             with tf.variable_scope("fully2"):
-                fully_2 = tf.nn.relu(layer(fully_1, [256, 512], [512]))
+                fully_2 = tf.nn.leaky_relu(layer(fully_1, [256, 512], [512]))
             with tf.variable_scope("output"):
-                output = tf.nn.sigmoid(layer(fully_2, [512, 784], [784]))
+                output = tf.nn.sigmoid(final_layer(fully_2, [512, 784], [784]))
 
         return output
 
@@ -84,26 +111,23 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
             x = tf.concat([x, target], axis=1)
         with tf.variable_scope("discriminator"):
             with tf.variable_scope("fully1"):
-                fully_1 = tf.nn.relu(layer(x, [np.shape(x)[1], 500], [500]))
+                fully_1 = tf.nn.leaky_relu(layer(x, [np.shape(x)[1], 500], [500]))
             with tf.variable_scope("fully2"):
-                fully_2 = tf.nn.relu(layer(fully_1, [500, 100], [100]))
+                fully_2 = tf.nn.leaky_relu(layer(fully_1, [500, 100], [100]))
             with tf.variable_scope("output"):
-                output = layer(fully_2, [100, 1], [1])
-        return output , tf.nn.sigmoid(output)
+                output = final_layer(fully_2, [100, 1], [1])
+        return output, tf.nn.sigmoid(output)
 
     def training(cost, var_list, scope=None):
-        if scope == None:
-            tf.summary.scalar("Discriminator Loss", cost)
-        else:
-            tf.summary.scalar("Generator Loss", cost)
-        '''GAN 구현시 Batch Normalization을 쓸 때 주의할 점!!!
-        #scope를 써줘야 한다. - 그냥 tf.get_collection(tf.GraphKeys.UPDATE_OPS) 이렇게 써버리면 
-        shared_variables 아래에 있는 변수들을 다 업데이트 해야하므로 scope를 지정해줘야한다.
-        - GAN의 경우 예)discriminator의 optimizer는 batch norm의 param 전체를 업데이트해야하고
-                        generator의 optimizer는 batch_norm param의 generator 부분만 업데이트 해야 한다.   
+
         '''
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope=scope)
-        with tf.control_dependencies(update_ops):
+        GAN 구현시 Batch Normalization을 쓸 때 주의할 점!!!
+        #scope를 써줘야 한다. - 그냥 tf.get_collection(tf.GraphKeys.UPDATE_OPS) 이렇게 써버리면 
+        shared_variables 아래에 있는 변수들을 다 업데이트 하므로 scope를 지정해줘야한다.
+        '''
+        if not batch_norm:
+            cost = tf.add_n([cost] + tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope=scope))
+        with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS, scope=scope)):
             if optimizer_selection == "Adam":
                 optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
             elif optimizer_selection == "RMSP":
@@ -132,15 +156,11 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
                 D_gene, sigmoid_D_gene = discriminator(x=G, target=target)
 
         # Algorithjm
-        var_D = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                  scope='shared_variables/discriminator')
-        # set으로 중복 제거 하고, 다시 list로 바꾼다.
-        var_G = list(set(np.concatenate(
-            (tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/generator'),
-             tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/generator')),
-            axis=0)))
+        var_D = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/discriminator')
 
-        # Adam optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
+        var_G = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/generator')
+
+        # optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
         with tf.name_scope("saver"):
             saver_all = tf.train.Saver(var_list=tf.global_variables(), max_to_keep=3)
             saver_generator = tf.train.Saver(var_list=var_G, max_to_keep=3)
@@ -154,9 +174,12 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
                 D_Loss = min_max_loss(logits=D_real, labels=tf.ones_like(D_real)) + min_max_loss(logits=D_gene,
                                                                                                  labels=tf.zeros_like(
                                                                                                      D_gene))
+                tf.summary.scalar("Discriminator Loss", D_Loss)
+
             with tf.name_scope("Generator_loss"):
                 # for generator
                 G_Loss = min_max_loss(logits=D_gene, labels=tf.ones_like(D_gene))
+                tf.summary.scalar("Generator Loss", G_Loss)
 
             if distance_loss == "L1":
                 with tf.name_scope("L1_loss"):
@@ -172,11 +195,11 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
                 dis_loss = tf.constant(value=0, dtype=tf.float32)
 
             with tf.name_scope("Discriminator_trainer"):
-                D_train_op = training(D_Loss, var_D, scope=None)
+                D_train_op = training(D_Loss, var_D, scope='shared_variables/discriminator')
             with tf.name_scope("Generator_trainer"):
                 G_train_op = training(G_Loss, var_G, scope='shared_variables/generator')
-            with tf.name_scope("tensorboard"):
-                summary_operation = tf.summary.merge_all()
+
+            summary_operation = tf.summary.merge_all()
 
     config = tf.ConfigProto(log_device_placement=False, allow_soft_placement=True)
     config.gpu_options.allow_growth = True
@@ -204,7 +227,7 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
                 Loss_D = 0.
                 Loss_G = 0
                 Loss_Distance = 0
-                #아래의 두 값이 각각 0.5 씩을 갖는게 가장 이상적이다.
+                # 아래의 두 값이 각각 0.5 씩을 갖는게 가장 이상적이다.
                 sigmoid_D = 0
                 sigmoid_G = 0
 
@@ -214,21 +237,25 @@ def model(TEST=True, noise_size=100, targeting=True, distance_loss="L2", distanc
                     noise = np.random.normal(loc=0.0, scale=1.0, size=(batch_size, noise_size))
                     feed_dict_all = {x: mbatch_x, target: mbatch_y, z: noise}
                     feed_dict_Generator = {x: mbatch_x, target: mbatch_y, z: noise}
-                    _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real], feed_dict=feed_dict_all)
-                    _, Generator_Loss, Distance_Loss, D_gene_simgoid = sess.run([G_train_op, G_Loss, dis_loss, sigmoid_D_gene],
-                                                                feed_dict=feed_dict_Generator)
+                    _, Discriminator_Loss, D_real_simgoid = sess.run([D_train_op, D_Loss, sigmoid_D_real],
+                                                                     feed_dict=feed_dict_all)
+                    _, Generator_Loss, Distance_Loss, D_gene_simgoid = sess.run(
+                        [G_train_op, G_Loss, dis_loss, sigmoid_D_gene],
+                        feed_dict=feed_dict_Generator)
                     Loss_D += (Discriminator_Loss / total_batch)
                     Loss_G += (Generator_Loss / total_batch)
                     Loss_Distance += (Distance_Loss / total_batch)
                     sigmoid_D += D_real_simgoid / total_batch
                     sigmoid_G += D_gene_simgoid / total_batch
 
-                print("Discriminator mean output : {} / Generator mean output : {}".format(np.mean(sigmoid_D), np.mean(sigmoid_G)))
+                print("Discriminator mean output : {} / Generator mean output : {}".format(np.mean(sigmoid_D),
+                                                                                           np.mean(sigmoid_G)))
 
-                if distance_loss == "L1" or distance_loss=="L2":
+                if distance_loss == "L1" or distance_loss == "L2":
                     print(
-                        "Discriminator Loss : {} / Generator Loss  : {} / {} loss : {}".format(Loss_D, Loss_G, distance_loss,
-                                                                                             Loss_Distance))
+                        "Discriminator Loss : {} / Generator Loss  : {} / {} loss : {}".format(Loss_D, Loss_G,
+                                                                                               distance_loss,
+                                                                                               Loss_Distance))
                 else:
                     print(
                         "Discriminator Loss : {} / Generator Loss  : {}".format(Loss_D, Loss_G, distance_loss))
@@ -275,13 +302,14 @@ if __name__ == "__main__":
     targeting = True 일 때 -> distance_loss = 'L1' 일 경우 , generator에서 나오는 출력과 실제 출력값을 비교하는 L1 loss를 생성
     targeting = True 일 때 -> distance_loss = 'L2' 일 경우 , generator에서 나오는 출력과 실제 출력값을 비교하는 L2 loss를 생성
     targeting = True 일 때 -> distamce_loss = None 일 경우 , 추가적인 loss 없음
-    참고 : distance_loss를 사용하지 않고, batch_norm을 쓰면 생성이 잘 안된다. 네트워크 구조를 간단히 하기위해
-    fully connected network를 사용해서 그런지 batch_norm이 generator가 숫자이미지를 생성하려는 것을 방해하는 것 같다.
     '''
-    model(TEST=True, noise_size=128, targeting=True, distance_loss="L2", distance_loss_weight=1,
-          optimizer_selection="Adam", learning_rate=0.0002, training_epochs=100,
+    # batch normalization은 Hidden Layer에만 추가합니다. 또한 활성화 함수전에 적용합니다.
+    # regularization -> batch_norm = False 일때, L2 or L1 or nothing
+    model(TEST=True, noise_size=128, targeting=True, distance_loss="L1",
+          distance_loss_weight=1, \
+          optimizer_selection="Adam", learning_rate=0.0002, training_epochs=50,
           batch_size=128,
-          display_step=1, batch_norm=False)
+          display_step=1, regularization='L2', scale=0.0001)
 
 else:
     print("model imported")

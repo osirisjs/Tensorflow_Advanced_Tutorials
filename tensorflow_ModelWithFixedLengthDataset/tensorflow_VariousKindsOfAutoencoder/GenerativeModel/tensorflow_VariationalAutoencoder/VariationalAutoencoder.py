@@ -25,7 +25,7 @@ def show_image(model_name, generated_image, column_size=10, row_size=10):
 
 def model(TEST=True, targeting=True, latent_number=16, optimizer_selection="Adam",
           learning_rate=0.001, training_epochs=100,
-          batch_size=128, display_step=10, batch_norm=True):
+          batch_size=128, display_step=10, batch_norm=True, regularization='L1', scale=0.0001):
     mnist = input_data.read_data_sets("", one_hot=False)
 
     if targeting:
@@ -35,22 +35,49 @@ def model(TEST=True, targeting=True, latent_number=16, optimizer_selection="Adam
         print("random generative VAE")
         model_name = "RandomVAE"
 
-    if batch_norm:
-        model_name = "BatchNorm_" + model_name
+    if batch_norm == True:
+        model_name = "BN" + model_name
+    else:
+        if regularization == "L1" or regularization == "L2":
+            model_name = "reg" + regularization + model_name
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
             shutil.rmtree("tensorboard/{}".format(model_name))
 
-    def layer(input, weight_shape, bias_shape):
+    def final_layer(input, weight_shape, bias_shape):
+
         weight_init = tf.random_normal_initializer(stddev=0.01)
         bias_init = tf.random_normal_initializer(stddev=0.01)
+        weight_decay = tf.constant(scale, dtype=tf.float32)
+        if regularization == "L1":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+        elif regularization == "L2":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        else:
+            w = tf.get_variable("w", weight_shape, initializer=weight_init)
+        b = tf.get_variable("b", bias_shape, initializer=bias_init)
+
+        return tf.matmul(input, w) + b
+
+    def layer(input, weight_shape, bias_shape):
+
+        weight_init = tf.truncated_normal_initializer(stddev=0.02)
+        bias_init = tf.truncated_normal_initializer(stddev=0.02)
         if batch_norm:
             w = tf.get_variable("w", weight_shape, initializer=weight_init)
         else:
-            weight_decay = tf.constant(0.00001, dtype=tf.float32)
-            w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+            weight_decay = tf.constant(scale, dtype=tf.float32)
+            if regularization == "L1":
+                w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                    regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+            elif regularization == "L2":
+                w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                    regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+            else:
+                w = tf.get_variable("w", weight_shape, initializer=weight_init)
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
 
         if batch_norm:
@@ -62,11 +89,11 @@ def model(TEST=True, targeting=True, latent_number=16, optimizer_selection="Adam
 
         with tf.variable_scope("encoder"):
             with tf.variable_scope("fully1"):
-                fully_1 = tf.nn.relu(layer(tf.reshape(x, (-1, 784)), [784, 256], [256]))
+                fully_1 = tf.nn.leaky_relu(layer(tf.reshape(x, (-1, 784)), [784, 256], [256]))
             with tf.variable_scope("fully2"):
-                fully_2 = tf.nn.relu(layer(fully_1, [256, 128], [128]))
+                fully_2 = tf.nn.leaky_relu(layer(fully_1, [256, 128], [128]))
             with tf.variable_scope("fully3"):
-                fully_3 = tf.nn.relu(layer(fully_2, [128, 64], [64]))
+                fully_3 = tf.nn.leaky_relu(layer(fully_2, [128, 64], [64]))
 
         with tf.variable_scope("mean_variance"):
             # 활성화 함수 쓰면 안된다.
@@ -81,20 +108,20 @@ def model(TEST=True, targeting=True, latent_number=16, optimizer_selection="Adam
 
             if targeting:
                 latent_variable = tf.concat([latent_variable, tf.tile(tf.reshape(target, (-1, 1)),
-                                                                                    [1, latent_number])], axis=1)
+                                                                      [1, latent_number])], axis=1)
             else:
-                latent_number = (latent_number//2)
+                latent_number = (latent_number // 2)
 
         # 학습이 완료된 후에는 아래의 decoder의 가중치만 사용하면 된다.
         with tf.variable_scope("decoder"):
             with tf.variable_scope("fully1"):
-                fully_4 = tf.nn.relu(layer(latent_variable, [latent_number * 2, 64], [64]))
+                fully_4 = tf.nn.leaky_relu(layer(latent_variable, [latent_number * 2, 64], [64]))
             with tf.variable_scope("fully2"):
-                fully_5 = tf.nn.relu(layer(fully_4, [64, 128], [128]))
+                fully_5 = tf.nn.leaky_relu(layer(fully_4, [64, 128], [128]))
             with tf.variable_scope("fully3"):
-                fully_6 = tf.nn.relu(layer(fully_5, [128, 256], [256]))
+                fully_6 = tf.nn.leaky_relu(layer(fully_5, [128, 256], [256]))
             with tf.variable_scope("output"):
-                decoder_output = tf.nn.sigmoid(layer(fully_6, [256, 784], [784]))
+                decoder_output = tf.nn.sigmoid(final_layer(fully_6, [256, 784], [784]))
 
         return latent_variable, encoder_output, decoder_output
 
@@ -123,8 +150,9 @@ def model(TEST=True, targeting=True, latent_number=16, optimizer_selection="Adam
 
     def training(cost):
         tf.summary.scalar("train_cost", cost)
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        with tf.control_dependencies(update_ops):
+        if not batch_norm:
+            cost = tf.add_n([cost] + tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
+        with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
             if optimizer_selection == "Adam":
                 optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
             elif optimizer_selection == "RMSP":
@@ -146,14 +174,13 @@ def model(TEST=True, targeting=True, latent_number=16, optimizer_selection="Adam
                 latent_variable, encoder_output, decoder_output = inference(x, target, latent_number)
             # scope.reuse_variables()
 
-        # Adam optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
+        # optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
         with tf.name_scope("saver"):
             saver_all = tf.train.Saver(var_list=tf.global_variables(), max_to_keep=3)
             # set으로 중복 제거 하고, 다시 list로 바꾼다.
-            saver_generator = tf.train.Saver(var_list=list(set(np.concatenate(( \
-                tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='shared_variables/decoder'), \
-                tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='shared_variables/decoder')), \
-                axis=0))), max_to_keep=3)
+            saver_generator = tf.train.Saver(var_list=tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,
+                                                                        scope='shared_variables/decoder'),
+                                             max_to_keep=3)
 
         if not TEST:
             # Variational Auotoencoder Loss
@@ -252,8 +279,11 @@ if __name__ == "__main__":
     targeting = False 일 때는 숫자를 무작위로 생성하는 VAE 생성 - General VAE
     targeting = True 일 때는 숫자를 타게팅 하여 생성하는 VAE 생성 - Conditional VAE
     '''
-    model(TEST=True, targeting=True, latent_number=16, optimizer_selection="Adam", \
-          learning_rate=0.001, training_epochs=300, batch_size=512, display_step=1, batch_norm=True)
-
+    # batch normalization은 Hidden Layer에만 추가합니다. 또한 활성화 함수전에 적용합니다.
+    # regularization -> batch_norm = False 일때, L2 or L1 or nothing
+    model(TEST=True, targeting=False, latent_number=32, optimizer_selection="Adam", \
+          learning_rate=0.001, training_epochs=1, batch_size=512, display_step=1, batch_norm=True,
+          regularization='L2', scale=0.0001)
+    
 else:
     print("model imported")

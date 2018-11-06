@@ -6,26 +6,54 @@ from tensorflow.examples.tutorials.mnist import input_data
 from tqdm import tqdm
 
 
-def model(TEST=True, model_name="FNN", optimizer_selection="Adam", learning_rate=0.001, training_epochs=100,
-          batch_size=128, display_step=10, batch_norm=True):
+def model(TEST=True, optimizer_selection="Adam", learning_rate=0.001, training_epochs=100,
+          batch_size=128, display_step=10, batch_norm=True, regularization='L1', scale=0.0001):
     mnist = input_data.read_data_sets("", one_hot=True)
 
+    model_name = "FNN"
     if batch_norm == True:
-        model_name = "batch_norm_" + model_name
+        model_name = "BN" + model_name
+    else:
+        if regularization == "L1" or regularization == "L2":
+            model_name = "reg" + regularization + model_name
 
     if TEST == False:
         if os.path.exists("tensorboard/{}".format(model_name)):
             shutil.rmtree("tensorboard/{}".format(model_name))
 
+    def final_layer(input, weight_shape, bias_shape):
+
+        weight_init = tf.random_normal_initializer(stddev=0.01)
+        bias_init = tf.random_normal_initializer(stddev=0.01)
+        weight_decay = tf.constant(scale, dtype=tf.float32)
+        if regularization == "L1":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+        elif regularization == "L2":
+            w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+        else:
+            w = tf.get_variable("w", weight_shape, initializer=weight_init)
+        b = tf.get_variable("b", bias_shape, initializer=bias_init)
+
+        return tf.matmul(input, w) + b
+
     def layer(input, weight_shape, bias_shape):
+
         weight_init = tf.truncated_normal_initializer(stddev=0.02)
         bias_init = tf.truncated_normal_initializer(stddev=0.02)
         if batch_norm:
             w = tf.get_variable("w", weight_shape, initializer=weight_init)
         else:
-            weight_decay = tf.constant(0.0001, dtype=tf.float32)
-            w = tf.get_variable("w", weight_shape, initializer=weight_init,
-                                regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+            weight_decay = tf.constant(scale, dtype=tf.float32)
+            if regularization == "L1":
+                w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                    regularizer=tf.contrib.layers.l1_regularizer(scale=weight_decay))
+            elif regularization == "L2":
+                w = tf.get_variable("w", weight_shape, initializer=weight_init,
+                                    regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay))
+            else:
+                w = tf.get_variable("w", weight_shape, initializer=weight_init)
         b = tf.get_variable("b", bias_shape, initializer=bias_init)
 
         if batch_norm:
@@ -35,11 +63,11 @@ def model(TEST=True, model_name="FNN", optimizer_selection="Adam", learning_rate
 
     def inference(x):
         with tf.variable_scope("hidden_1"):
-            hidden1 = tf.nn.relu(layer(x, [784, 256], [256]))
+            hidden1 = tf.nn.leaky_relu(layer(x, [784, 256], [256]))
         with tf.variable_scope("hidden_2"):
-            hidden2 = tf.nn.relu(layer(hidden1, [256, 256], [256]))
+            hidden2 = tf.nn.leaky_relu(layer(hidden1, [256, 256], [256]))
         with tf.variable_scope("output"):
-            output = layer(hidden2, [256, 10], [10])
+            output = final_layer(hidden2, [256, 10], [10])
         return output
 
     def loss(output, y):
@@ -49,8 +77,9 @@ def model(TEST=True, model_name="FNN", optimizer_selection="Adam", learning_rate
 
     def training(cost, global_step):
         tf.summary.scalar("cost", cost)
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        with tf.control_dependencies(update_ops):
+        if not batch_norm:
+            cost = tf.add_n([cost] + tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
+        with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
             if optimizer_selection == "Adam":
                 optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
             elif optimizer_selection == "RMSP":
@@ -61,7 +90,7 @@ def model(TEST=True, model_name="FNN", optimizer_selection="Adam", learning_rate
         return train_operation
 
     def evaluate(output, y):
-        correct_prediction = tf.equal(tf.argmax(output, 1), tf.argmax(y, 1))
+        correct_prediction = tf.equal(tf.argmax(tf.nn.softmax(output), 1), tf.argmax(y, 1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
         return accuracy
 
@@ -76,7 +105,7 @@ def model(TEST=True, model_name="FNN", optimizer_selection="Adam", learning_rate
                 output = inference(x)
             # or scope.reuse_variables()
 
-        # Adam optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
+        # optimizer의 매개변수들을 저장하고 싶지 않다면 여기에 선언해야한다.
         with tf.name_scope("saver"):
             saver = tf.train.Saver(var_list=tf.global_variables(), max_to_keep=3)
 
@@ -145,7 +174,9 @@ def model(TEST=True, model_name="FNN", optimizer_selection="Adam", learning_rate
 
 if __name__ == "__main__":
     # optimizers_ selection = "Adam" or "RMSP" or "SGD"
-    model(TEST=True, model_name="FNN", optimizer_selection="Adam", learning_rate=0.001, training_epochs=1,
-          batch_size=512, display_step=1, batch_norm=True)
+    # batch normalization은 Hidden Layer에만 추가합니다. 또한 활성화 함수전에 적용합니다.
+    # regularization -> batch_norm = False 일때, L2 or L1 or nothing
+    model(TEST=True, optimizer_selection="Adam", learning_rate=0.001, training_epochs=50,
+          batch_size=256, display_step=1, batch_norm=True, regularization='L2', scale=0.0001)
 else:
     print("model imported")
